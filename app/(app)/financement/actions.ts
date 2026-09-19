@@ -93,13 +93,26 @@ export async function rembourserEcheance(
 export async function addSubvention(formData: FormData): Promise<Resultat> {
   const ctx = await getContexte()
   const supabase = await createClient()
+
+  const materielId = opt(formData, 'materiel_id')
+  const taux = num(formData, 'taux_subvention')
+  let montant = num(formData, 'montant_accorde')
+  if (taux !== undefined) {
+    if (!materielId) return { error: 'Choisissez le matériel financé pour saisir la subvention en pourcentage.' }
+    if (taux <= 0 || taux > 100) return { error: 'Le taux de subvention doit être compris entre 0 et 100 %.' }
+    const { data: mat } = await supabase.from('materiels').select('cout_acquisition').eq('id', materielId).maybeSingle()
+    if (!mat) return { error: 'Matériel introuvable.' }
+    montant = Math.round(Number(mat.cout_acquisition) * taux) / 100
+  }
+  if (!montant || montant <= 0) return { error: 'Indiquez le montant accordé ou le taux de subvention.' }
+
   const { error } = await supabase.from('subventions').insert({
     organisation_id: ctx.organisationId,
     code: txt(formData, 'code').toUpperCase(),
     libelle: txt(formData, 'libelle'),
     bailleur_id: txt(formData, 'bailleur_id'),
-    materiel_id: opt(formData, 'materiel_id') ?? null,
-    montant_accorde: num(formData, 'montant_accorde'),
+    materiel_id: materielId ?? null,
+    montant_accorde: montant,
     date_octroi: txt(formData, 'date_octroi'),
   })
   if (error) return message(error)

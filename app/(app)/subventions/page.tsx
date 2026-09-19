@@ -21,7 +21,7 @@ export default async function SubventionsPage() {
     <>
       <PageHeader
         titre="Subventions d'investissement"
-        description="Le matériel reste inscrit à son coût global ; la subvention (compte 14) est reprise au résultat (compte 865) au rythme de l'amortissement du bien financé."
+        description="Le matériel reste inscrit à son coût global. À chaque dotation, la part financée par la subvention (taux = subvention ÷ coût) est reprise au résultat (865) et déduite du compte 14."
       >
         <SimpleCreateForm
           titre="Nouvelle subvention"
@@ -31,7 +31,8 @@ export default async function SubventionsPage() {
             { name: 'code', label: 'Code', required: true },
             { name: 'libelle', label: 'Libellé', required: true },
             { name: 'bailleur_id', label: 'Bailleur', type: 'select', required: true, options: o.bailleurs.map((b) => ({ value: b.id, label: b.label })) },
-            { name: 'montant_accorde', label: 'Montant accordé', type: 'number', step: '0.01', required: true },
+            { name: 'montant_accorde', label: 'Montant accordé (ou laissez vide et indiquez le taux)', type: 'number', step: '0.01' },
+            { name: 'taux_subvention', label: 'ou taux de subvention (% du coût du matériel : 50, 70…)', type: 'number', step: '0.01' },
             { name: 'date_octroi', label: 'Date d’octroi', type: 'date', required: true, defaultValue: new Date().toISOString().slice(0, 10) },
             {
               name: 'materiel_id', label: 'Matériel financé (pour la reprise)', type: 'select',
@@ -58,6 +59,7 @@ export default async function SubventionsPage() {
             <th className={th}>Libellé</th>
             <th className={th}>Bailleur</th>
             <th className={th}>Octroi</th>
+            <th className={`${th} text-right`}>Taux du coût</th>
             <th className={`${th} text-right`}>Accordé</th>
             <th className={`${th} text-right`}>Encaissé</th>
             <th className={`${th} text-right`}>Repris au résultat</th>
@@ -73,6 +75,7 @@ export default async function SubventionsPage() {
                 <td className={td}>{s.libelle}</td>
                 <td className={td}>{b?.nom}</td>
                 <td className={td}>{formatDate(s.date_octroi)}</td>
+                <td className={`${td} text-right`}>{s.taux_financement != null ? `${Number(s.taux_financement)} %` : '—'}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(s.montant_accorde, ctx.devise)}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(s.montant_encaisse, ctx.devise)}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(s.reprises_cumulees, ctx.devise)}</td>
