@@ -44,6 +44,7 @@ export async function chargerOptions() {
     producteurs: tiersDe('producteur'),
     clients: tiersDe('client'),
     fournisseurs: tiersDe('fournisseur'),
+    bailleurs: tiersDe('bailleur'),
     tousTiers: (tiers.data ?? []).map((t) => ({ id: t.id, label: `${t.code} — ${t.nom}` })),
   }
 }

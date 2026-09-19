@@ -16,6 +16,9 @@ import {
   Store,
   Truck,
   Wallet,
+  Banknote,
+  HandCoins,
+  Tractor,
   Building2,
   CalendarRange,
   FileText,
@@ -63,6 +66,14 @@ const NAV = [
       { href: '/ventes?type=marche', label: 'Ventes marché', icon: ArrowLeftRight },
       { href: '/remboursements-nature', label: 'Remboursements en nature', icon: Semis },
       { href: '/tresorerie', label: 'Trésorerie', icon: Wallet },
+    ],
+  },
+  {
+    titre: 'Financement & matériel',
+    items: [
+      { href: '/financements', label: 'Emprunts et crédits', icon: Banknote },
+      { href: '/subventions', label: 'Subventions', icon: HandCoins },
+      { href: '/materiel', label: 'Parc matériel', icon: Tractor },
     ],
   },
   {

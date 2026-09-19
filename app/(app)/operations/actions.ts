@@ -132,6 +132,8 @@ export async function addReglement(formData: FormData): Promise<Resultat> {
     montant: Number(txt(formData, 'montant')),
     compte_tresorerie_id: txt(formData, 'compte_tresorerie_id'),
     reference: opt(formData, 'reference'),
+    nature: opt(formData, 'nature'),
+    contrat_financement_id: opt(formData, 'contrat_financement_id'),
   })
 }
 

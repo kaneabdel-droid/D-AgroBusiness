@@ -12,7 +12,7 @@ export default async function TresoreriePage() {
   const ctx = await getContexte()
   const o = await chargerOptions()
   const supabase = await createClient()
-  const [{ data: soldes }, { data: reglements }, { data: operations }, { data: comptes }] = await Promise.all([
+  const [{ data: soldes }, { data: reglements }, { data: operations }, { data: comptes }, { data: financements }] = await Promise.all([
     supabase.from('v_soldes_tresorerie').select('*').order('code'),
     supabase
       .from('reglements')
@@ -23,6 +23,7 @@ export default async function TresoreriePage() {
       .select('id, numero, date_operation, sens, montant, libelle, comptes_tresorerie(code)')
       .order('date_operation', { ascending: false }).limit(30),
     supabase.from('comptes_comptables').select('id, numero, libelle').eq('actif', true).order('numero'),
+    supabase.from('contrats_financement').select('id, code, libelle').in('type', ['credit_campagne', 'fonds_commercialisation']).eq('statut', 'actif').order('code'),
   ])
   const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
   const total = (soldes ?? []).reduce((s, x) => s + Number(x.solde), 0)
@@ -48,6 +49,17 @@ export default async function TresoreriePage() {
             { name: 'montant', label: 'Montant', type: 'number', step: '0.01', required: true },
             { name: 'compte_tresorerie_id', label: 'Compte de trésorerie', type: 'select', required: true, options: optCt },
             { name: 'reference', label: 'Référence (chèque, virement…)' },
+            {
+              name: 'nature', label: 'Nature du paiement', type: 'select', defaultValue: 'courant',
+              options: [
+                { value: 'courant', label: 'Fournisseur courant (dette 401)' },
+                { value: 'immobilisation', label: 'Fournisseur d’investissements (dette 481)' },
+              ],
+            },
+            {
+              name: 'contrat_financement_id', label: 'Financement utilisé (crédit de campagne / fonds de commercialisation)', type: 'select',
+              options: financements?.map((f) => ({ value: f.id, label: `${f.code} — ${f.libelle}` })),
+            },
           ]}
         />
         <SimpleCreateForm
