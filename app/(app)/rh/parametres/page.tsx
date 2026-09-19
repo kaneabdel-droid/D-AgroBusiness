@@ -119,6 +119,7 @@ export default async function ParametresPaiePage() {
                 { value: 'CI', label: 'Côte d’Ivoire — ITS et RICF (CGI art. 116 et 119 bis), CN, taxe d’apprentissage, FPC ; CNPS à paramétrer' },
                 { value: 'NE', label: 'Niger — ITS (CGI art. 60 à 66) : abattements 10 % et charges de famille, barème 1 à 35 % ; CNSS à paramétrer' },
                 { value: 'BJ', label: 'Bénin — ITS (CGI 2025 art. 125) barème 0 à 30 %, VPS 4 % ; CNSS et redevance ORTB à paramétrer' },
+                { value: 'GH', label: 'Ghana — PAYE (GRA 2024) : barème 0 à 35 %, SSNIT 5,5 % déductible ; taux patronal à valider' },
                 { value: 'ML', label: 'Mali — ITS (brochure DGI 2020) : INPS 3,6 % déductible, réduction familiale en %, −2 points ; taux patronaux à paramétrer' },
               ],
             },

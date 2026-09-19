@@ -11,6 +11,7 @@ export const PAYS = [
   { code: 'GW', nom: 'Guinée-Bissau' },
   { code: 'MR', nom: 'Mauritanie' },
   { code: 'MA', nom: 'Maroc' },
+  { code: 'GH', nom: 'Ghana' },
 ] as const
 
 export const ROLES: Record<string, string> = {
