@@ -146,6 +146,7 @@ export async function addOperationTresorerie(formData: FormData): Promise<Result
     contrepartie_compte_id: txt(formData, 'contrepartie_compte_id'),
     libelle: txt(formData, 'libelle'),
     departement_id: opt(formData, 'departement_id'),
+    secteur_id: opt(formData, 'secteur_id'),
     campagne_id: opt(formData, 'campagne_id'),
   })
 }

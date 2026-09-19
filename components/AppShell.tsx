@@ -19,6 +19,8 @@ import {
   Banknote,
   HandCoins,
   Tractor,
+  Factory,
+  Wheat,
   Building2,
   CalendarRange,
   FileText,
@@ -66,6 +68,13 @@ const NAV = [
       { href: '/ventes?type=marche', label: 'Ventes marché', icon: ArrowLeftRight },
       { href: '/remboursements-nature', label: 'Remboursements en nature', icon: Semis },
       { href: '/tresorerie', label: 'Trésorerie', icon: Wallet },
+    ],
+  },
+  {
+    titre: 'Production & usine',
+    items: [
+      { href: '/production', label: 'Production agricole', icon: Wheat },
+      { href: '/usine', label: 'Usine de transformation', icon: Factory },
     ],
   },
   {

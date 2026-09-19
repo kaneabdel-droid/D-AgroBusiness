@@ -80,6 +80,7 @@ export default async function TresoreriePage() {
             },
             { name: 'libelle', label: 'Libellé', required: true },
             { name: 'departement_id', label: 'Département (obligatoire pour charges/produits)', type: 'select', options: o.departements.map((d) => ({ value: d.id, label: d.label })) },
+            { name: 'secteur_id', label: 'Secteur / projet (doit appartenir au département)', type: 'select', options: o.secteurs.map((s) => ({ value: s.id, label: s.label })) },
             { name: 'campagne_id', label: 'Campagne', type: 'select', options: o.campagnes.map((c) => ({ value: c.id, label: c.label })) },
           ]}
         />
