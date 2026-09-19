@@ -44,5 +44,5 @@ Après avoir exécuté `supabase/migrations/06_rh_paie.sql`, importer le barème
 2. Choisir `supabase/seed/bareme_retenue_sn_2013.csv` (19 823 lignes) ; laisser `id`, `organisation_id` et `pays` vides (valeurs par défaut).
 3. Dans l'application : Paie → Paramètres → vérifier les taux et plafonds, puis « Valider le paramétrage ».
 
-Le fichier source est le barème 2013 : si les textes changent, importer une nouvelle version depuis Paie → Paramètres (import CSV, même format), sans toucher au code.
+Le barème SN-2013 est celui en vigueur au Sénégal (confirmé par l'utilisateur). Si les textes changent, importer une nouvelle version depuis Paie → Paramètres (import CSV, même format), sans toucher au code.
 Pour un autre pays, importer son barème (ou renseigner tranches, réductions et forfaits en mode « calcul ») et ses règles de cotisations.
