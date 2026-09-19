@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ECEFEF;
+  --surface: #FFFFFF;
+  --surface-border: #D9DFDD;
+  --foreground: #09090b;
+  --foreground-muted: #475569;
+  --sidebar: #F4F6F5;
+
+  --primary: #1E5631;
+  --primary-hover: #2F855A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #D97706;
+  --danger: #DC2626;
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --info: #0284C7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-border: var(--surface-border);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-sidebar: var(--sidebar);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-outfit);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Cibles tactiles confortables sur mobile (écrans de terrain). */
+@media (pointer: coarse) {
+  button, [role="button"], input, select, textarea {
+    min-height: 44px;
+  }
+}
