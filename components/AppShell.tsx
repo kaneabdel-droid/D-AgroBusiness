@@ -24,6 +24,11 @@ import {
   ClipboardCheck,
   Receipt,
   Settings,
+  PiggyBank,
+  Percent,
+  LineChart,
+  Flag,
+  CalendarDays,
   Building2,
   CalendarRange,
   FileText,
@@ -96,6 +101,16 @@ const NAV = [
       { href: '/financements', label: 'Emprunts et crédits', icon: Banknote },
       { href: '/subventions', label: 'Subventions', icon: HandCoins },
       { href: '/materiel', label: 'Parc matériel', icon: Tractor },
+    ],
+  },
+  {
+    titre: 'Pilotage',
+    items: [
+      { href: '/pilotage/budgets', label: 'Budgets', icon: PiggyBank },
+      { href: '/pilotage/etats', label: 'États et ratios', icon: LineChart },
+      { href: '/pilotage/campagnes', label: 'Bilans de campagne', icon: Flag },
+      { href: '/pilotage/rapport-mensuel', label: 'Rapport mensuel', icon: CalendarDays },
+      { href: '/pilotage/tva', label: 'TVA', icon: Percent },
     ],
   },
   {
