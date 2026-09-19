@@ -59,6 +59,7 @@ export async function addEmploye(formData: FormData): Promise<Resultat> {
     nombre_conjoints: conjoints,
     parts_ir: num(formData, 'parts_ir') ?? partsParDefaut(situation, enfants),
     regime_ipres: txt(formData, 'regime_ipres') || 'general',
+    deduction_fixe_mensuelle: num(formData, 'deduction_fixe_mensuelle') ?? 0,
     telephone: opt(formData, 'telephone') ?? null,
   })
   if (error) return message(error)
@@ -186,6 +187,11 @@ export async function majParametrage(formData: FormData): Promise<Resultat> {
       abattement_pct: num(formData, 'abattement_pct') ?? 0,
       abattement_plafond_annuel: num(formData, 'abattement_plafond_annuel') ?? null,
       arrondi_base: num(formData, 'arrondi_base') ?? 0,
+      ricf_mode: txt(formData, 'ricf_mode') || 'parts',
+      ricf_marie_pct: num(formData, 'ricf_marie_pct') ?? 0,
+      ricf_par_enfant_pct: num(formData, 'ricf_par_enfant_pct') ?? 0,
+      ricf_max_enfants: num(formData, 'ricf_max_enfants') ?? 10,
+      reduction_pression_points: num(formData, 'reduction_pression_points') ?? 0,
     })
     .eq('organisation_id', ctx.organisationId)
   if (error) return message(error)

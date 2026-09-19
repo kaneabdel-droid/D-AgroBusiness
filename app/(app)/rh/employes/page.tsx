@@ -48,6 +48,7 @@ export default async function EmployesPage() {
               name: 'regime_ipres', label: 'Régime IPRES', type: 'select', required: true, defaultValue: 'general',
               options: [{ value: 'general', label: 'Général' }, { value: 'cadre', label: 'Général + complémentaire (cadre)' }],
             },
+            { name: 'deduction_fixe_mensuelle', label: 'Déduction forfaitaire mensuelle de la base d’impôt (Mali : indemnité spéciale de solidarité)', type: 'number', step: '0.01', defaultValue: '0' },
             { name: 'telephone', label: 'Téléphone', type: 'tel' },
           ]}
         />

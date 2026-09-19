@@ -98,6 +98,11 @@ export default async function ParametresPaiePage() {
             { name: 'jours_par_mois', label: 'Jours par mois (retenue d’absence)', type: 'number', step: '0.5', defaultValue: String(param?.jours_par_mois ?? 30) },
             { name: 'jours_conge_par_mois', label: 'Jours de congé acquis par mois', type: 'number', step: '0.01', defaultValue: String(param?.jours_conge_par_mois ?? 2) },
             { name: 'arrondi_base', label: 'Mode calcul : arrondi à l’inférieur de la base imposable (ex. 1000)', type: 'number', step: '1', defaultValue: String(param?.arrondi_base ?? 0) },
+            { name: 'ricf_mode', label: 'Réduction pour charges de famille', type: 'select', required: true, defaultValue: param?.ricf_mode ?? 'parts', options: [{ value: 'parts', label: 'Selon le nombre de parts (tableau ci-dessous)' }, { value: 'familial', label: 'Pourcentage de l’impôt : taux marié + taux par enfant' }] },
+            { name: 'ricf_marie_pct', label: 'Mode pourcentage : taux si marié (%)', type: 'number', step: '0.001', defaultValue: String(param?.ricf_marie_pct ?? 0) },
+            { name: 'ricf_par_enfant_pct', label: 'Mode pourcentage : taux par enfant (%)', type: 'number', step: '0.001', defaultValue: String(param?.ricf_par_enfant_pct ?? 0) },
+            { name: 'ricf_max_enfants', label: 'Mode pourcentage : nombre maximal d’enfants retenus', type: 'number', defaultValue: String(param?.ricf_max_enfants ?? 10) },
+            { name: 'reduction_pression_points', label: 'Diminution du taux de pression fiscale (points, ex. Mali : 2)', type: 'number', step: '0.001', defaultValue: String(param?.reduction_pression_points ?? 0) },
             { name: 'abattement_pct', label: 'Mode calcul : abattement forfaitaire (%)', type: 'number', step: '0.01', defaultValue: String(param?.abattement_pct ?? 0) },
             { name: 'abattement_plafond_annuel', label: 'Mode calcul : plafond annuel de l’abattement', type: 'number', step: '0.01', defaultValue: param?.abattement_plafond_annuel != null ? String(param.abattement_plafond_annuel) : '' },
           ]}
@@ -112,6 +117,7 @@ export default async function ParametresPaiePage() {
               options: [
                 { value: 'SN', label: 'Sénégal — barème officiel de retenue à la source, IPRES, CSS, CFCE' },
                 { value: 'CI', label: 'Côte d’Ivoire — ITS et RICF (CGI art. 116 et 119 bis), CN, taxe d’apprentissage, FPC ; CNPS à paramétrer' },
+                { value: 'ML', label: 'Mali — ITS (brochure DGI 2020) : INPS 3,6 % déductible, réduction familiale en %, −2 points ; taux patronaux à paramétrer' },
               ],
             },
           ]}
