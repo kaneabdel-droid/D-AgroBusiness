@@ -121,6 +121,7 @@ export default async function ParametresPaiePage() {
                 { value: 'BJ', label: 'Bénin — ITS (CGI 2025 art. 125) barème 0 à 30 %, VPS 4 % ; CNSS 3,6 % / 6,4 % ; redevance ORTB non gérée' },
                 { value: 'GH', label: 'Ghana — PAYE (GRA 2024) : barème 0 à 35 %, SSNIT 5,5 % déductible ; taux patronal à valider' },
                 { value: 'ML', label: 'Mali — ITS (brochure DGI 2020) : INPS 3,6 % déductible, réduction familiale en %, −2 points ; INPS, AMO et ANPE inclus' },
+                { value: 'MR', label: 'Mauritanie — ITS (CGI 2023 art. 110, 113, 114) : 6 000 MRU exonérés, barème 15 / 25 / 40 %, CNSS, CNAM, médecine du travail' },
                 { value: 'MA', label: 'Maroc — IR salaires (CGI 2026 art. 59, 73, 74) : frais pro 35 % / 25 %, barème 0 à 37 %, 600 DH par charge, CNSS et AMO' },
                 { value: 'TG', label: 'Togo — IRPP (CGI art. 26, 72-74) : abattement 28 %, 10 000 F par charge et par mois, barème 0 à 35 %, CNSS et AMU' },
                 { value: 'BF', label: 'Burkina Faso — IUTS (CGI art. 60 à 62) : abattement 25 % (20 % cadres supérieurs à ajuster), barème 0 à 25 %, charges de famille 8 à 14 %, CNSS, TPA 3 %' },
