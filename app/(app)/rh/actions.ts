@@ -185,6 +185,7 @@ export async function majParametrage(formData: FormData): Promise<Resultat> {
       jours_conge_par_mois: num(formData, 'jours_conge_par_mois') ?? 2,
       abattement_pct: num(formData, 'abattement_pct') ?? 0,
       abattement_plafond_annuel: num(formData, 'abattement_plafond_annuel') ?? null,
+      arrondi_base: num(formData, 'arrondi_base') ?? 0,
     })
     .eq('organisation_id', ctx.organisationId)
   if (error) return message(error)
@@ -335,9 +336,10 @@ export async function addForfait(formData: FormData): Promise<Resultat> {
     organisation_id: ctx.organisationId,
     code: 'TRIMF',
     libelle: txt(formData, 'libelle') || 'TRIMF',
-    salaire_min_annuel: num(formData, 'salaire_min_annuel'),
-    salaire_max_annuel: num(formData, 'salaire_max_annuel') ?? null,
-    montant_annuel: num(formData, 'montant_annuel'),
+    periodicite: txt(formData, 'periodicite') || 'annuel',
+    seuil_min: num(formData, 'seuil_min'),
+    seuil_max: num(formData, 'seuil_max') ?? null,
+    montant: num(formData, 'montant'),
   })
   if (error) return message(error)
   rafraichir()

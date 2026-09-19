@@ -26,7 +26,7 @@ export default async function ParametresPaiePage() {
       supabase.from('v_baremes_versions').select('*').order('version'),
       supabase.from('bareme_ir').select('*').order('tranche_min'),
       supabase.from('reductions_famille').select('*').order('parts'),
-      supabase.from('tranches_forfaitaires').select('*').order('salaire_min_annuel'),
+      supabase.from('tranches_forfaitaires').select('*').order('periodicite').order('seuil_min'),
     ])
   const admin = ctx.role === 'admin'
   const valide = !!param?.valide_le
@@ -75,15 +75,14 @@ export default async function ParametresPaiePage() {
       <h2 className="mb-2 font-heading text-lg font-semibold">Impôt sur le revenu et TRIMF</h2>
       <Card className="mb-4 text-sm">
         <p>
-          Mode : <strong>{param?.mode_ir === 'table' ? 'lecture d’un barème de retenue à la source' : 'calcul (barème progressif, abattement, réductions de famille)'}</strong>
+          Mode : <strong>{param?.mode_ir === 'table' ? 'lecture d’un barème de retenue importé' : 'calcul automatique (brut, parts, conjoints)'}</strong>
           {param?.mode_ir === 'table' && <> · version <strong>{param?.bareme_version ?? '—'}</strong></>}
         </p>
-        {param?.mode_ir === 'table' && (
-          <p className="mt-1 text-foreground-muted">
-            Barème lu par statut : permanent → {per.permanent ?? '—'}, saisonnier → {per.saisonnier ?? '—'}, journalier → {per.journalier ?? '—'}.
-            TRIMF = montant « par personne » du barème × (1 + nombre de conjoints de l&apos;employé).
-          </p>
-        )}
+        <p className="mt-1 text-foreground-muted">
+          Base de calcul par statut : permanent → {per.permanent ?? '—'}, saisonnier → {per.saisonnier ?? '—'}, journalier → {per.journalier ?? '—'}.
+          {param?.mode_ir !== 'table' && <> Base = brut − abattement ({Number(param?.abattement_pct ?? 0)} %, plafonné à {param?.abattement_plafond_annuel != null ? formatMontant(param.abattement_plafond_annuel, '') : 'aucun plafond'} par an), arrondie à {formatMontant(param?.arrondi_base ?? 0, '')}, puis barème progressif et réduction pour charges de famille selon les parts.</>}
+          {' '}TRIMF = palier du brut × (1 + nombre de conjoints de l&apos;employé).
+        </p>
       </Card>
       <div className="mb-6 flex flex-wrap gap-2">
         <SimpleCreateForm
@@ -91,13 +90,14 @@ export default async function ParametresPaiePage() {
           disabled={!admin}
           action={majParametrage}
           champs={[
-            { name: 'mode_ir', label: 'Mode', type: 'select', required: true, defaultValue: param?.mode_ir ?? 'calcul', options: [{ value: 'table', label: 'Lecture d’un barème de retenue (table)' }, { value: 'calcul', label: 'Calcul (barème progressif)' }] },
-            { name: 'bareme_version', label: 'Version du barème (mode table)', defaultValue: param?.bareme_version ?? '' },
+            { name: 'mode_ir', label: 'Mode', type: 'select', required: true, defaultValue: param?.mode_ir ?? 'calcul', options: [{ value: 'calcul', label: 'Calcul automatique (recommandé)' }, { value: 'table', label: 'Lecture d’un barème de retenue importé' }] },
+            { name: 'bareme_version', label: 'Mode table : version du barème importé', defaultValue: param?.bareme_version ?? '' },
             { name: 'periodicite_permanent', label: 'Permanents lisent le barème', type: 'select', defaultValue: per.permanent ?? 'annuel', options: PERIODICITES },
             { name: 'periodicite_saisonnier', label: 'Saisonniers lisent le barème', type: 'select', defaultValue: per.saisonnier ?? 'mensuel', options: PERIODICITES },
             { name: 'periodicite_journalier', label: 'Journaliers lisent le barème', type: 'select', defaultValue: per.journalier ?? 'journalier', options: PERIODICITES },
             { name: 'jours_par_mois', label: 'Jours par mois (retenue d’absence)', type: 'number', step: '0.5', defaultValue: String(param?.jours_par_mois ?? 30) },
             { name: 'jours_conge_par_mois', label: 'Jours de congé acquis par mois', type: 'number', step: '0.01', defaultValue: String(param?.jours_conge_par_mois ?? 2) },
+            { name: 'arrondi_base', label: 'Mode calcul : arrondi à l’inférieur de la base imposable (ex. 1000)', type: 'number', step: '1', defaultValue: String(param?.arrondi_base ?? 0) },
             { name: 'abattement_pct', label: 'Mode calcul : abattement forfaitaire (%)', type: 'number', step: '0.01', defaultValue: String(param?.abattement_pct ?? 0) },
             { name: 'abattement_plafond_annuel', label: 'Mode calcul : plafond annuel de l’abattement', type: 'number', step: '0.01', defaultValue: param?.abattement_plafond_annuel != null ? String(param.abattement_plafond_annuel) : '' },
           ]}
@@ -195,7 +195,7 @@ export default async function ParametresPaiePage() {
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Mode « calcul » (pays sans barème de retenue) : tranches, réductions, forfaits</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">Calcul automatique : tranches d’impôt, réductions pour charges de famille, paliers de TRIMF</h2>
       <div className="mb-2 flex flex-wrap gap-2">
         <SimpleCreateForm titre="Tranche d'impôt" disabled={!admin} action={addTrancheIr}
           champs={[
@@ -210,19 +210,19 @@ export default async function ParametresPaiePage() {
             { name: 'minimum', label: 'Minimum', type: 'number', step: '0.01', defaultValue: '0' },
             { name: 'maximum', label: 'Maximum', type: 'number', step: '0.01' },
           ]} />
-        <SimpleCreateForm titre="Forfait par tranche (TRIMF)" disabled={!admin} action={addForfait}
+        <SimpleCreateForm titre="Palier de TRIMF" disabled={!admin} action={addForfait}
           champs={[
-            { name: 'libelle', label: 'Libellé', defaultValue: 'TRIMF' },
-            { name: 'salaire_min_annuel', label: 'Salaire annuel de', type: 'number', step: '0.01', required: true },
-            { name: 'salaire_max_annuel', label: 'à (vide : sans limite)', type: 'number', step: '0.01' },
-            { name: 'montant_annuel', label: 'Montant annuel', type: 'number', step: '0.01', required: true },
+            { name: 'periodicite', label: 'Périodicité du palier', type: 'select', required: true, defaultValue: 'annuel', options: PERIODICITES },
+            { name: 'seuil_min', label: 'Brut de la période à partir de', type: 'number', step: '0.01', required: true },
+            { name: 'seuil_max', label: 'jusqu’à (vide : sans limite)', type: 'number', step: '0.01' },
+            { name: 'montant', label: 'Montant de la période (par personne)', type: 'number', step: '0.01', required: true },
           ]} />
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         {([
           ['Tranches d’impôt', tranches?.map((t) => ({ id: t.id, texte: `${formatMontant(t.tranche_min, '')} → ${t.tranche_max != null ? formatMontant(t.tranche_max, '') : '∞'} : ${Number(t.taux)} %` })), 'bareme_ir'],
           ['Réductions de famille', reductions?.map((r) => ({ id: r.id, texte: `${Number(r.parts)} parts : ${Number(r.taux)} % (min ${formatMontant(r.minimum, '')}, max ${r.maximum != null ? formatMontant(r.maximum, '') : '—'})` })), 'reductions_famille'],
-          ['Forfaits TRIMF', forfaits?.map((f) => ({ id: f.id, texte: `${formatMontant(f.salaire_min_annuel, '')} → ${f.salaire_max_annuel != null ? formatMontant(f.salaire_max_annuel, '') : '∞'} : ${formatMontant(f.montant_annuel, '')} / an` })), 'tranches_forfaitaires'],
+          ['Paliers de TRIMF', forfaits?.map((f) => ({ id: f.id, texte: `${f.periodicite} · dès ${formatMontant(f.seuil_min, '')} : ${Number(f.montant)}` })), 'tranches_forfaitaires'],
         ] as [string, { id: string; texte: string }[] | undefined, 'bareme_ir' | 'reductions_famille' | 'tranches_forfaitaires'][]).map(([titre, lignes, table]) => (
           <Card key={titre}>
             <p className="mb-2 text-sm font-medium">{titre}</p>

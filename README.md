@@ -33,16 +33,17 @@ npm run typecheck  # tsc --noEmit
 - **Phase 3** : production par secteur × campagne (coût analytique, rendement), usine de transformation (nomenclatures, ordres de fabrication, répartition matière + frais).
 - **Phase 4** : personnel, contrats, pointage, congés, paie paramétrable avec verrou de validation.
 
-## Paie : barème de retenue à la source (Sénégal)
+## Paie : impôt et TRIMF calculés automatiquement
 
-L'impôt sur le revenu et la TRIMF sont lus dans un barème officiel de retenue à la source, importé dans la table `baremes_retenue`
-(permanents → barème annuel, saisonniers → mensuel, journaliers → journalier ; TRIMF × (1 + nombre de conjoints)).
+L'impôt sur le revenu et la TRIMF se calculent à partir du **brut**, du **nombre de parts** et du **nombre de conjoints**, sans barème à importer :
 
-Après avoir exécuté `supabase/migrations/06_rh_paie.sql`, importer le barème de référence :
+1. base = brut − abattement (30 %, plafonné à 900 000 par an), arrondie à l'inférieur (1 000) ;
+2. impôt brut = barème progressif ; réduction pour charges de famille selon les parts (minimum et maximum) ;
+3. TRIMF = palier du brut × (1 + nombre de conjoints).
 
-1. Supabase → Table Editor → `baremes_retenue` → Insert → Import data from CSV.
-2. Choisir `supabase/seed/bareme_retenue_sn_2013.csv` (19 823 lignes, colonnes identiques à la table : `id`, `organisation_id` vide = référence globale, `pays`…).
-3. Dans l'application : Paie → Paramètres → vérifier les taux et plafonds, puis « Valider le paramétrage ».
+Permanents : base annuelle · saisonniers : base mensuelle · journaliers : base journalière (annualisée × 360 puis ÷ 360).
+Cette formule reproduit exactement le barème officiel de retenue à la source du Sénégal (vérifié sur les 19 823 lignes de ses grilles annuelle, mensuelle et journalière).
 
-Le barème SN-2013 est celui en vigueur au Sénégal (confirmé par l'utilisateur). Si les textes changent, importer une nouvelle version depuis Paie → Paramètres (import CSV, même format), sans toucher au code.
-Pour un autre pays, importer son barème (ou renseigner tranches, réductions et forfaits en mode « calcul ») et ses règles de cotisations.
+Tout est paramétrable par organisation dans Paie → Paramètres (tranches, réductions, paliers de TRIMF, abattement, arrondi, cotisations), donc adaptable à un autre pays.
+Un mode « table » permet aussi d'importer une grille de retenue (CSV, `supabase/seed/bareme_retenue_sn_2013.csv` pour l'exemple sénégalais) pour les pays qui publient un barème par lignes.
+Un administrateur doit valider le paramétrage avant tout calcul de paie ; toute modification impose une nouvelle validation.
