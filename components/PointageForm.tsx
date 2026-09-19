@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
+import { useT } from '@/components/I18nProvider'
 import { enregistrerPointages } from '@/app/(app)/rh/actions'
 
 type Opt = { id: string; label: string }
@@ -30,6 +31,7 @@ export function PointageForm({
   campagnes: Opt[]
   date: string
 }) {
+  const { t } = useT()
   const router = useRouter()
   const [date, setDate] = useState(dateInitiale)
   const [valeurs, setValeurs] = useState<Record<string, string>>(
@@ -65,7 +67,7 @@ export function PointageForm({
             campagne_id: campagne || undefined,
           }))
       )
-      setMessage('error' in res ? { type: 'erreur', texte: res.error } : { type: 'ok', texte: 'Pointage enregistré.' })
+      setMessage('error' in res ? { type: 'erreur', texte: res.error } : { type: 'ok', texte: t('Pointage enregistré.') })
     })
   }
 
@@ -73,25 +75,25 @@ export function PointageForm({
     <div className="space-y-4">
       <Card className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="date">{t('Date')}</Label>
           <Input id="date" type="date" value={date} onChange={(e) => changerDate(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="secteur">Imputer la journée au secteur / projet</Label>
+          <Label htmlFor="secteur">{t('Imputer la journée au secteur / projet')}</Label>
           <Select id="secteur" value={secteur} onChange={(e) => setSecteur(e.target.value)}>
-            <option value="">Affectation habituelle</option>
+            <option value="">{t('Affectation habituelle')}</option>
             {secteurs.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="campagne">Campagne</Label>
+          <Label htmlFor="campagne">{t('Campagne')}</Label>
           <Select id="campagne" value={campagne} onChange={(e) => setCampagne(e.target.value)}>
             <option value="">—</option>
             {campagnes.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           </Select>
         </div>
         <div className="flex items-end gap-2">
-          <Button type="button" variant="outline" onClick={() => toutMarquer('present')}>Tous présents</Button>
+          <Button type="button" variant="outline" onClick={() => toutMarquer('present')}>{t('Tous présents')}</Button>
         </div>
       </Card>
 
@@ -103,12 +105,12 @@ export function PointageForm({
               <p className="text-xs text-foreground-muted">{e.statut}</p>
             </div>
             <Select
-              aria-label={`Statut de ${e.label}`}
+              aria-label={t('Statut de {nom}', { nom: e.label })}
               value={valeurs[e.id] ?? ''}
               onChange={(ev) => setValeurs((v) => ({ ...v, [e.id]: ev.target.value }))}
               className="sm:w-48"
             >
-              {STATUTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {STATUTS.map((s) => <option key={s.value} value={s.value}>{t(s.label)}</option>)}
             </Select>
           </div>
         ))}
@@ -116,7 +118,7 @@ export function PointageForm({
 
       <div className="flex items-center gap-3">
         <Button type="button" onClick={enregistrer} disabled={pending}>
-          {pending ? 'Enregistrement…' : 'Enregistrer le pointage'}
+          {pending ? t('Enregistrement…') : t('Enregistrer le pointage')}
         </Button>
         {message && (
           <p role="status" className={message.type === 'ok' ? 'text-sm text-success' : 'text-sm text-danger'}>{message.texte}</p>

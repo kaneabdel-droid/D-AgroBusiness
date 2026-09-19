@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
+import { useT } from '@/components/I18nProvider'
 
 export type Champ = {
   name: string
@@ -33,6 +34,7 @@ export function SimpleCreateForm({
   action: (formData: FormData) => Promise<Resultat>
   disabled?: boolean
 }) {
+  const { t } = useT()
   const [ouvert, setOuvert] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
@@ -65,7 +67,7 @@ export function SimpleCreateForm({
     <Card className="w-full basis-full">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-heading text-lg font-semibold">{titre}</h2>
-        <button type="button" onClick={() => setOuvert(false)} aria-label="Fermer" className="rounded-lg p-2 hover:bg-sidebar">
+        <button type="button" onClick={() => setOuvert(false)} aria-label={t('Fermer')} className="rounded-lg p-2 hover:bg-sidebar">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -76,7 +78,7 @@ export function SimpleCreateForm({
             {c.type === 'select' ? (
               <Select id={c.name} name={c.name} required={c.required} defaultValue={c.defaultValue ?? ''}>
                 <option value="" disabled={c.required}>
-                  {c.required ? 'Choisir…' : '— Aucun —'}
+                  {c.required ? t('Choisir…') : t('— Aucun —')}
                 </option>
                 {c.options?.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -114,10 +116,10 @@ export function SimpleCreateForm({
         )}
         <div className="flex gap-2 sm:col-span-2">
           <Button type="submit" disabled={pending}>
-            {pending ? 'Enregistrement…' : 'Enregistrer'}
+            {pending ? t('Enregistrement…') : t('Enregistrer')}
           </Button>
           <Button type="button" variant="outline" onClick={() => setOuvert(false)}>
-            Annuler
+            {t('Annuler')}
           </Button>
         </div>
       </form>

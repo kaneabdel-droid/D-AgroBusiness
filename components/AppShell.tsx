@@ -43,6 +43,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/auth/actions'
+import { useT } from '@/components/I18nProvider'
 
 const NAV = [
   {
@@ -137,16 +138,17 @@ export function AppShell({
   role: string
   children: React.ReactNode
 }) {
+  const { t } = useT()
   const [ouvert, setOuvert] = useState(false)
   const pathname = usePathname()
   const typeVente = useSearchParams().get('type') === 'marche' ? 'marche' : 'distribution'
 
   const nav = (
-    <nav className="flex-1 space-y-6 overflow-y-auto p-4" aria-label="Navigation principale">
+    <nav className="flex-1 space-y-6 overflow-y-auto p-4" aria-label={t('Navigation principale')}>
       {NAV.map((groupe) => (
         <div key={groupe.titre}>
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-            {groupe.titre}
+            {t(groupe.titre)}
           </p>
           <ul className="space-y-1">
             {groupe.items.map(({ href, label, icon: Icon }) => {
@@ -170,7 +172,7 @@ export function AppShell({
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                    {label}
+                    {t(label)}
                   </Link>
                 </li>
               )
@@ -190,7 +192,7 @@ export function AppShell({
           type="submit"
           className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-surface"
         >
-          <LogOut className="h-4 w-4" aria-hidden /> Déconnexion
+          <LogOut className="h-4 w-4" aria-hidden /> {t('Déconnexion')}
         </button>
       </form>
     </div>
@@ -214,7 +216,7 @@ export function AppShell({
           <button
             type="button"
             onClick={() => setOuvert(true)}
-            aria-label="Ouvrir le menu"
+            aria-label={t('Ouvrir le menu')}
             className="rounded-lg p-2 hover:bg-surface"
           >
             <Menu className="h-5 w-5" />
@@ -229,7 +231,7 @@ export function AppShell({
           <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
             <button
               type="button"
-              aria-label="Fermer le menu"
+              aria-label={t('Fermer le menu')}
               className="absolute inset-0 bg-black/40"
               onClick={() => setOuvert(false)}
             />
@@ -239,7 +241,7 @@ export function AppShell({
                 <button
                   type="button"
                   onClick={() => setOuvert(false)}
-                  aria-label="Fermer le menu"
+                  aria-label={t('Fermer le menu')}
                   className="rounded-lg p-2 hover:bg-surface"
                 >
                   <X className="h-5 w-5" />

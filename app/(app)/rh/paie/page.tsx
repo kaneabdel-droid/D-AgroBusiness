@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { MOIS } from '@/lib/rh'
 import { formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -11,6 +12,8 @@ const STATUTS: Record<string, string> = { ouverte: 'Ouverte', validee: 'Validée
 
 export default async function PaiePage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
+  const fm = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
   const supabase = await createClient()
   const [{ data: periodes }, { data: bulletins }, { data: param }] = await Promise.all([
     supabase.from('periodes_paie').select('*').order('annee', { ascending: false }).order('mois', { ascending: false }),
@@ -20,28 +23,28 @@ export default async function PaiePage() {
   const peutCreer = ['admin', 'rh', 'comptable'].includes(ctx.role)
   const totaux = new Map<string, { nb: number; brut: number; net: number; cout: number }>()
   for (const b of bulletins ?? []) {
-    const t = totaux.get(b.periode_id) ?? { nb: 0, brut: 0, net: 0, cout: 0 }
-    t.nb += 1
-    t.brut += Number(b.brut)
-    t.net += Number(b.net_a_payer)
-    t.cout += Number(b.cout_total)
-    totaux.set(b.periode_id, t)
+    const cumul = totaux.get(b.periode_id) ?? { nb: 0, brut: 0, net: 0, cout: 0 }
+    cumul.nb += 1
+    cumul.brut += Number(b.brut)
+    cumul.net += Number(b.net_a_payer)
+    cumul.cout += Number(b.cout_total)
+    totaux.set(b.periode_id, cumul)
   }
   const aujourdhui = new Date()
 
   return (
     <>
       <PageHeader
-        titre="Paie"
-        description="Une période = un mois. Calcul des bulletins, validation (écriture comptable analytique) puis paiement des salaires."
+        titre={t('Paie')}
+        description={t('Une période = un mois. Calcul des bulletins, validation (écriture comptable analytique) puis paiement des salaires.')}
       >
         <SimpleCreateForm
-          titre="Nouvelle période"
+          titre={t('Nouvelle période')}
           disabled={!peutCreer}
           action={addPeriode}
           champs={[
-            { name: 'annee', label: 'Année', type: 'number', required: true, defaultValue: String(aujourdhui.getFullYear()) },
-            { name: 'mois', label: 'Mois', type: 'select', required: true, defaultValue: String(aujourdhui.getMonth() + 1), options: MOIS.map((m, i) => ({ value: String(i + 1), label: m })) },
+            { name: 'annee', label: t('Année'), type: 'number', required: true, defaultValue: String(aujourdhui.getFullYear()) },
+            { name: 'mois', label: t('Mois'), type: 'select', required: true, defaultValue: String(aujourdhui.getMonth() + 1), options: MOIS.map((m, i) => ({ value: String(i + 1), label: t(m) })) },
           ]}
         />
       </PageHeader>
@@ -49,8 +52,8 @@ export default async function PaiePage() {
       {!param?.valide_le && (
         <Card className="mb-6 border-warning">
           <p className="text-sm">
-            Le paramétrage de la paie (cotisations, barème de retenue) n&apos;est pas validé : aucun calcul n&apos;est possible.{' '}
-            <Link href="/rh/parametres" className="font-medium text-primary underline">Vérifier et valider le paramétrage</Link>
+            {t('Le paramétrage de la paie (cotisations, barème de retenue) n’est pas validé : aucun calcul n’est possible.')}{' '}
+            <Link href="/rh/parametres" className="font-medium text-primary underline">{t('Vérifier et valider le paramétrage')}</Link>
           </p>
         </Card>
       )}
@@ -58,29 +61,29 @@ export default async function PaiePage() {
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Période</th>
-            <th className={th}>Statut</th>
-            <th className={`${th} text-right`}>Bulletins</th>
-            <th className={`${th} text-right`}>Brut</th>
-            <th className={`${th} text-right`}>Net à payer</th>
-            <th className={`${th} text-right`}>Coût employeur</th>
+            <th className={th}>{t('Période')}</th>
+            <th className={th}>{t('Statut')}</th>
+            <th className={`${th} text-right`}>{t('Bulletins')}</th>
+            <th className={`${th} text-right`}>{t('Brut')}</th>
+            <th className={`${th} text-right`}>{t('Net à payer')}</th>
+            <th className={`${th} text-right`}>{t('Coût employeur')}</th>
           </tr>
         </thead>
         <tbody>
           {periodes?.map((p) => {
-            const t = totaux.get(p.id)
+            const tot = totaux.get(p.id)
             return (
               <tr key={p.id}>
                 <td className={td}>
                   <Link href={`/rh/paie/${p.id}`} className="font-medium text-primary underline">
-                    {MOIS[p.mois - 1]} {p.annee}
+                    {t(MOIS[p.mois - 1])} {p.annee}
                   </Link>
                 </td>
-                <td className={td}>{STATUTS[p.statut]}</td>
-                <td className={`${td} text-right`}>{t?.nb ?? 0}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(t?.brut ?? 0, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(t?.net ?? 0, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(t?.cout ?? 0, ctx.devise)}</td>
+                <td className={td}>{t(STATUTS[p.statut])}</td>
+                <td className={`${td} text-right`}>{tot?.nb ?? 0}</td>
+                <td className={`${td} text-right tabular-nums`}>{fm(tot?.brut ?? 0)}</td>
+                <td className={`${td} text-right tabular-nums`}>{fm(tot?.net ?? 0)}</td>
+                <td className={`${td} text-right tabular-nums`}>{fm(tot?.cout ?? 0)}</td>
               </tr>
             )
           })}

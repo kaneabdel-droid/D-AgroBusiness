@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { STATUTS_EMPLOYE } from '@/lib/rh'
 import { PageHeader } from '@/components/ui/card'
@@ -11,6 +12,7 @@ export default async function PointagePage({
   searchParams: Promise<{ date?: string }>
 }) {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const { date: dateParam } = await searchParams
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : new Date().toISOString().slice(0, 10)
   const o = await chargerOptions()
@@ -26,8 +28,8 @@ export default async function PointagePage({
   return (
     <>
       <PageHeader
-        titre="Pointage"
-        description="Présences du jour. Les saisonniers et journaliers sont payés d'après ces jours ; l'imputation au secteur alimente le coût de production."
+        titre={t('Pointage')}
+        description={t('Présences du jour. Les saisonniers et journaliers sont payés d’après ces jours ; l’imputation au secteur alimente le coût de production.')}
       />
       {peutEcrire ? (
         <PointageForm
@@ -36,14 +38,14 @@ export default async function PointagePage({
           employes={(employes ?? []).map((e) => ({
             id: e.id,
             label: `${e.matricule} — ${e.nom} ${e.prenom ?? ''}`,
-            statut: STATUTS_EMPLOYE[e.statut],
+            statut: t(STATUTS_EMPLOYE[e.statut]),
             statutJour: statutDuJour.get(e.id),
           }))}
           secteurs={o.secteurs}
           campagnes={o.campagnes}
         />
       ) : (
-        <p className="text-sm text-foreground-muted">Vous n&apos;avez pas le droit de saisir le pointage.</p>
+        <p className="text-sm text-foreground-muted">{t('Vous n’avez pas le droit de saisir le pointage.')}</p>
       )}
     </>
   )

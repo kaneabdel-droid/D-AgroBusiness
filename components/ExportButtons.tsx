@@ -2,6 +2,7 @@
 
 import { FileDown, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useT } from '@/components/I18nProvider'
 
 type Cellule = string | number | null | undefined
 
@@ -19,6 +20,8 @@ export function ExportButtons({
   lignes: Cellule[][]
   fichier: string
 }) {
+  const { t } = useT()
+
   function csv() {
     const echapper = (v: Cellule) => `"${String(v ?? '').replace(/"/g, '""')}"`
     const contenu = [colonnes, ...lignes].map((l) => l.map(echapper).join(';')).join('\r\n')
@@ -54,7 +57,7 @@ export function ExportButtons({
   return (
     <>
       <Button type="button" size="sm" variant="outline" onClick={csv}>
-        <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden /> Excel (CSV)
+        <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden /> {t('Excel (CSV)')}
       </Button>
       <Button type="button" size="sm" variant="outline" onClick={pdf}>
         <FileDown className="h-3.5 w-3.5" aria-hidden /> PDF

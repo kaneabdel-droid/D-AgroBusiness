@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { langDe, type Lang } from '@/lib/i18n'
 
 export type Contexte = {
   userId: string
@@ -12,6 +13,7 @@ export type Contexte = {
   devise: string
   referentiel: string
   pays: string
+  lang: Lang
 }
 
 /** Contexte de l'utilisateur connecté (une requête par rendu grâce à cache). */
@@ -41,6 +43,7 @@ export const getContexte = cache(async (): Promise<Contexte> => {
     devise: org?.devise ?? 'XOF',
     referentiel: org?.referentiel ?? 'SYSCOHADA',
     pays: org?.pays ?? 'SN',
+    lang: langDe(org?.pays),
   }
 })
 

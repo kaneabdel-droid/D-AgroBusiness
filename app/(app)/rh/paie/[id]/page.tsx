@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT, traduireLibelle } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { MOIS, STATUTS_EMPLOYE } from '@/lib/rh'
 import { formatMontant } from '@/lib/utils'
@@ -15,6 +16,8 @@ type Ligne = { ordre: number; code: string; libelle: string; type: string; base:
 export default async function PeriodePaiePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
+  const fm = (v: number | string | null) => formatMontant(v, ctx.devise, ctx.lang)
   const o = await chargerOptions()
   const supabase = await createClient()
 
@@ -29,7 +32,7 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
       .order('created_at'),
     supabase.from('v_cotisations_periode').select('*').eq('periode_id', id).order('code'),
   ])
-  const libellePeriode = `${MOIS[periode.mois - 1]} ${periode.annee}`
+  const libellePeriode = `${t(MOIS[periode.mois - 1])} ${periode.annee}`
   const peutCalculer = ['admin', 'rh'].includes(ctx.role) && periode.statut === 'ouverte'
   const peutValider = ['admin', 'comptable'].includes(ctx.role) && periode.statut === 'ouverte' && (bulletins?.length ?? 0) > 0
   const peutPayer = ['admin', 'comptable'].includes(ctx.role) && periode.statut === 'validee'
@@ -39,11 +42,11 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader titre={`Paie — ${libellePeriode}`} description={`Période ${periode.statut === 'ouverte' ? 'ouverte' : periode.statut === 'validee' ? 'validée, écriture comptable générée' : 'payée'}.`}>
-        <Link href="/rh/paie" className="text-sm text-primary underline">← Périodes</Link>
+      <PageHeader titre={`${t('Paie')} — ${libellePeriode}`} description={periode.statut === 'ouverte' ? t('Période ouverte.') : periode.statut === 'validee' ? t('Période validée, écriture comptable générée.') : t('Période payée.')}>
+        <Link href="/rh/paie" className="text-sm text-primary underline">← {t('Périodes')}</Link>
         {peutCalculer && (
           <ActionButton
-            label={(bulletins?.length ?? 0) > 0 ? 'Recalculer les bulletins' : 'Calculer les bulletins'}
+            label={(bulletins?.length ?? 0) > 0 ? t('Recalculer les bulletins') : t('Calculer les bulletins')}
             variant="default"
             size="default"
             action={calculerPaie.bind(null, id)}
@@ -51,8 +54,8 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
         )}
         {peutValider && (
           <ActionButton
-            label="Valider et comptabiliser"
-            confirmation={`Valider la paie de ${libellePeriode} ? L'écriture comptable sera générée et les bulletins ne seront plus modifiables.`}
+            label={t('Valider et comptabiliser')}
+            confirmation={t('Valider la paie de {p} ? L’écriture comptable sera générée et les bulletins ne seront plus modifiables.', { p: libellePeriode })}
             size="default"
             action={validerPaie.bind(null, id)}
           />
@@ -69,23 +72,23 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
           ['Coût employeur', somme('cout_total')],
         ] as [string, number][]).map(([libelle, valeur]) => (
           <Card key={libelle}>
-            <p className="text-sm text-foreground-muted">{libelle}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums">{formatMontant(valeur, ctx.devise)}</p>
+            <p className="text-sm text-foreground-muted">{t(libelle)}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{fm(valeur)}</p>
           </Card>
         ))}
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Bulletins</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Bulletins')}</h2>
       <div className="mb-6">
         <TableWrap>
           <thead>
             <tr>
-              <th className={th}>Employé</th>
-              <th className={`${th} text-right`}>Jours</th>
-              <th className={`${th} text-right`}>Brut</th>
-              <th className={`${th} text-right`}>Retenues</th>
-              <th className={`${th} text-right`}>Net</th>
-              <th className={`${th} text-right`}>Coût</th>
+              <th className={th}>{t('Employé')}</th>
+              <th className={`${th} text-right`}>{t('Jours')}</th>
+              <th className={`${th} text-right`}>{t('Brut')}</th>
+              <th className={`${th} text-right`}>{t('Retenues')}</th>
+              <th className={`${th} text-right`}>{t('Net')}</th>
+              <th className={`${th} text-right`}>{t('Coût')}</th>
               <th className={th}></th>
             </tr>
           </thead>
@@ -101,31 +104,32 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
                       <ul className="mt-2 space-y-1 text-xs text-foreground-muted">
                         {lignes.map((l, i) => (
                           <li key={i} className="flex justify-between gap-4">
-                            <span>{l.libelle}{l.taux ? ` (${Number(l.taux)} %)` : ''}</span>
+                            <span>{traduireLibelle(t, l.libelle)}{l.taux ? ` (${Number(l.taux)} %)` : ''}</span>
                             <span className={`tabular-nums ${l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? 'text-danger' : ''}`}>
-                              {l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? '−' : l.type === 'charge_patronale' ? '(employeur) ' : ''}
-                              {formatMontant(l.montant, ctx.devise)}
+                              {l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? '−' : l.type === 'charge_patronale' ? `${t('(employeur)')} ` : ''}
+                              {fm(l.montant)}
                             </span>
                           </li>
                         ))}
                       </ul>
                     </details>
-                    <span className="text-xs text-foreground-muted">{STATUTS_EMPLOYE[e?.statut ?? '']}</span>
+                    <span className="text-xs text-foreground-muted">{t(STATUTS_EMPLOYE[e?.statut ?? ''] ?? '')}</span>
                     {b.avertissements && <p className="mt-1 text-xs text-warning">⚠ {b.avertissements}</p>}
                   </td>
                   <td className={`${td} text-right`}>{Number(b.jours_payes)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{formatMontant(b.brut, ctx.devise)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{formatMontant(b.total_retenues, ctx.devise)}</td>
-                  <td className={`${td} text-right tabular-nums font-medium`}>{formatMontant(b.net_a_payer, ctx.devise)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{formatMontant(b.cout_total, ctx.devise)}</td>
+                  <td className={`${td} text-right tabular-nums`}>{fm(b.brut)}</td>
+                  <td className={`${td} text-right tabular-nums`}>{fm(b.total_retenues)}</td>
+                  <td className={`${td} text-right tabular-nums font-medium`}>{fm(b.net_a_payer)}</td>
+                  <td className={`${td} text-right tabular-nums`}>{fm(b.cout_total)}</td>
                   <td className={td}>
                     <BulletinPdfButton
                       data={{
                         organisation: ctx.organisationNom,
+                        lang: ctx.lang,
                         periode: libellePeriode,
                         matricule: e?.matricule ?? '',
                         nom: `${e?.nom ?? ''} ${e?.prenom ?? ''}`.trim(),
-                        statut: STATUTS_EMPLOYE[e?.statut ?? ''] ?? '',
+                        statut: t(STATUTS_EMPLOYE[e?.statut ?? ''] ?? ''),
                         poste: e?.poste ?? '',
                         devise: ctx.devise,
                         joursPayes: Number(b.jours_payes),
@@ -133,7 +137,7 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
                         retenues: Number(b.total_retenues),
                         net: Number(b.net_a_payer),
                         chargesPatronales: Number(b.charges_patronales),
-                        lignes: lignes.map((l) => ({ libelle: l.libelle, type: l.type, base: l.base != null ? Number(l.base) : null, taux: l.taux != null ? Number(l.taux) : null, montant: Number(l.montant) })),
+                        lignes: lignes.map((l) => ({ libelle: traduireLibelle(t, l.libelle), type: l.type, base: l.base != null ? Number(l.base) : null, taux: l.taux != null ? Number(l.taux) : null, montant: Number(l.montant) })),
                       }}
                     />
                   </td>
@@ -144,31 +148,31 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">État des cotisations et impôts (base des déclarations)</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('État des cotisations et impôts (base des déclarations)')}</h2>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Code</th>
-            <th className={th}>Libellé</th>
-            <th className={th}>À la charge de</th>
-            <th className={`${th} text-right`}>Employés</th>
-            <th className={`${th} text-right`}>Montant à déclarer</th>
+            <th className={th}>{t('Code')}</th>
+            <th className={th}>{t('Libellé')}</th>
+            <th className={th}>{t('À la charge de')}</th>
+            <th className={`${th} text-right`}>{t('Employés')}</th>
+            <th className={`${th} text-right`}>{t('Montant à déclarer')}</th>
           </tr>
         </thead>
         <tbody>
           {cotisations?.map((c, i) => (
             <tr key={i}>
               <td className={td}>{c.code}</td>
-              <td className={td}>{c.libelle}</td>
-              <td className={td}>{c.type === 'retenue_salariale' ? 'Salarié (retenue)' : 'Employeur'}</td>
+              <td className={td}>{traduireLibelle(t, c.libelle)}</td>
+              <td className={td}>{c.type === 'retenue_salariale' ? t('Salarié (retenue)') : t('Employeur')}</td>
               <td className={`${td} text-right`}>{c.nb_employes}</td>
-              <td className={`${td} text-right tabular-nums`}>{formatMontant(c.montant, ctx.devise)}</td>
+              <td className={`${td} text-right tabular-nums`}>{fm(c.montant)}</td>
             </tr>
           ))}
         </tbody>
       </TableWrap>
       <p className="mt-2 text-sm text-foreground-muted">
-        Le règlement de ces montants aux organismes (IPRES, CSS, DGID) se saisit dans Trésorerie → Autre opération, contrepartie 431, 442 ou 447.
+        {t('Le règlement de ces montants aux organismes sociaux et à l’administration fiscale se saisit dans Trésorerie → Autre opération, contrepartie 431, 442 ou 447.')}
       </p>
     </>
   )

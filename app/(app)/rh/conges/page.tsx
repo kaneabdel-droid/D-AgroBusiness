@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { TYPES_CONGE } from '@/lib/rh'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -11,6 +12,7 @@ const STATUTS: Record<string, string> = { demande: 'En attente', approuve: 'Appr
 
 export default async function CongesPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const [{ data: demandes }, { data: employes }, { data: soldes }] = await Promise.all([
     supabase.from('demandes_conge').select('*, employes(matricule, nom, prenom)').order('created_at', { ascending: false }).limit(100),
@@ -23,33 +25,33 @@ export default async function CongesPage() {
   return (
     <>
       <PageHeader
-        titre="Congés et absences"
-        description="L'approbation d'une demande pointe automatiquement les jours ouvrables (hors dimanches) : les congés sans solde ne sont pas payés."
+        titre={t('Congés et absences')}
+        description={t('L’approbation d’une demande pointe automatiquement les jours ouvrables (hors dimanches) : les congés sans solde ne sont pas payés.')}
       >
         <SimpleCreateForm
-          titre="Nouvelle demande"
+          titre={t('Nouvelle demande')}
           disabled={!peutDemander}
           action={addDemandeConge}
           champs={[
-            { name: 'employe_id', label: 'Employé', type: 'select', required: true, options: employes?.map((e) => ({ value: e.id, label: `${e.matricule} — ${e.nom} ${e.prenom ?? ''}` })) },
-            { name: 'type', label: 'Type', type: 'select', required: true, options: TYPES_CONGE },
-            { name: 'date_debut', label: 'Du', type: 'date', required: true },
-            { name: 'date_fin', label: 'Au', type: 'date', required: true },
-            { name: 'motif', label: 'Motif' },
+            { name: 'employe_id', label: t('Employé'), type: 'select', required: true, options: employes?.map((e) => ({ value: e.id, label: `${e.matricule} — ${e.nom} ${e.prenom ?? ''}` })) },
+            { name: 'type', label: t('Type'), type: 'select', required: true, options: TYPES_CONGE.map((c) => ({ ...c, label: t(c.label) })) },
+            { name: 'date_debut', label: t('Du'), type: 'date', required: true },
+            { name: 'date_fin', label: t('Au'), type: 'date', required: true },
+            { name: 'motif', label: t('Motif') },
           ]}
         />
       </PageHeader>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Demandes</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Demandes')}</h2>
       <div className="mb-6">
         <TableWrap>
           <thead>
             <tr>
-              <th className={th}>Employé</th>
-              <th className={th}>Type</th>
-              <th className={th}>Période</th>
-              <th className={`${th} text-right`}>Jours</th>
-              <th className={th}>Statut</th>
+              <th className={th}>{t('Employé')}</th>
+              <th className={th}>{t('Type')}</th>
+              <th className={th}>{t('Période')}</th>
+              <th className={`${th} text-right`}>{t('Jours')}</th>
+              <th className={th}>{t('Statut')}</th>
               <th className={th}></th>
             </tr>
           </thead>
@@ -59,15 +61,15 @@ export default async function CongesPage() {
               return (
                 <tr key={d.id}>
                   <td className={td}>{e?.matricule} — {e?.nom} {e?.prenom}</td>
-                  <td className={td}>{TYPES_CONGE.find((t) => t.value === d.type)?.label}</td>
-                  <td className={td}>{formatDate(d.date_debut)} → {formatDate(d.date_fin)}</td>
+                  <td className={td}>{t(TYPES_CONGE.find((x) => x.value === d.type)?.label ?? '')}</td>
+                  <td className={td}>{formatDate(d.date_debut, ctx.lang)} → {formatDate(d.date_fin, ctx.lang)}</td>
                   <td className={`${td} text-right`}>{Number(d.jours)}</td>
-                  <td className={td}>{STATUTS[d.statut]}</td>
+                  <td className={td}>{t(STATUTS[d.statut])}</td>
                   <td className={td}>
                     {peutTraiter && d.statut === 'demande' && (
                       <span className="flex gap-2">
-                        <ActionButton label="Approuver" variant="default" action={traiterConge.bind(null, d.id, 'approuve')} />
-                        <ActionButton label="Refuser" action={traiterConge.bind(null, d.id, 'refuse')} />
+                        <ActionButton label={t('Approuver')} variant="default" action={traiterConge.bind(null, d.id, 'approuve')} />
+                        <ActionButton label={t('Refuser')} action={traiterConge.bind(null, d.id, 'refuse')} />
                       </span>
                     )}
                   </td>
@@ -78,14 +80,14 @@ export default async function CongesPage() {
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Soldes de congé annuel</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Soldes de congé annuel')}</h2>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Employé</th>
-            <th className={`${th} text-right`}>Acquis</th>
-            <th className={`${th} text-right`}>Pris</th>
-            <th className={`${th} text-right`}>Solde</th>
+            <th className={th}>{t('Employé')}</th>
+            <th className={`${th} text-right`}>{t('Acquis')}</th>
+            <th className={`${th} text-right`}>{t('Pris')}</th>
+            <th className={`${th} text-right`}>{t('Solde')}</th>
           </tr>
         </thead>
         <tbody>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { MOIS } from '@/lib/rh'
 import { Card, PageHeader } from '@/components/ui/card'
@@ -8,7 +9,8 @@ import { Card, PageHeader } from '@/components/ui/card'
 export default async function DashboardPage() {
   const ctx = await getContexte()
   const supabase = await createClient()
-  const fm = (v: number) => formatMontant(v, ctx.devise)
+  const t = creerT(ctx.lang)
+  const fm = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
   const maintenant = new Date()
   const aujourdhui = maintenant.toISOString().slice(0, 10)
   const dans30 = new Date(maintenant.getTime() + 30 * 86400000).toISOString().slice(0, 10)
@@ -44,7 +46,7 @@ export default async function DashboardPage() {
 
   const mensuel = Array.from({ length: 12 }, (_, i) => {
     const m = evolution.data?.find((e) => e.mois === i + 1)
-    return { mois: MOIS[i].slice(0, 3), produits: Number(m?.produits ?? 0), charges: Number(m?.charges ?? 0) }
+    return { mois: t(MOIS[i]).slice(0, 3), produits: Number(m?.produits ?? 0), charges: Number(m?.charges ?? 0) }
   })
   const maxMensuel = Math.max(1, ...mensuel.flatMap((m) => [m.produits, m.charges]))
 
@@ -61,13 +63,13 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHeader titre={`Bonjour${ctx.nomComplet ? `, ${ctx.nomComplet}` : ''}`} description={ctx.organisationNom} />
+      <PageHeader titre={`${t('Bonjour')}${ctx.nomComplet ? `, ${ctx.nomComplet}` : ''}`} description={ctx.organisationNom} />
 
       {!exercice && (
         <Card className="mb-6 border-warning">
           <p className="text-sm">
-            Aucun exercice comptable ouvert : créez-en un pour pouvoir saisir des écritures.{' '}
-            <Link href="/referentiels/exercices" className="font-medium text-primary underline">Créer un exercice</Link>
+            {t('Aucun exercice comptable ouvert : créez-en un pour pouvoir saisir des écritures.')}{' '}
+            <Link href="/referentiels/exercices" className="font-medium text-primary underline">{t('Créer un exercice')}</Link>
           </p>
         </Card>
       )}
@@ -75,7 +77,7 @@ export default async function DashboardPage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cartes.map(([libelle, valeur, note]) => (
           <Card key={libelle}>
-            <p className="text-sm text-foreground-muted">{libelle}{note ? ` — ${note}` : ''}</p>
+            <p className="text-sm text-foreground-muted">{t(libelle)}{note ? ` — ${note}` : ''}</p>
             <p className={`mt-1 text-xl font-semibold tabular-nums ${libelle === 'Résultat' ? (produits - charges < 0 ? 'text-danger' : 'text-success') : ''}`}>{valeur}</p>
           </Card>
         ))}
@@ -83,17 +85,17 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <h2 className="mb-1 font-heading text-lg font-semibold">Évolution mensuelle</h2>
+          <h2 className="mb-1 font-heading text-lg font-semibold">{t('Évolution mensuelle')}</h2>
           <p className="mb-4 text-xs text-foreground-muted">
-            <span className="mr-3 inline-flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-primary" /> Produits</span>
-            <span className="inline-flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-secondary" /> Charges</span>
+            <span className="mr-3 inline-flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-primary" /> {t('Produits')}</span>
+            <span className="inline-flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm bg-secondary" /> {t('Charges')}</span>
           </p>
-          <div className="flex h-40 items-end gap-1 sm:gap-2" role="img" aria-label="Produits et charges par mois">
+          <div className="flex h-40 items-end gap-1 sm:gap-2" role="img" aria-label={t('Produits et charges par mois')}>
             {mensuel.map((m) => (
               <div key={m.mois} className="flex h-full flex-1 flex-col justify-end">
                 <div className="flex flex-1 items-end justify-center gap-0.5">
-                  <div className="w-1/2 rounded-t bg-primary" style={{ height: `${(m.produits / maxMensuel) * 100}%` }} title={`${m.mois} produits : ${fm(m.produits)}`} />
-                  <div className="w-1/2 rounded-t bg-secondary" style={{ height: `${(m.charges / maxMensuel) * 100}%` }} title={`${m.mois} charges : ${fm(m.charges)}`} />
+                  <div className="w-1/2 rounded-t bg-primary" style={{ height: `${(m.produits / maxMensuel) * 100}%` }} title={`${m.mois} ${t('produits')} : ${fm(m.produits)}`} />
+                  <div className="w-1/2 rounded-t bg-secondary" style={{ height: `${(m.charges / maxMensuel) * 100}%` }} title={`${m.mois} ${t('charges')} : ${fm(m.charges)}`} />
                 </div>
                 <p className="mt-1 text-center text-[10px] text-foreground-muted sm:text-xs">{m.mois}</p>
               </div>
@@ -102,27 +104,27 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-3 font-heading text-lg font-semibold">À surveiller</h2>
+          <h2 className="mb-3 font-heading text-lg font-semibold">{t('À surveiller')}</h2>
           <ul className="space-y-3 text-sm">
-            {(echeances.data ?? []).length === 0 && <li className="text-foreground-muted">Aucune échéance d&apos;emprunt dans les 30 jours.</li>}
+            {(echeances.data ?? []).length === 0 && <li className="text-foreground-muted">{t('Aucune échéance d’emprunt dans les 30 jours.')}</li>}
             {echeances.data?.map((e, i) => {
               const c = Array.isArray(e.contrats_financement) ? e.contrats_financement[0] : e.contrats_financement
               const enRetard = e.date_echeance < aujourdhui
               return (
                 <li key={i} className="flex justify-between gap-3">
-                  <span>Échéance {c?.code} <span className={enRetard ? 'text-danger' : 'text-foreground-muted'}>({formatDate(e.date_echeance)}{enRetard ? ', en retard' : ''})</span></span>
+                  <span>{t('Échéance')} {c?.code} <span className={enRetard ? 'text-danger' : 'text-foreground-muted'}>({formatDate(e.date_echeance, ctx.lang)}{enRetard ? `, ${t('en retard')}` : ''})</span></span>
                   <span className="tabular-nums">{fm(Number(e.capital) + Number(e.interets))}</span>
                 </li>
               )
             })}
             {(conges.count ?? 0) > 0 && (
-              <li><Link href="/rh/conges" className="text-primary underline">{conges.count} demande(s) de congé en attente</Link></li>
+              <li><Link href="/rh/conges" className="text-primary underline">{t('{n} demande(s) de congé en attente', { n: conges.count ?? 0 })}</Link></li>
             )}
           </ul>
           <div className="mt-4 flex flex-wrap gap-2 text-sm">
-            <Link href="/pilotage/etats" className="text-primary underline">États et ratios</Link>
-            <Link href="/pilotage/rapport-mensuel" className="text-primary underline">Rapport mensuel</Link>
-            <Link href="/pilotage/budgets" className="text-primary underline">Budgets</Link>
+            <Link href="/pilotage/etats" className="text-primary underline">{t('États et ratios')}</Link>
+            <Link href="/pilotage/rapport-mensuel" className="text-primary underline">{t('Rapport mensuel')}</Link>
+            <Link href="/pilotage/budgets" className="text-primary underline">{t('Budgets')}</Link>
           </div>
         </Card>
       </div>
