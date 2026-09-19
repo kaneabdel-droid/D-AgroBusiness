@@ -357,3 +357,7 @@ export async function supprimerLigneParametre(
   rafraichir()
   return { success: true }
 }
+
+export async function chargerModelePaie(formData: FormData): Promise<Resultat> {
+  return rpc('charger_modele_paie', { p_pays: txt(formData, 'pays') })
+}

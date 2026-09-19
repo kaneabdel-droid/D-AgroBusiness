@@ -6,7 +6,7 @@ import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { ActionButton } from '@/components/ActionButton'
 import {
-  addForfait, addReductionFamille, addRegle, addTrancheIr, basculerRegle, importerBareme, majParametrage,
+  addForfait, addReductionFamille, chargerModelePaie, addRegle, addTrancheIr, basculerRegle, importerBareme, majParametrage,
   supprimerBareme, supprimerLigneParametre, supprimerRegle, validerParametrage,
 } from '../actions'
 
@@ -100,6 +100,20 @@ export default async function ParametresPaiePage() {
             { name: 'arrondi_base', label: 'Mode calcul : arrondi à l’inférieur de la base imposable (ex. 1000)', type: 'number', step: '1', defaultValue: String(param?.arrondi_base ?? 0) },
             { name: 'abattement_pct', label: 'Mode calcul : abattement forfaitaire (%)', type: 'number', step: '0.01', defaultValue: String(param?.abattement_pct ?? 0) },
             { name: 'abattement_plafond_annuel', label: 'Mode calcul : plafond annuel de l’abattement', type: 'number', step: '0.01', defaultValue: param?.abattement_plafond_annuel != null ? String(param.abattement_plafond_annuel) : '' },
+          ]}
+        />
+        <SimpleCreateForm
+          titre="Charger un modèle pays"
+          disabled={!admin}
+          action={chargerModelePaie}
+          champs={[
+            {
+              name: 'pays', label: 'Modèle (remplace les règles, barèmes et paramètres actuels)', type: 'select', required: true,
+              options: [
+                { value: 'SN', label: 'Sénégal — barème officiel de retenue à la source, IPRES, CSS, CFCE' },
+                { value: 'CI', label: 'Côte d’Ivoire — ITS et RICF (CGI art. 116 et 119 bis), CN, taxe d’apprentissage, FPC ; CNPS à paramétrer' },
+              ],
+            },
           ]}
         />
         <SimpleCreateForm
