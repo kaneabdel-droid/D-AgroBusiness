@@ -41,7 +41,7 @@ L'impôt sur le revenu et la TRIMF sont lus dans un barème officiel de retenue 
 Après avoir exécuté `supabase/migrations/06_rh_paie.sql`, importer le barème de référence :
 
 1. Supabase → Table Editor → `baremes_retenue` → Insert → Import data from CSV.
-2. Choisir `supabase/seed/bareme_retenue_sn_2013.csv` (19 823 lignes) ; laisser `id`, `organisation_id` et `pays` vides (valeurs par défaut).
+2. Choisir `supabase/seed/bareme_retenue_sn_2013.csv` (19 823 lignes, colonnes identiques à la table : `id`, `organisation_id` vide = référence globale, `pays`…).
 3. Dans l'application : Paie → Paramètres → vérifier les taux et plafonds, puis « Valider le paramétrage ».
 
 Le barème SN-2013 est celui en vigueur au Sénégal (confirmé par l'utilisateur). Si les textes changent, importer une nouvelle version depuis Paie → Paramètres (import CSV, même format), sans toucher au code.
