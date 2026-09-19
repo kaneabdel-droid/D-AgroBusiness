@@ -1,0 +1,250 @@
+-- D-AGROBUSINESS — Modèles de paie Niger (NE) et Bénin (BJ), et abattement familial en pourcentage de la base.
+--
+-- Sources : Code général des impôts du Niger (art. 60 à 66 : base, abattements de 10 % et pour charges de famille, barème
+-- mensuel de 1 % à 35 %) et Code général des impôts du Bénin 2025 (art. 122 à 125 : base brute, barème mensuel 0 à 30 % ;
+-- art. 191 à 194 : versement patronal sur salaires de 4 %). Modèles à faire valider avant usage (voir les commentaires
+-- de chaque branche pour les éléments non fournis par ces textes).
+
+do $$
+declare c record;
+begin
+  for c in select conname from pg_constraint
+           where conrelid = 'parametrage_paie'::regclass and contype = 'c'
+             and pg_get_constraintdef(oid) like '%ricf_mode%' loop
+    execute format('alter table parametrage_paie drop constraint %I', c.conname);
+  end loop;
+end $$;
+alter table parametrage_paie
+  add constraint parametrage_paie_ricf_mode_check check (ricf_mode in ('parts', 'familial', 'abattement_base'));
+
+create or replace function retenue_calculee(
+  p_org uuid, p_periodicite text, p_brut numeric, p_parts numeric,
+  p_deduction numeric default 0, p_marie boolean default false, p_enfants integer default 0
+) returns table (ir numeric, trimf numeric)
+language plpgsql stable security definer set search_path = public as $$
+declare
+  par parametrage_paie%rowtype;
+  rf reductions_famille%rowtype;
+  v_cfg jsonb;
+  v_n numeric;
+  v_niveau text;
+  v_b numeric;
+  v_d numeric;
+  v_f numeric;
+  v_net numeric;
+  v_base numeric;
+  v_impot numeric;
+  v_taux numeric;
+  v_montant numeric;
+begin
+  select * into par from parametrage_paie where organisation_id = p_org;
+  v_cfg := par.calcul_par_periodicite -> p_periodicite;
+  if v_cfg is null then
+    raise exception 'Périodicité % non configurée dans le paramétrage de la paie', p_periodicite;
+  end if;
+  v_n := (v_cfg ->> 'n')::numeric;
+  v_niveau := coalesce(v_cfg ->> 'niveau', 'periode');
+  v_b := case when v_niveau = 'annuel' then p_brut * v_n else p_brut end;
+  v_d := case when v_niveau = 'annuel' then p_deduction * v_n else p_deduction end;
+  v_f := case when v_niveau = 'annuel' then 1 else v_n end;
+
+  -- Base = (brut − déductions) − abattement, arrondie à l'inférieur
+  v_net := greatest(0, v_b - v_d);
+  v_net := v_net - least(par.abattement_pct / 100 * v_net, coalesce(par.abattement_plafond_annuel, 1e18) / v_f);
+  -- Abattement pour charges de famille en pourcentage de la base (Niger, art. 64-65 CGI) : taux selon le nombre de
+  -- personnes à charge (enfants retenus + conjoint sans revenu si marié), lu dans reductions_famille (parts = nombre de charges)
+  if par.ricf_mode = 'abattement_base' then
+    select r.taux into v_taux from reductions_famille r
+      where r.organisation_id = p_org
+        and r.parts <= least(greatest(p_enfants, 0), par.ricf_max_enfants) + case when p_marie then 1 else 0 end
+      order by r.parts desc limit 1;
+    v_net := v_net * (1 - coalesce(v_taux, 0) / 100);
+  end if;
+  v_base := case when par.arrondi_base > 0 then floor(v_net / par.arrondi_base) * par.arrondi_base else v_net end;
+
+  select coalesce(sum(greatest(0, least(v_base, coalesce(tranche_max / v_f, 1e18)) - tranche_min / v_f) * taux / 100), 0)
+    into v_impot from bareme_ir where organisation_id = p_org;
+
+  -- Réduction pour charges de famille
+  if par.ricf_mode = 'familial' then
+    -- pourcentage de l'impôt brut : taux « marié » + taux par enfant (dans la limite du nombre d'enfants retenus)
+    v_taux := (case when p_marie then par.ricf_marie_pct else 0 end)
+              + least(greatest(p_enfants, 0), par.ricf_max_enfants) * par.ricf_par_enfant_pct;
+    v_impot := v_impot - least(v_impot, v_impot * v_taux / 100);
+  elsif par.ricf_mode = 'parts' then
+    -- par nombre de parts : ligne des parts immédiatement inférieures ou égales
+    select * into rf from reductions_famille
+      where organisation_id = p_org and parts <= p_parts order by parts desc limit 1;
+    if found then
+      v_impot := v_impot - least(v_impot, greatest(rf.minimum / v_f,
+                   least(coalesce(rf.maximum / v_f, 1e18), v_impot * rf.taux / 100)));
+    end if;
+  end if;
+
+  -- Diminution du taux de pression fiscale (impôt ÷ base) d'un nombre de points
+  if par.reduction_pression_points > 0 and v_base > 0 then
+    v_impot := greatest(0, v_impot - v_base * par.reduction_pression_points / 100);
+  end if;
+
+  ir := case when v_niveau = 'annuel' then v_impot / v_n else v_impot end;
+
+  select t.montant into v_montant from tranches_forfaitaires t
+    where t.organisation_id = p_org and t.code = 'TRIMF' and t.periodicite = p_periodicite
+      and t.seuil_min <= p_brut and (t.seuil_max is null or p_brut <= t.seuil_max)
+    order by t.seuil_min desc limit 1;
+  trimf := coalesce(v_montant, 0);
+  return next;
+end $$;
+
+revoke execute on function retenue_calculee(uuid, text, numeric, numeric, numeric, boolean, integer)
+  from public, anon, authenticated;
+
+create or replace function appliquer_modele_paie(p_org uuid, p_pays text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_pays not in ('SN', 'CI', 'ML', 'NE', 'BJ') then
+    raise exception 'Aucun modèle de paie pour le pays %', p_pays;
+  end if;
+
+  delete from regles_paie where organisation_id = p_org;
+  delete from bareme_ir where organisation_id = p_org;
+  delete from reductions_famille where organisation_id = p_org;
+  delete from tranches_forfaitaires where organisation_id = p_org;
+
+  if p_pays = 'SN' then
+    update parametrage_paie
+       set mode_ir = 'calcul', bareme_version = null, ricf_mode = 'parts', reduction_pression_points = 0, abattement_pct = 30, abattement_plafond_annuel = 900000,
+           arrondi_base = 1000,
+           periodicite_par_statut = '{"permanent":"annuel","saisonnier":"mensuel","journalier":"journalier"}',
+           calcul_par_periodicite = '{"annuel":{"n":1,"niveau":"periode"},"mensuel":{"n":12,"niveau":"periode"},"journalier":{"n":360,"niveau":"annuel"}}'
+     where organisation_id = p_org;
+
+    insert into regles_paie (organisation_id, code, libelle, taux_salarie, taux_employeur, plancher_mensuel,
+                             plafond_mensuel, regime, deductible_ir, compte_cle, ordre) values
+      (p_org, 'IPRES_RG', 'IPRES régime général', 5.6, 8.4, 0, 432000, null, false, 'organismes_sociaux', 10),
+      (p_org, 'IPRES_RC', 'IPRES régime complémentaire cadres', 2.4, 3.6, 432000, 1296000, 'cadre', false, 'organismes_sociaux', 11),
+      (p_org, 'CSS_PF', 'CSS prestations familiales', 0, 7, 0, 63000, null, false, 'organismes_sociaux', 20),
+      (p_org, 'CSS_AT', 'CSS accidents du travail (1 %, 3 % ou 5 % selon le risque)', 0, 1, 0, 63000, null, false, 'organismes_sociaux', 21),
+      (p_org, 'CFCE', 'CFCE (contribution forfaitaire à la charge de l''employeur, 3 % du brut imposable)', 0, 3, 0, null, null, false, 'etat_impots_taxes', 30);
+
+    insert into bareme_ir (organisation_id, tranche_min, tranche_max, taux) values
+      (p_org, 0, 630000, 0), (p_org, 630000, 1500000, 20), (p_org, 1500000, 4000000, 30),
+      (p_org, 4000000, 8000000, 35), (p_org, 8000000, 13500000, 37), (p_org, 13500000, null, 40);
+
+    insert into reductions_famille (organisation_id, parts, taux, minimum, maximum) values
+      (p_org, 1.5, 10, 100000, 300000), (p_org, 2, 15, 200000, 650000), (p_org, 2.5, 20, 300000, 1100000),
+      (p_org, 3, 25, 400000, 1650000), (p_org, 3.5, 30, 500000, 2030000), (p_org, 4, 35, 600000, 2490000),
+      (p_org, 4.5, 40, 700000, 2755000), (p_org, 5, 45, 800000, 3180000);
+
+    insert into tranches_forfaitaires (organisation_id, code, libelle, periodicite, seuil_min, seuil_max, montant) values
+      (p_org, 'TRIMF', 'TRIMF', 'annuel', 600000, null, 3600), (p_org, 'TRIMF', 'TRIMF', 'annuel', 1000000, null, 4800),
+      (p_org, 'TRIMF', 'TRIMF', 'annuel', 2000000, null, 12000), (p_org, 'TRIMF', 'TRIMF', 'annuel', 7000000, null, 18000),
+      (p_org, 'TRIMF', 'TRIMF', 'annuel', 12000000, null, 36000),
+      (p_org, 'TRIMF', 'TRIMF', 'mensuel', 50000, null, 300), (p_org, 'TRIMF', 'TRIMF', 'mensuel', 84000, null, 400),
+      (p_org, 'TRIMF', 'TRIMF', 'mensuel', 167000, null, 500), (p_org, 'TRIMF', 'TRIMF', 'mensuel', 1000000, null, 1500),
+      (p_org, 'TRIMF', 'TRIMF', 'journalier', 1000, null, 2.5), (p_org, 'TRIMF', 'TRIMF', 'journalier', 1700, null, 10),
+      (p_org, 'TRIMF', 'TRIMF', 'journalier', 2800, null, 13.333333), (p_org, 'TRIMF', 'TRIMF', 'journalier', 5600, null, 33.333333),
+      (p_org, 'TRIMF', 'TRIMF', 'journalier', 19500, null, 50), (p_org, 'TRIMF', 'TRIMF', 'journalier', 33400, null, 100);
+
+  elsif p_pays = 'CI' then
+    -- Côte d'Ivoire : barème mensuel appliqué au brut mensuel, sans abattement ; les paliers sont saisis en montants
+    -- annuels (× 12) car le moteur les ramène à la période. RICF : montant fixe (taux 100 %, minimum = maximum),
+    -- plafonné à l'impôt brut comme le prévoit le texte (impôt = IB − RICF, jamais négatif).
+    update parametrage_paie
+       set mode_ir = 'calcul', bareme_version = null, ricf_mode = 'parts', reduction_pression_points = 0, abattement_pct = 0, abattement_plafond_annuel = null,
+           arrondi_base = 0,
+           periodicite_par_statut = '{"permanent":"mensuel","saisonnier":"mensuel","journalier":"mensuel"}',
+           calcul_par_periodicite = '{"annuel":{"n":1,"niveau":"periode"},"mensuel":{"n":12,"niveau":"periode"},"journalier":{"n":360,"niveau":"annuel"}}'
+     where organisation_id = p_org;
+
+    insert into bareme_ir (organisation_id, tranche_min, tranche_max, taux) values
+      (p_org, 0, 900000, 0),
+      (p_org, 900000, 2880000, 16),
+      (p_org, 2880000, 9600000, 21),
+      (p_org, 9600000, 28800000, 24),
+      (p_org, 28800000, 96000000, 28),
+      (p_org, 96000000, null, 32);
+
+    insert into reductions_famille (organisation_id, parts, taux, minimum, maximum) values
+      (p_org, 1.5, 100, 66000, 66000), (p_org, 2, 100, 132000, 132000), (p_org, 2.5, 100, 198000, 198000),
+      (p_org, 3, 100, 264000, 264000), (p_org, 3.5, 100, 330000, 330000), (p_org, 4, 100, 396000, 396000),
+      (p_org, 4.5, 100, 462000, 462000), (p_org, 5, 100, 528000, 528000);
+
+    insert into regles_paie (organisation_id, code, libelle, taux_salarie, taux_employeur, plancher_mensuel,
+                             plafond_mensuel, regime, deductible_ir, compte_cle, ordre) values
+      (p_org, 'CN', 'Contribution nationale (CN)', 0, 1.2, 0, null, null, false, 'etat_impots_taxes', 30),
+      (p_org, 'TA', 'Taxe d''apprentissage', 0, 0.4, 0, null, null, false, 'etat_impots_taxes', 31),
+      (p_org, 'FPC', 'Taxe additionnelle à la formation professionnelle continue', 0, 1.2, 0, null, null, false, 'etat_impots_taxes', 32);
+  elsif p_pays = 'ML' then
+    -- Mali (DGI, brochure « L'impôt sur les traitements et salaires n° 2 », avril 2020) :
+    --  base = salaire − cotisation INPS retraite (3,6 %) − indemnité spéciale de solidarité (déduction forfaitaire de l'employé),
+    --  arrondie à 250 F inférieurs (niveau mensuel), barème progressif annuel ramené au mois ;
+    --  réduction pour charges de famille = 10 % de l'impôt brut si marié + 2,5 % par enfant (jusqu'au 10e) ;
+    --  puis diminution de 2 points du taux de pression fiscale (impôt net ÷ revenu imposable).
+    -- Non fournis par la brochure, donc à paramétrer : taux patronaux INPS / AMO, taxes patronales.
+    update parametrage_paie
+       set mode_ir = 'calcul', bareme_version = null, abattement_pct = 0, abattement_plafond_annuel = null,
+           arrondi_base = 250, ricf_mode = 'familial', ricf_marie_pct = 10, ricf_par_enfant_pct = 2.5,
+           ricf_max_enfants = 10, reduction_pression_points = 2,
+           periodicite_par_statut = '{"permanent":"mensuel","saisonnier":"mensuel","journalier":"mensuel"}',
+           calcul_par_periodicite = '{"annuel":{"n":1,"niveau":"periode"},"mensuel":{"n":12,"niveau":"periode"},"journalier":{"n":360,"niveau":"annuel"}}'
+     where organisation_id = p_org;
+
+    insert into bareme_ir (organisation_id, tranche_min, tranche_max, taux) values
+      (p_org, 0, 330000, 0), (p_org, 330000, 578400, 5), (p_org, 578400, 1176400, 12),
+      (p_org, 1176400, 1789733, 18), (p_org, 1789733, 2384195, 26), (p_org, 2384195, 3494130, 31),
+      (p_org, 3494130, null, 37);
+
+    insert into regles_paie (organisation_id, code, libelle, taux_salarie, taux_employeur, plancher_mensuel,
+                             plafond_mensuel, regime, deductible_ir, compte_cle, ordre) values
+      (p_org, 'INPS_RET', 'INPS — retenue pour pension (déductible de l''ITS dans la limite de 3,6 %)', 3.6, 0, 0, null, null, true, 'organismes_sociaux', 10);
+  elsif p_pays = 'NE' then
+    -- Niger (Code général des impôts, art. 60 à 66) :
+    --  base mensuelle = salaire − retenue pour pension (limitée à 6 % de la rémunération principale brute) − abattement de 10 %
+    --  pour frais professionnels − abattement pour charges de famille (0 / 5 / 10 / 12 / 13 / 14 / 15 / 30 % selon 0 à 7 charges),
+    --  arrondie au millier inférieur ; barème progressif mensuel de 1 % à 35 %.
+    -- Non fournis par le CGI, donc à paramétrer : taux CNSS (salarié et employeur) et taxes patronales.
+    update parametrage_paie
+       set mode_ir = 'calcul', bareme_version = null, abattement_pct = 10, abattement_plafond_annuel = null,
+           arrondi_base = 1000, ricf_mode = 'abattement_base', ricf_marie_pct = 0, ricf_par_enfant_pct = 0,
+           ricf_max_enfants = 6, reduction_pression_points = 0,
+           periodicite_par_statut = '{"permanent":"mensuel","saisonnier":"mensuel","journalier":"mensuel"}',
+           calcul_par_periodicite = '{"annuel":{"n":1,"niveau":"periode"},"mensuel":{"n":12,"niveau":"periode"},"journalier":{"n":360,"niveau":"annuel"}}'
+     where organisation_id = p_org;
+
+    insert into bareme_ir (organisation_id, tranche_min, tranche_max, taux) values
+      (p_org, 0, 300000, 1), (p_org, 300000, 600000, 2), (p_org, 600000, 1200000, 6),
+      (p_org, 1200000, 1800000, 13), (p_org, 1800000, 3600000, 25), (p_org, 3600000, 4800000, 30),
+      (p_org, 4800000, 8400000, 32), (p_org, 8400000, 12000000, 34), (p_org, 12000000, null, 35);
+
+    insert into reductions_famille (organisation_id, parts, taux, minimum, maximum) values
+      (p_org, 1, 5, 0, null), (p_org, 2, 10, 0, null), (p_org, 3, 12, 0, null), (p_org, 4, 13, 0, null),
+      (p_org, 5, 14, 0, null), (p_org, 6, 15, 0, null), (p_org, 7, 30, 0, null);
+
+    insert into regles_paie (organisation_id, code, libelle, taux_salarie, taux_employeur, plancher_mensuel,
+                             plafond_mensuel, regime, deductible_ir, compte_cle, ordre) values
+      (p_org, 'CNSS', 'CNSS — taux à paramétrer (retenue pension déductible dans la limite de 6 % du salaire)', 0, 0, 0, null, null, true, 'organismes_sociaux', 10);
+
+  else
+    -- Bénin (Code général des impôts 2025, art. 122 à 125 et 191 à 194) :
+    --  base = salaire mensuel imposable brut (aucun abattement ni réduction familiale dans le texte) ;
+    --  barème progressif mensuel : 0 % jusqu'à 60 000, 10 % jusqu'à 150 000, 15 % jusqu'à 250 000, 19 % jusqu'à 500 000, 30 % au-delà ;
+    --  versement patronal sur salaires (VPS) : 4 % de la même base à la charge de l'employeur.
+    -- Non gérés / à paramétrer : redevance ORTB (1 000 F en mars, 3 000 F en juin), cotisations CNSS.
+    update parametrage_paie
+       set mode_ir = 'calcul', bareme_version = null, abattement_pct = 0, abattement_plafond_annuel = null,
+           arrondi_base = 0, ricf_mode = 'parts', ricf_marie_pct = 0, ricf_par_enfant_pct = 0,
+           ricf_max_enfants = 10, reduction_pression_points = 0,
+           periodicite_par_statut = '{"permanent":"mensuel","saisonnier":"mensuel","journalier":"mensuel"}',
+           calcul_par_periodicite = '{"annuel":{"n":1,"niveau":"periode"},"mensuel":{"n":12,"niveau":"periode"},"journalier":{"n":360,"niveau":"annuel"}}'
+     where organisation_id = p_org;
+
+    insert into bareme_ir (organisation_id, tranche_min, tranche_max, taux) values
+      (p_org, 0, 720000, 0), (p_org, 720000, 1800000, 10), (p_org, 1800000, 3000000, 15),
+      (p_org, 3000000, 6000000, 19), (p_org, 6000000, null, 30);
+
+    insert into regles_paie (organisation_id, code, libelle, taux_salarie, taux_employeur, plancher_mensuel,
+                             plafond_mensuel, regime, deductible_ir, compte_cle, ordre) values
+      (p_org, 'VPS', 'Versement patronal sur salaires (VPS, art. 194 du CGI)', 0, 4, 0, null, null, false, 'etat_impots_taxes', 30);
+  end if;
+end $$;

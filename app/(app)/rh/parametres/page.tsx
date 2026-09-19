@@ -98,7 +98,7 @@ export default async function ParametresPaiePage() {
             { name: 'jours_par_mois', label: 'Jours par mois (retenue d’absence)', type: 'number', step: '0.5', defaultValue: String(param?.jours_par_mois ?? 30) },
             { name: 'jours_conge_par_mois', label: 'Jours de congé acquis par mois', type: 'number', step: '0.01', defaultValue: String(param?.jours_conge_par_mois ?? 2) },
             { name: 'arrondi_base', label: 'Mode calcul : arrondi à l’inférieur de la base imposable (ex. 1000)', type: 'number', step: '1', defaultValue: String(param?.arrondi_base ?? 0) },
-            { name: 'ricf_mode', label: 'Réduction pour charges de famille', type: 'select', required: true, defaultValue: param?.ricf_mode ?? 'parts', options: [{ value: 'parts', label: 'Selon le nombre de parts (tableau ci-dessous)' }, { value: 'familial', label: 'Pourcentage de l’impôt : taux marié + taux par enfant' }] },
+            { name: 'ricf_mode', label: 'Réduction pour charges de famille', type: 'select', required: true, defaultValue: param?.ricf_mode ?? 'parts', options: [{ value: 'parts', label: 'Selon le nombre de parts (tableau ci-dessous)' }, { value: 'familial', label: 'Pourcentage de l’impôt : taux marié + taux par enfant' }, { value: 'abattement_base', label: 'Abattement sur la base selon le nombre de charges (tableau ci-dessous, Niger)' }] },
             { name: 'ricf_marie_pct', label: 'Mode pourcentage : taux si marié (%)', type: 'number', step: '0.001', defaultValue: String(param?.ricf_marie_pct ?? 0) },
             { name: 'ricf_par_enfant_pct', label: 'Mode pourcentage : taux par enfant (%)', type: 'number', step: '0.001', defaultValue: String(param?.ricf_par_enfant_pct ?? 0) },
             { name: 'ricf_max_enfants', label: 'Mode pourcentage : nombre maximal d’enfants retenus', type: 'number', defaultValue: String(param?.ricf_max_enfants ?? 10) },
@@ -117,6 +117,8 @@ export default async function ParametresPaiePage() {
               options: [
                 { value: 'SN', label: 'Sénégal — barème officiel de retenue à la source, IPRES, CSS, CFCE' },
                 { value: 'CI', label: 'Côte d’Ivoire — ITS et RICF (CGI art. 116 et 119 bis), CN, taxe d’apprentissage, FPC ; CNPS à paramétrer' },
+                { value: 'NE', label: 'Niger — ITS (CGI art. 60 à 66) : abattements 10 % et charges de famille, barème 1 à 35 % ; CNSS à paramétrer' },
+                { value: 'BJ', label: 'Bénin — ITS (CGI 2025 art. 125) barème 0 à 30 %, VPS 4 % ; CNSS et redevance ORTB à paramétrer' },
                 { value: 'ML', label: 'Mali — ITS (brochure DGI 2020) : INPS 3,6 % déductible, réduction familiale en %, −2 points ; taux patronaux à paramétrer' },
               ],
             },
