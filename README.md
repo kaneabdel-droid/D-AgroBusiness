@@ -26,4 +26,23 @@ npm run typecheck  # tsc --noEmit
 - Référentiels : départements, secteurs/projets, exercices, campagnes, tiers unifiés.
 - Moteur comptable : plan comptable par référentiel (SYSCOHADA complet sur les comptes principaux ; PCM Maroc et Mauritanie en squelette, à faire valider), journaux, écritures immuables et équilibrées, imputation analytique obligatoire sur les classes 6 et 7, contre-passation, balance et résultat analytique.
 
-Voir le plan d'implémentation pour les phases 1 à 5.
+## Phases livrées
+
+- **Phase 1** : catalogue, stocks (CUMP, stock propre / consigné), achats, dépôt-vente, ventes et distribution, remboursement en nature, trésorerie.
+- **Phase 2** : emprunts, crédit de campagne, fonds de commercialisation, crédit-bail, subventions d'investissement (reprise au taux de financement), parc matériel et amortissements.
+- **Phase 3** : production par secteur × campagne (coût analytique, rendement), usine de transformation (nomenclatures, ordres de fabrication, répartition matière + frais).
+- **Phase 4** : personnel, contrats, pointage, congés, paie paramétrable avec verrou de validation.
+
+## Paie : barème de retenue à la source (Sénégal)
+
+L'impôt sur le revenu et la TRIMF sont lus dans un barème officiel de retenue à la source, importé dans la table `baremes_retenue`
+(permanents → barème annuel, saisonniers → mensuel, journaliers → journalier ; TRIMF × (1 + nombre de conjoints)).
+
+Après avoir exécuté `supabase/migrations/06_rh_paie.sql`, importer le barème de référence :
+
+1. Supabase → Table Editor → `baremes_retenue` → Insert → Import data from CSV.
+2. Choisir `supabase/seed/bareme_retenue_sn_2013.csv` (19 823 lignes) ; laisser `id`, `organisation_id` et `pays` vides (valeurs par défaut).
+3. Dans l'application : Paie → Paramètres → vérifier les taux et plafonds, puis « Valider le paramétrage ».
+
+Le fichier source est le barème 2013 : si les textes changent, importer une nouvelle version depuis Paie → Paramètres (import CSV, même format), sans toucher au code.
+Pour un autre pays, importer son barème (ou renseigner tranches, réductions et forfaits en mode « calcul ») et ses règles de cotisations.

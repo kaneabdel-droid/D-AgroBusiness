@@ -11,6 +11,7 @@ export type Contexte = {
   organisationNom: string
   devise: string
   referentiel: string
+  pays: string
 }
 
 /** Contexte de l'utilisateur connecté (une requête par rendu grâce à cache). */
@@ -23,7 +24,7 @@ export const getContexte = cache(async (): Promise<Contexte> => {
 
   const { data } = await supabase
     .from('utilisateurs')
-    .select('nom_complet, role, actif, organisation_id, organisations(nom, devise, referentiel)')
+    .select('nom_complet, role, actif, organisation_id, organisations(nom, devise, referentiel, pays)')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -39,6 +40,7 @@ export const getContexte = cache(async (): Promise<Contexte> => {
     organisationNom: org?.nom ?? '',
     devise: org?.devise ?? 'XOF',
     referentiel: org?.referentiel ?? 'SYSCOHADA',
+    pays: org?.pays ?? 'SN',
   }
 })
 

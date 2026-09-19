@@ -21,6 +21,9 @@ import {
   Tractor,
   Factory,
   Wheat,
+  ClipboardCheck,
+  Receipt,
+  Settings,
   Building2,
   CalendarRange,
   FileText,
@@ -75,6 +78,16 @@ const NAV = [
     items: [
       { href: '/production', label: 'Production agricole', icon: Wheat },
       { href: '/usine', label: 'Usine de transformation', icon: Factory },
+    ],
+  },
+  {
+    titre: 'Personnel & paie',
+    items: [
+      { href: '/rh/employes', label: 'Personnel', icon: Users },
+      { href: '/rh/pointage', label: 'Pointage', icon: ClipboardCheck },
+      { href: '/rh/conges', label: 'Congés et absences', icon: CalendarRange },
+      { href: '/rh/paie', label: 'Paie', icon: Receipt },
+      { href: '/rh/parametres', label: 'Paramètres de paie', icon: Settings },
     ],
   },
   {

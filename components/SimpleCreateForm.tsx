@@ -10,12 +10,13 @@ import { Card } from '@/components/ui/card'
 export type Champ = {
   name: string
   label: string
-  type?: 'text' | 'number' | 'date' | 'email' | 'tel' | 'select' | 'multiselect'
+  type?: 'text' | 'number' | 'date' | 'email' | 'tel' | 'select' | 'multiselect' | 'file'
   required?: boolean
   options?: { value: string; label: string }[]
   placeholder?: string
   step?: string
   defaultValue?: string
+  accept?: string
 }
 
 type Resultat = { success?: boolean; error?: string } | void
@@ -101,6 +102,7 @@ export function SimpleCreateForm({
                 placeholder={c.placeholder}
                 step={c.step}
                 defaultValue={c.defaultValue}
+                accept={c.accept}
               />
             )}
           </div>
