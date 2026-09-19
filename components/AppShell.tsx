@@ -2,10 +2,20 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
+  ArrowLeftRight,
   BarChart3,
   BookOpen,
+  Boxes,
+  Handshake,
+  Landmark,
+  Package,
+  ShoppingCart,
+  Sprout as Semis,
+  Store,
+  Truck,
+  Wallet,
   Building2,
   CalendarRange,
   FileText,
@@ -37,11 +47,32 @@ const NAV = [
     ],
   },
   {
+    titre: 'Catalogue & stocks',
+    items: [
+      { href: '/catalogue/produits', label: 'Produits', icon: Package },
+      { href: '/catalogue/magasins', label: 'Magasins', icon: Store },
+      { href: '/stocks', label: 'État des stocks', icon: Boxes },
+    ],
+  },
+  {
+    titre: 'Opérations',
+    items: [
+      { href: '/achats', label: 'Achats', icon: ShoppingCart },
+      { href: '/depot-vente', label: 'Dépôt-vente', icon: Handshake },
+      { href: '/ventes?type=distribution', label: 'Distribution producteurs', icon: Truck },
+      { href: '/ventes?type=marche', label: 'Ventes marché', icon: ArrowLeftRight },
+      { href: '/remboursements-nature', label: 'Remboursements en nature', icon: Semis },
+      { href: '/tresorerie', label: 'Trésorerie', icon: Wallet },
+    ],
+  },
+  {
     titre: 'Comptabilité',
     items: [
       { href: '/comptabilite/plan-comptable', label: 'Plan comptable', icon: BookOpen },
       { href: '/comptabilite/ecritures', label: 'Écritures', icon: FileText },
       { href: '/comptabilite/balance', label: 'Balance', icon: Scale },
+      { href: '/comptabilite/soldes-tiers', label: 'Créances et dettes', icon: Landmark },
+      { href: '/comptabilite/releve', label: 'Relevés de compte', icon: FileText },
       { href: '/comptabilite/analytique', label: 'Résultat analytique', icon: BarChart3 },
     ],
   },
@@ -60,6 +91,7 @@ export function AppShell({
 }) {
   const [ouvert, setOuvert] = useState(false)
   const pathname = usePathname()
+  const typeVente = useSearchParams().get('type') === 'marche' ? 'marche' : 'distribution'
 
   const nav = (
     <nav className="flex-1 space-y-6 overflow-y-auto p-4" aria-label="Navigation principale">
@@ -70,7 +102,12 @@ export function AppShell({
           </p>
           <ul className="space-y-1">
             {groupe.items.map(({ href, label, icon: Icon }) => {
-              const actif = href === '/' ? pathname === '/' : pathname.startsWith(href)
+              const [chemin, requete] = href.split('?')
+              const actif =
+                chemin === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(chemin) &&
+                    (!requete || (chemin === '/ventes' && requete === `type=${typeVente}`))
               return (
                 <li key={href}>
                   <Link

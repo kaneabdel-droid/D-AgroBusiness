@@ -15,6 +15,7 @@ export type Champ = {
   options?: { value: string; label: string }[]
   placeholder?: string
   step?: string
+  defaultValue?: string
 }
 
 type Resultat = { success?: boolean; error?: string } | void
@@ -72,7 +73,7 @@ export function SimpleCreateForm({
           <div key={c.name} className="space-y-1.5">
             <Label htmlFor={c.name}>{c.label}</Label>
             {c.type === 'select' ? (
-              <Select id={c.name} name={c.name} required={c.required} defaultValue="">
+              <Select id={c.name} name={c.name} required={c.required} defaultValue={c.defaultValue ?? ''}>
                 <option value="" disabled={c.required}>
                   {c.required ? 'Choisir…' : '— Aucun —'}
                 </option>
@@ -99,6 +100,7 @@ export function SimpleCreateForm({
                 required={c.required}
                 placeholder={c.placeholder}
                 step={c.step}
+                defaultValue={c.defaultValue}
               />
             )}
           </div>
