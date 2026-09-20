@@ -48,3 +48,40 @@ export function construirePlan(mois: string[], soldeInitial: number, flux: Flux[
   }
   return { mois, lignes: [...parCategorie].map(([categorie, parMois]) => ({ categorie, parMois })), soldeDebut, soldeFin, premierDeficit }
 }
+
+export type VenteMensuelle = { annee: number; mois: number; montant: number }
+export type EstimationVentes = {
+  valeurs: number[]                                  // ventes estimées de chaque mois de l'horizon (0 = pas d'estimation)
+  methodes: ('saisonnier' | 'moyenne' | null)[]
+  moisHistorique: number                             // nombre de mois complets avec des ventes dans les 24 derniers mois
+}
+
+/**
+ * Estime les ventes des mois à venir à partir de l'historique.
+ * - saisonnier : moyenne du même mois calendaire des 2 années précédentes (les cultures sont saisonnières) ;
+ * - moyenne : à défaut, ventes des 12 derniers mois complets ÷ 12, si au moins 3 mois de ventes sont connus.
+ * Le mois en cours n'est pas estimé : il est déjà en partie réalisé et figure dans les créances ouvertes.
+ */
+export function estimerVentes(historique: VenteMensuelle[], horizon: string[], aujourdhui: string): EstimationVentes {
+  const cle = (a: number, m: number) => a * 12 + (m - 1)
+  const courant = cle(Number(aujourdhui.slice(0, 4)), Number(aujourdhui.slice(5, 7)))
+  const parCle = new Map<number, number>()
+  for (const h of historique) {
+    const k = cle(h.annee, h.mois)
+    if (k < courant && k >= courant - 24 && h.montant > 0) parCle.set(k, (parCle.get(k) ?? 0) + h.montant)
+  }
+  const derniers12 = [...parCle].filter(([k]) => k >= courant - 12)
+  const moyenne12 = derniers12.length >= 3 ? derniers12.reduce((s, [, v]) => s + v, 0) / 12 : null
+
+  const valeurs: number[] = []
+  const methodes: EstimationVentes['methodes'] = []
+  horizon.forEach((mois, i) => {
+    const k = cle(Number(mois.slice(0, 4)), Number(mois.slice(5, 7)))
+    const memes = [k - 12, k - 24].map((x) => parCle.get(x)).filter((v): v is number => v !== undefined)
+    if (i === 0) { valeurs.push(0); methodes.push(null) }
+    else if (memes.length) { valeurs.push(Math.round(memes.reduce((s, v) => s + v, 0) / memes.length)); methodes.push('saisonnier') }
+    else if (moyenne12 !== null) { valeurs.push(Math.round(moyenne12)); methodes.push('moyenne') }
+    else { valeurs.push(0); methodes.push(null) }
+  })
+  return { valeurs, methodes, moisHistorique: parCle.size }
+}

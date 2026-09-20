@@ -35,6 +35,7 @@ npm run typecheck  # tsc --noEmit
 - **Traçabilité et qualité** (migration 27) : lots créés automatiquement par chaque récolte et chaque fabrication (ou à la main pour les achats), filiation matière → produit fini, contrôles qualité avec blocage automatique d’un lot non conforme, expéditions refusées pour un lot bloqué ou périmé, rappel de lot (clients touchés en aval).
 - **Rapprochement bancaire** (migration 28) : import d’un relevé CSV, pointage automatique (uniquement sans ambiguïté) ou manuel avec les écritures de la banque, comptabilisation des lignes absentes des livres (frais, agios), écart de rapprochement.
 - **Trésorerie prévisionnelle** (migration 29) : plan à 12 mois (soldes, échéances de financement, créances et dettes ouvertes avec délai de règlement paramétrable, prévisions saisies uniques ou mensuelles), alerte au premier mois de trésorerie négative.
+  Les ventes futures sont estimées d’après l’historique (même mois des années précédentes, sinon moyenne des 12 derniers mois), retenues à 80 % par défaut (0 à 100 % au choix) et encaissées avec le délai des créances ; le mois en cours n’est pas estimé.
 
 ## Paie : impôt et TRIMF calculés automatiquement
 

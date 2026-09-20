@@ -1194,4 +1194,9 @@ export const EN: Record<string, string> = {
   "Une prévision mensuelle a besoin d’une date de fin.": "A monthly forecast needs an end date.",
   "Une seule fois": "Once",
   "Ventes et encaissements clients": "Sales and customer receipts",
+  "Ventes futures estimées, retenues à": "Estimated future sales, taken at",
+  "0 % (sans estimation)": "0 % (no estimate)",
+  "Aucune vente dans l’historique : les ventes futures ne peuvent pas être estimées.": "No sales in the history: future sales cannot be estimated.",
+  "Ventes estimées (historique)": "Estimated sales (history)",
+  "Ventes estimées d’après l’historique (mois avec ventes : {n}) : même mois des années précédentes, sinon moyenne des 12 derniers mois, encaissées avec le même délai que les créances. Le mois en cours n’est pas estimé.": "Sales estimated from the history (months with sales: {n}): same month of previous years, otherwise average of the last 12 months, collected with the same delay as receivables. The current month is not estimated.",
 }

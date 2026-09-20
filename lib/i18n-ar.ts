@@ -1172,4 +1172,9 @@ export const AR: Record<string, string> = {
   "Une prévision mensuelle a besoin d’une date de fin.": "يحتاج التوقع الشهري إلى تاريخ انتهاء.",
   "Une seule fois": "مرة واحدة",
   "Ventes et encaissements clients": "المبيعات ومقبوضات العملاء",
+  "Ventes futures estimées, retenues à": "المبيعات المستقبلية المقدَّرة، المعتمدة بنسبة",
+  "0 % (sans estimation)": "0 % (بدون تقدير)",
+  "Aucune vente dans l’historique : les ventes futures ne peuvent pas être estimées.": "لا توجد مبيعات في السجل: لا يمكن تقدير المبيعات المستقبلية.",
+  "Ventes estimées (historique)": "المبيعات المقدَّرة (السجل)",
+  "Ventes estimées d’après l’historique (mois avec ventes : {n}) : même mois des années précédentes, sinon moyenne des 12 derniers mois, encaissées avec le même délai que les créances. Le mois en cours n’est pas estimé.": "مبيعات مقدَّرة من السجل (الأشهر ذات المبيعات: {n}): نفس الشهر في السنوات السابقة، وإلا متوسط آخر 12 شهرًا، وتُحصَّل بنفس مهلة الذمم المدينة. لا يُقدَّر الشهر الجاري.",
 }
