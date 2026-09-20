@@ -949,4 +949,7 @@ export const EN: Record<string, string> = {
   "Sous-produit / produit {i}": "By-product / product {i}",
   "Rendement {i} (% de la matière)": "Yield {i} (% of the material)",
 
+  "Gambie — PAYE (GRA, barème 2018) : 0 à 25 %, aucune déduction admise ; SSHFC 5 % / 10 %": "The Gambia — PAYE (GRA, 2018 scale): 0% to 25%, no deductions allowed; SSHFC 5% / 10%",
+  "SSHFC — National Provident Fund (5 % salarié, non déductible du PAYE ; 10 % employeur)": "SSHFC — National Provident Fund (5% employee, not deductible from PAYE; 10% employer)",
+
 }

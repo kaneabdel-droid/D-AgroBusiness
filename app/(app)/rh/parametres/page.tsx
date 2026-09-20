@@ -125,6 +125,7 @@ export default async function ParametresPaiePage() {
                 { value: 'BJ', label: t('Bénin — ITS (CGI 2025 art. 125) barème 0 à 30 %, VPS 4 % ; CNSS 3,6 % / 6,4 % ; redevance ORTB non gérée') },
                 { value: 'GH', label: t('Ghana — PAYE (GRA 2024) : barème 0 à 35 %, SSNIT 5,5 % déductible ; taux patronal à valider') },
                 { value: 'ML', label: t('Mali — ITS (brochure DGI 2020) : INPS 3,6 % déductible, réduction familiale en %, −2 points ; INPS, AMO et ANPE inclus') },
+                { value: 'GM', label: t('Gambie — PAYE (GRA, barème 2018) : 0 à 25 %, aucune déduction admise ; SSHFC 5 % / 10 %') },
                 { value: 'NG', label: t('Nigeria — PAYE (Nigeria Tax Act 2025) : barème 0 à 25 %, pension 8 % et NHF 2,5 % déductibles ; loyer à saisir par employé') },
                 { value: 'GN', label: t('Guinée — RTS (CGI 2022 art. 57-63) : barème 0 à 20 %, CNSS 5 % déductible, versement forfaitaire 6 %') },
                 { value: 'MR', label: t('Mauritanie — ITS (CGI 2023 art. 110, 113, 114) : 6 000 MRU exonérés, barème 15 / 25 / 40 %, CNSS, CNAM, médecine du travail') },
