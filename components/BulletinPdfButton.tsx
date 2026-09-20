@@ -4,6 +4,7 @@ import { FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/components/I18nProvider'
 import { LOCALES, type Lang } from '@/lib/i18n'
+import { imprimerHtml, echapper } from '@/lib/impression'
 
 export type BulletinPdf = {
   organisation: string
@@ -33,6 +34,7 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
   const { t } = useT()
 
   async function generer() {
+    if (data.lang === 'ar') return genererArabe()
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
     const fmt = (v: number) => `${v.toLocaleString(LOCALES[data.lang], { minimumFractionDigits: data.devise === 'XOF' ? 0 : 2, maximumFractionDigits: data.devise === 'XOF' ? 0 : 2 })}`
@@ -81,6 +83,30 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
     doc.text(`${t('Coût employeur')} : ${fmt(data.brut + data.chargesPatronales)} ${data.devise}`, 14, y + 22)
 
     doc.save(`${t('bulletin')}-${data.matricule}-${data.periode.replace(/\s+/g, '-')}.pdf`)
+  }
+
+  // Arabe : document HTML imprimé par le navigateur (lettres reliées et écriture de droite à gauche)
+  function genererArabe() {
+    const dec = data.devise === 'XOF' ? 0 : 2
+    const fmt = (v: number) => v.toLocaleString(LOCALES[data.lang], { minimumFractionDigits: dec, maximumFractionDigits: dec })
+    const rows: string[] = []
+    for (const type of ['gain', 'retenue_absence', 'retenue_salariale', 'charge_patronale']) {
+      const ls = data.lignes.filter((l) => l.type === type)
+      if (ls.length === 0) continue
+      rows.push(`<tr class="section"><td colspan="4">${echapper(t(TITRES[type]))}</td></tr>`)
+      for (const l of ls) {
+        rows.push(`<tr><td>${echapper(l.libelle)}</td><td class="n">${l.base != null ? fmt(l.base) : ''}</td><td class="n">${l.taux != null && l.taux !== 0 ? l.taux + ' %' : ''}</td><td class="n">${fmt(l.montant)}</td></tr>`)
+      }
+    }
+    const corps = `<h1>${echapper(t('BULLETIN DE PAIE'))}</h1><p>${echapper(data.organisation)}</p>
+<p>${echapper(t('Période'))} : ${echapper(data.periode)} — ${echapper(t('Matricule'))} : ${echapper(data.matricule)} — ${echapper(t('Nom'))} : ${echapper(data.nom)}</p>
+<p>${echapper(t('Statut'))} : ${echapper(data.statut)}${data.poste ? ` — ${echapper(data.poste)}` : ''} — ${echapper(t('Jours payés'))} : ${data.joursPayes}</p>
+<table><thead><tr><th>${echapper(t('Libellé'))}</th><th class="n">${echapper(t('Base'))}</th><th class="n">${echapper(t('Taux'))}</th><th class="n">${echapper(t('Montant'))} (${echapper(data.devise)})</th></tr></thead><tbody>${rows.join('')}</tbody></table>
+<p class="total">${echapper(t('Brut'))} : ${fmt(data.brut)} ${echapper(data.devise)}</p>
+<p class="total">${echapper(t('Total retenues'))} : ${fmt(data.retenues)} ${echapper(data.devise)}</p>
+<p class="total net">${echapper(t('NET À PAYER'))} : ${fmt(data.net)} ${echapper(data.devise)}</p>
+<p class="total">${echapper(t('Coût employeur'))} : ${fmt(data.brut + data.chargesPatronales)} ${echapper(data.devise)}</p>`
+    imprimerHtml(`${t('bulletin')}-${data.matricule}`, corps, data.lang)
   }
 
   return (

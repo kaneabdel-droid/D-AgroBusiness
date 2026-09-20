@@ -951,5 +951,7 @@ export const EN: Record<string, string> = {
 
   "Gambie — PAYE (GRA, barème 2018) : 0 à 25 %, aucune déduction admise ; SSHFC 5 % / 10 %": "The Gambia — PAYE (GRA, 2018 scale): 0% to 25%, no deductions allowed; SSHFC 5% / 10%",
   "SSHFC — National Provident Fund (5 % salarié, non déductible du PAYE ; 10 % employeur)": "SSHFC — National Provident Fund (5% employee, not deductible from PAYE; 10% employer)",
+  "D-AGROBUSINESS — Gestion intégrée de la chaîne de valeur agricole": "D-AGROBUSINESS — Integrated agricultural value-chain management",
+  "Financement, intrants, parc matériel, production, usine de transformation, RH et comptabilité analytique pour les entreprises agro-industrielles.": "Financing, inputs, equipment fleet, production, processing plant, HR and analytical accounting for agro-industrial companies.",
 
 }

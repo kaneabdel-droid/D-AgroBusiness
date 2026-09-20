@@ -3,6 +3,7 @@
 import { FileDown, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/components/I18nProvider'
+import { imprimerHtml, tableauHtml, echapper } from '@/lib/impression'
 
 type Cellule = string | number | null | undefined
 
@@ -20,7 +21,7 @@ export function ExportButtons({
   lignes: Cellule[][]
   fichier: string
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
 
   function csv() {
     const echapper = (v: Cellule) => `"${String(v ?? '').replace(/"/g, '""')}"`
@@ -35,6 +36,11 @@ export function ExportButtons({
   }
 
   async function pdf() {
+    // Arabe : impression par le navigateur (lettres reliées et sens d’écriture gérés nativement)
+    if (lang === 'ar') {
+      imprimerHtml(titre, `<h1>${echapper(titre)}</h1>${sousTitre ? `<p>${echapper(sousTitre)}</p>` : ''}${tableauHtml(colonnes, lignes)}`, lang)
+      return
+    }
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
     const doc = new jsPDF({ orientation: colonnes.length > 5 ? 'landscape' : 'portrait' })

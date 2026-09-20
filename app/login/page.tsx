@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { AuthForm } from '@/components/AuthForm'
 import { Card } from '@/components/ui/card'
-import { creerT } from '@/lib/i18n'
+import { creerT, estRtl } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { langueNavigateur } from '@/lib/i18n-server'
 
 export default async function LoginPage({
@@ -13,8 +14,9 @@ export default async function LoginPage({
   const lang = await langueNavigateur()
   const t = creerT(lang)
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-10">
+    <main className="flex flex-1 items-center justify-center px-4 py-10" dir={estRtl(lang) ? 'rtl' : 'ltr'}>
       <Card className="w-full max-w-md">
+        <LanguageSwitcher lang={lang} className="mb-4 flex-wrap" />
         <h1 className="font-heading text-2xl font-semibold">D-AGROBUSINESS</h1>
         <p className="mb-6 mt-1 text-sm text-foreground-muted">{t('Connexion à votre espace')}</p>
         {erreur === 'organisation' && (

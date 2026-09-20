@@ -52,3 +52,18 @@ body {
     min-height: 44px;
   }
 }
+
+/* Arabe : écriture de droite à gauche (attribut dir posé sur <html> et sur les conteneurs d'écran). */
+[dir="rtl"] {
+  font-family: var(--font-cairo), var(--font-inter), Arial, sans-serif;
+}
+[dir="rtl"] .font-heading {
+  font-family: var(--font-cairo), var(--font-outfit), Arial, sans-serif;
+}
+/* Colonnes de nombres : alignées en fin de cellule, donc à gauche en RTL ; texte de tableau : aligné à droite */
+[dir="rtl"] .text-right { text-align: left; }
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .border-r { border-right-width: 0; border-left-width: 1px; }
+[dir="rtl"] .border-l { border-left-width: 0; border-right-width: 1px; }
+/* Les nombres, dates et montants restent lisibles de gauche à droite au milieu d'un texte arabe */
+[dir="rtl"] .tabular-nums { direction: ltr; unicode-bidi: plaintext; }

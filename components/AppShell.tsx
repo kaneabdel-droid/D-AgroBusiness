@@ -44,6 +44,8 @@ import {
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/auth/actions'
 import { useT } from '@/components/I18nProvider'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { estRtl } from '@/lib/i18n'
 
 const NAV = [
   {
@@ -138,7 +140,7 @@ export function AppShell({
   role: string
   children: React.ReactNode
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const [ouvert, setOuvert] = useState(false)
   const pathname = usePathname()
   const typeVente = useSearchParams().get('type') === 'marche' ? 'marche' : 'distribution'
@@ -187,6 +189,7 @@ export function AppShell({
     <div className="border-t border-surface-border p-4">
       <p className="truncate text-sm font-medium">{utilisateur}</p>
       <p className="mb-3 text-xs text-foreground-muted">{role}</p>
+      <LanguageSwitcher lang={lang} className="mb-3 flex-wrap" />
       <form action={signOut}>
         <button
           type="submit"
@@ -199,7 +202,7 @@ export function AppShell({
   )
 
   return (
-    <div className="flex min-h-screen flex-1">
+    <div className="flex min-h-screen flex-1" dir={estRtl(lang) ? 'rtl' : 'ltr'}>
       {/* Bureau : barre latérale fixe */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-surface-border bg-sidebar lg:flex">
         <div className="border-b border-surface-border p-4">
