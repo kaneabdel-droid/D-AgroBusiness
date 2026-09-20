@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/card'
 import { EcritureForm } from '@/components/EcritureForm'
 
 export default async function NouvelleEcriturePage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   if (!['admin', 'comptable'].includes(ctx.role)) redirect('/comptabilite/ecritures')
 
   const supabase = await createClient()
@@ -21,8 +23,8 @@ export default async function NouvelleEcriturePage() {
   return (
     <>
       <PageHeader
-        titre="Nouvelle écriture"
-        description="Saisie équilibrée. Les charges et produits (classes 6 et 7) doivent être imputés à un département."
+        titre={t('Nouvelle écriture')}
+        description={t('Saisie équilibrée. Les charges et produits (classes 6 et 7) doivent être imputés à un département.')}
       />
       <EcritureForm
         devise={ctx.devise}

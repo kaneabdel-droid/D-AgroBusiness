@@ -8,7 +8,7 @@ import { EN } from '@/lib/i18n-en'
 export type Lang = 'fr' | 'en'
 
 /** Pays dont l'interface s'affiche en anglais. */
-const PAYS_ANGLOPHONES = ['GH', 'NG']
+const PAYS_ANGLOPHONES = ['GH', 'NG', 'GM']
 
 export function langDe(pays: string | null | undefined): Lang {
   return PAYS_ANGLOPHONES.includes((pays ?? '').toUpperCase()) ? 'en' : 'fr'

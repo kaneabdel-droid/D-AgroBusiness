@@ -1,12 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader } from '@/components/ui/card'
 import { OrdreFabricationForm, type NomenclatureOpt } from '@/components/OrdreFabricationForm'
 
 export default async function NouvelOrdreFabricationPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   if (!['admin', 'comptable', 'chef_departement'].includes(ctx.role)) redirect('/usine')
   const o = await chargerOptions()
   const supabase = await createClient()
@@ -21,7 +23,7 @@ export default async function NouvelOrdreFabricationPage() {
     return {
       id: n.id,
       label: `${n.code} — ${n.libelle}`,
-      matiere: m?.nom ?? 'matière première',
+      matiere: m?.nom ?? t('matière première'),
       sorties: (n.nomenclature_sorties as { produit_id: string; rendement_pct: number; principal: boolean; produits: { nom: string; unite: string } | { nom: string; unite: string }[] | null }[]).map((s) => {
         const pr = Array.isArray(s.produits) ? s.produits[0] : s.produits
         return { produit_id: s.produit_id, label: pr?.nom ?? '', unite: pr?.unite ?? '', rendement: Number(s.rendement_pct), principal: s.principal }
@@ -33,8 +35,8 @@ export default async function NouvelOrdreFabricationPage() {
   return (
     <>
       <PageHeader
-        titre="Nouvel ordre de fabrication"
-        description="La matière est sortie du stock au CUMP ; les produits obtenus entrent en stock à leur coût de revient."
+        titre={t('Nouvel ordre de fabrication')}
+        description={t('La matière est sortie du stock au CUMP ; les produits obtenus entrent en stock à leur coût de revient.')}
       />
       <OrdreFabricationForm
         nomenclatures={nomenclatures}

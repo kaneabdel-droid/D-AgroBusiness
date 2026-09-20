@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -11,6 +12,7 @@ type Ligne = { debit: number; credit: number }
 
 export default async function EcrituresPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: ecritures } = await supabase
     .from('ecritures')
@@ -27,13 +29,13 @@ export default async function EcrituresPage() {
   return (
     <>
       <PageHeader
-        titre="Écritures comptables"
-        description="Les écritures validées sont immuables : toute correction passe par une contre-passation."
+        titre={t('Écritures comptables')}
+        description={t('Les écritures validées sont immuables : toute correction passe par une contre-passation.')}
       >
         {peutEcrire && (
           <Button asChild>
             <Link href="/comptabilite/ecritures/nouvelle">
-              <Plus className="h-4 w-4" aria-hidden /> Nouvelle écriture
+              <Plus className="h-4 w-4" aria-hidden /> {t('Nouvelle écriture')}
             </Link>
           </Button>
         )}
@@ -41,11 +43,11 @@ export default async function EcrituresPage() {
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Date</th>
-            <th className={th}>Journal</th>
+            <th className={th}>{t('Date')}</th>
+            <th className={th}>{t('Journal')}</th>
             <th className={th}>N°</th>
-            <th className={th}>Libellé</th>
-            <th className={`${th} text-right`}>Montant</th>
+            <th className={th}>{t('Libellé')}</th>
+            <th className={`${th} text-right`}>{t('Montant')}</th>
             <th className={th}></th>
           </tr>
         </thead>
@@ -57,15 +59,15 @@ export default async function EcrituresPage() {
             const dejaContrepassee = contrepassees.has(e.id)
             return (
               <tr key={e.id}>
-                <td className={td}>{formatDate(e.date_ecriture)}</td>
+                <td className={td}>{formatDate(e.date_ecriture, ctx.lang)}</td>
                 <td className={td}>{journal?.code}</td>
                 <td className={td}>{e.numero}</td>
                 <td className={td}>
                   {e.libelle}
-                  {estContrepassation && <span className="ml-2 rounded bg-warning/15 px-1.5 py-0.5 text-xs">contre-passation</span>}
-                  {dejaContrepassee && <span className="ml-2 rounded bg-sidebar px-1.5 py-0.5 text-xs">contre-passée</span>}
+                  {estContrepassation && <span className="ml-2 rounded bg-warning/15 px-1.5 py-0.5 text-xs">{t('contre-passation')}</span>}
+                  {dejaContrepassee && <span className="ml-2 rounded bg-sidebar px-1.5 py-0.5 text-xs">{t('contre-passée')}</span>}
                 </td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(montant, ctx.devise)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(montant, ctx.devise, ctx.lang)}</td>
                 <td className={td}>
                   {peutEcrire && !estContrepassation && !dejaContrepassee && <ContrepassationButton id={e.id} />}
                 </td>

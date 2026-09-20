@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { TYPES_FINANCEMENT } from '@/lib/catalogue'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -11,6 +12,7 @@ import { ExportButtons } from '@/components/ExportButtons'
 export default async function BilanCampagnePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const o = await chargerOptions()
   const supabase = await createClient()
 
@@ -25,7 +27,7 @@ export default async function BilanCampagnePage({ params }: { params: Promise<{ 
     supabase.from('v_resultat_analytique').select('departement_id, secteur_id, produits, charges, resultat').eq('campagne_id', id),
     supabase.from('v_financements').select('*').eq('campagne_id', id),
   ])
-  const fm = (v: number) => formatMontant(v, ctx.devise)
+  const fm = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
   const somme = (rows: { [k: string]: unknown }[] | null, k: string) => (rows ?? []).reduce((s, r) => s + Number(r[k] ?? 0), 0)
 
   const distribue = somme((ventes.data ?? []).filter((v) => v.type === 'distribution'), 'total_ttc')
@@ -44,25 +46,25 @@ export default async function BilanCampagnePage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <PageHeader titre={`Bilan de campagne — ${c.code}`} description={`${c.libelle} · du ${formatDate(c.date_debut)} au ${formatDate(c.date_fin)}`}>
-        <Link href="/pilotage/campagnes" className="text-sm text-primary underline">← Campagnes</Link>
-        <ExportButtons titre={`Bilan de campagne ${c.code} — résultat analytique`} sousTitre={`${ctx.organisationNom} · ${c.libelle}`} fichier={`bilan-campagne-${c.code}`}
-          colonnes={['Département', 'Secteur / projet', 'Produits', 'Charges', 'Résultat']}
+      <PageHeader titre={`${t('Bilan de campagne')} — ${c.code}`} description={`${c.libelle} · ${t('du')} ${formatDate(c.date_debut, ctx.lang)} ${t('au')} ${formatDate(c.date_fin, ctx.lang)}`}>
+        <Link href="/pilotage/campagnes" className="text-sm text-primary underline">{t('← Campagnes')}</Link>
+        <ExportButtons titre={`${t('Bilan de campagne')} ${c.code} — ${t('résultat analytique')}`} sousTitre={`${ctx.organisationNom} · ${c.libelle}`} fichier={`bilan-campagne-${c.code}`}
+          colonnes={[t('Département'), t('Secteur / projet'), t('Produits'), t('Charges'), t('Résultat')]}
           lignes={analyt.map((a) => [a.dep, a.sec, a.produits, a.charges, a.resultat])} />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card><p className="text-sm text-foreground-muted">Distribué aux producteurs (TTC)</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(distribue)}</p></Card>
-        <Card><p className="text-sm text-foreground-muted">Recouvré (espèces + nature)</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(recouvre)}</p><p className="text-xs text-foreground-muted">dont nature reçue : {fm(nat)}</p></Card>
-        <Card><p className="text-sm text-foreground-muted">Taux de recouvrement</p><p className="mt-1 text-xl font-semibold tabular-nums">{facture > 0 ? `${((recouvre / facture) * 100).toFixed(1)} %` : '—'}</p><p className="text-xs text-foreground-muted">reste à recouvrer : {fm(resteARecouvrer)}</p></Card>
-        <Card><p className="text-sm text-foreground-muted">Résultat analytique</p><p className={`mt-1 text-xl font-semibold tabular-nums ${totalRes < 0 ? 'text-danger' : 'text-success'}`}>{fm(totalRes)}</p><p className="text-xs text-foreground-muted">ventes marché : {fm(venduMarche)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Distribué aux producteurs (TTC)')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(distribue)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Recouvré (espèces + nature)')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(recouvre)}</p><p className="text-xs text-foreground-muted">{t('dont nature reçue :')} {fm(nat)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Taux de recouvrement')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{facture > 0 ? `${((recouvre / facture) * 100).toFixed(1)} %` : '—'}</p><p className="text-xs text-foreground-muted">{t('reste à recouvrer :')} {fm(resteARecouvrer)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Résultat analytique')}</p><p className={`mt-1 text-xl font-semibold tabular-nums ${totalRes < 0 ? 'text-danger' : 'text-success'}`}>{fm(totalRes)}</p><p className="text-xs text-foreground-muted">{t('ventes marché :')} {fm(venduMarche)}</p></Card>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Production</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Production')}</h2>
       <div className="mb-6">
         <TableWrap>
           <thead>
-            <tr><th className={th}>Secteur / projet</th><th className={th}>Culture</th><th className={`${th} text-right`}>Superficie</th><th className={`${th} text-right`}>Récolte</th><th className={`${th} text-right`}>Rendement / ha</th><th className={`${th} text-right`}>Charges</th><th className={`${th} text-right`}>Coût unitaire</th></tr>
+            <tr><th className={th}>{t('Secteur / projet')}</th><th className={th}>{t('Culture')}</th><th className={`${th} text-right`}>{t('Superficie')}</th><th className={`${th} text-right`}>{t('Récolte')}</th><th className={`${th} text-right`}>{t('Rendement / ha')}</th><th className={`${th} text-right`}>{t('Charges')}</th><th className={`${th} text-right`}>{t('Coût unitaire')}</th></tr>
           </thead>
           <tbody>
             {prod.data?.map((p) => {
@@ -83,10 +85,10 @@ export default async function BilanCampagnePage({ params }: { params: Promise<{ 
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Résultat analytique par département et secteur</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Résultat analytique par département et secteur')}</h2>
       <div className="mb-6">
         <TableWrap>
-          <thead><tr><th className={th}>Département</th><th className={th}>Secteur / projet</th><th className={`${th} text-right`}>Produits</th><th className={`${th} text-right`}>Charges</th><th className={`${th} text-right`}>Résultat</th></tr></thead>
+          <thead><tr><th className={th}>{t('Département')}</th><th className={th}>{t('Secteur / projet')}</th><th className={`${th} text-right`}>{t('Produits')}</th><th className={`${th} text-right`}>{t('Charges')}</th><th className={`${th} text-right`}>{t('Résultat')}</th></tr></thead>
           <tbody>
             {analyt.map((a, i) => (
               <tr key={i}>
@@ -96,19 +98,19 @@ export default async function BilanCampagnePage({ params }: { params: Promise<{ 
                 <td className={`${td} text-right tabular-nums ${a.resultat < 0 ? 'text-danger' : ''}`}>{fm(a.resultat)}</td>
               </tr>
             ))}
-            <tr className="font-semibold"><td className={td} colSpan={4}>Résultat de la campagne</td><td className={`${td} text-right tabular-nums`}>{fm(totalRes)}</td></tr>
+            <tr className="font-semibold"><td className={td} colSpan={4}>{t('Résultat de la campagne')}</td><td className={`${td} text-right tabular-nums`}>{fm(totalRes)}</td></tr>
           </tbody>
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Financements rattachés à la campagne</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Financements rattachés à la campagne')}</h2>
       <TableWrap>
-        <thead><tr><th className={th}>Contrat</th><th className={th}>Type</th><th className={`${th} text-right`}>Accordé</th><th className={`${th} text-right`}>Reçu</th><th className={`${th} text-right`}>Consommé</th><th className={`${th} text-right`}>Utilisation</th><th className={`${th} text-right`}>Encours</th></tr></thead>
+        <thead><tr><th className={th}>{t('Contrat')}</th><th className={th}>{t('Type')}</th><th className={`${th} text-right`}>{t('Accordé')}</th><th className={`${th} text-right`}>{t('Reçu')}</th><th className={`${th} text-right`}>{t('Consommé')}</th><th className={`${th} text-right`}>{t('Utilisation')}</th><th className={`${th} text-right`}>{t('Encours')}</th></tr></thead>
         <tbody>
           {financements.data?.map((f) => (
             <tr key={f.id}>
               <td className={td}><Link href={`/financements/${f.id}`} className="text-primary underline">{f.code}</Link></td>
-              <td className={td}>{TYPES_FINANCEMENT[f.type]}</td>
+              <td className={td}>{t(TYPES_FINANCEMENT[f.type])}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(Number(f.montant_accorde))}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(Number(f.montant_recu))}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(Number(f.montant_consomme))}</td>

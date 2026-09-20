@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT, LOCALES } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -11,6 +12,7 @@ import { consommerIntrants, enregistrerRecolte } from '../actions'
 export default async function ProductionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const o = await chargerOptions()
   const supabase = await createClient()
 
@@ -32,43 +34,43 @@ export default async function ProductionDetailPage({ params }: { params: Promise
   const resteAAbsorber = Number(p.charges) - Number(p.valeur_recoltee)
 
   const cartes: [string, string][] = [
-    ['Charges imputées (analytique)', formatMontant(p.charges, ctx.devise)],
-    ['Coût par hectare', p.cout_par_ha != null ? formatMontant(p.cout_par_ha, ctx.devise) : '—'],
-    ['Récolte', `${Number(p.quantite_recoltee).toLocaleString('fr-FR')} ${prod?.unite}`],
+    [t('Charges imputées (analytique)'), formatMontant(p.charges, ctx.devise, ctx.lang)],
+    [t('Coût par hectare'), p.cout_par_ha != null ? formatMontant(p.cout_par_ha, ctx.devise, ctx.lang) : '—'],
+    [t('Récolte'), `${Number(p.quantite_recoltee).toLocaleString(LOCALES[ctx.lang])} ${prod?.unite}`],
     ['Rendement par hectare', p.rendement_par_ha != null ? Number(p.rendement_par_ha).toLocaleString('fr-FR') : '—'],
-    ['Coût de revient unitaire', p.cout_unitaire != null ? formatMontant(p.cout_unitaire, ctx.devise) : '—'],
-    ['Coût restant à absorber', formatMontant(Math.max(0, resteAAbsorber), ctx.devise)],
+    [t('Coût de revient unitaire'), p.cout_unitaire != null ? formatMontant(p.cout_unitaire, ctx.devise, ctx.lang) : '—'],
+    [t('Coût restant à absorber'), formatMontant(Math.max(0, resteAAbsorber), ctx.devise, ctx.lang)],
   ]
 
   return (
     <>
       <PageHeader
         titre={`${p.code} — ${p.secteur_nom}`}
-        description={`${prod?.nom} · campagne ${camp?.code} · ${p.superficie != null ? `${Number(p.superficie)} ha` : 'superficie non renseignée'}`}
+        description={`${prod?.nom} · ${t('campagne')} ${camp?.code} · ${p.superficie != null ? `${Number(p.superficie)} ha` : t('superficie non renseignée')}`}
       >
-        <Link href="/production" className="text-sm text-primary underline">← Productions</Link>
+        <Link href="/production" className="text-sm text-primary underline">{t('← Productions')}</Link>
         {peutEcrire && (
           <>
             <SimpleCreateForm
-              titre="Consommer un intrant"
+              titre={t('Consommer un intrant')}
               action={consommerIntrants.bind(null, id)}
               champs={[
-                { name: 'date', label: 'Date', type: 'date', required: true, defaultValue: aujourdhui },
-                { name: 'produit_id', label: 'Intrant', type: 'select', required: true, options: o.produits.filter((x) => x.categorie !== 'service').map((x) => ({ value: x.id, label: x.label })) },
-                { name: 'magasin_id', label: 'Magasin', type: 'select', required: true, options: o.magasins.map((x) => ({ value: x.id, label: x.label })) },
-                { name: 'quantite', label: 'Quantité', type: 'number', step: '0.001', required: true },
+                { name: 'date', label: t('Date'), type: 'date', required: true, defaultValue: aujourdhui },
+                { name: 'produit_id', label: t('Intrant'), type: 'select', required: true, options: o.produits.filter((x) => x.categorie !== 'service').map((x) => ({ value: x.id, label: x.label })) },
+                { name: 'magasin_id', label: t('Magasin'), type: 'select', required: true, options: o.magasins.map((x) => ({ value: x.id, label: x.label })) },
+                { name: 'quantite', label: t('Quantité'), type: 'number', step: '0.001', required: true },
               ]}
             />
             <SimpleCreateForm
-              titre="Enregistrer une récolte"
+              titre={t('Enregistrer une récolte')}
               action={enregistrerRecolte.bind(null, id)}
               champs={[
-                { name: 'date', label: 'Date', type: 'date', required: true, defaultValue: aujourdhui },
-                { name: 'produit_id', label: 'Produit récolté', type: 'select', required: true, defaultValue: p.produit_id, options: o.produits.filter((x) => ['produit_agricole', 'semence'].includes(x.categorie)).map((x) => ({ value: x.id, label: x.label })) },
-                { name: 'magasin_id', label: 'Magasin de réception', type: 'select', required: true, options: o.magasins.map((x) => ({ value: x.id, label: x.label })) },
-                { name: 'quantite', label: 'Quantité récoltée', type: 'number', step: '0.001', required: true },
-                { name: 'valeur_totale', label: 'Valeur (vide = coût de production restant à absorber)', type: 'number', step: '0.01' },
-                { name: 'observation', label: 'Observation' },
+                { name: 'date', label: t('Date'), type: 'date', required: true, defaultValue: aujourdhui },
+                { name: 'produit_id', label: t('Produit récolté'), type: 'select', required: true, defaultValue: p.produit_id, options: o.produits.filter((x) => ['produit_agricole', 'semence'].includes(x.categorie)).map((x) => ({ value: x.id, label: x.label })) },
+                { name: 'magasin_id', label: t('Magasin de réception'), type: 'select', required: true, options: o.magasins.map((x) => ({ value: x.id, label: x.label })) },
+                { name: 'quantite', label: t('Quantité récoltée'), type: 'number', step: '0.001', required: true },
+                { name: 'valeur_totale', label: t('Valeur (vide = coût de production restant à absorber)'), type: 'number', step: '0.01' },
+                { name: 'observation', label: t('Observation') },
               ]}
             />
           </>
@@ -84,18 +86,16 @@ export default async function ProductionDetailPage({ params }: { params: Promise
         ))}
       </div>
       <p className="mb-6 text-sm text-foreground-muted">
-        Les charges regroupent tout ce qui est imputé à ce secteur et à cette campagne : intrants consommés,
-        dotations du matériel affecté, autres dépenses saisies avec le secteur (Trésorerie → Autre opération).
-        Une récolte sans valeur saisie est valorisée à ce coût.
+        {t('Les charges regroupent tout ce qui est imputé à ce secteur et à cette campagne : intrants consommés, dotations du matériel affecté, autres dépenses saisies avec le secteur (Trésorerie → Autre opération). Une récolte sans valeur saisie est valorisée à ce coût.')}
       </p>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Intrants consommés</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Intrants consommés')}</h2>
       <div className="mb-6">
         <TableWrap>
           <thead>
             <tr>
-              <th className={th}>Date</th><th className={th}>Intrant</th>
-              <th className={`${th} text-right`}>Quantité</th><th className={`${th} text-right`}>Valeur (CUMP)</th>
+              <th className={th}>{t('Date')}</th><th className={th}>{t('Intrant')}</th>
+              <th className={`${th} text-right`}>{t('Quantité')}</th><th className={`${th} text-right`}>{t('Valeur (CUMP)')}</th>
             </tr>
           </thead>
           <tbody>
@@ -103,10 +103,10 @@ export default async function ProductionDetailPage({ params }: { params: Promise
               const x = Array.isArray(c.produits) ? c.produits[0] : c.produits
               return (
                 <tr key={c.id}>
-                  <td className={td}>{formatDate(c.date_consommation)}</td>
+                  <td className={td}>{formatDate(c.date_consommation, ctx.lang)}</td>
                   <td className={td}>{x?.nom}</td>
                   <td className={`${td} text-right tabular-nums`}>{Number(c.quantite).toLocaleString('fr-FR')} {x?.unite}</td>
-                  <td className={`${td} text-right tabular-nums`}>{formatMontant(c.valeur, ctx.devise)}</td>
+                  <td className={`${td} text-right tabular-nums`}>{formatMontant(c.valeur, ctx.devise, ctx.lang)}</td>
                 </tr>
               )
             })}
@@ -114,12 +114,12 @@ export default async function ProductionDetailPage({ params }: { params: Promise
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Récoltes</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Récoltes')}</h2>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>N°</th><th className={th}>Date</th><th className={th}>Produit</th>
-            <th className={`${th} text-right`}>Quantité</th><th className={`${th} text-right`}>Valeur</th>
+            <th className={th}>N°</th><th className={th}>{t('Date')}</th><th className={th}>{t('Produit')}</th>
+            <th className={`${th} text-right`}>{t('Quantité')}</th><th className={`${th} text-right`}>{t('Valeur')}</th>
           </tr>
         </thead>
         <tbody>
@@ -128,10 +128,10 @@ export default async function ProductionDetailPage({ params }: { params: Promise
             return (
               <tr key={r.id}>
                 <td className={td}>{r.numero}</td>
-                <td className={td}>{formatDate(r.date_recolte)}</td>
+                <td className={td}>{formatDate(r.date_recolte, ctx.lang)}</td>
                 <td className={td}>{x?.nom}</td>
                 <td className={`${td} text-right tabular-nums`}>{Number(r.quantite).toLocaleString('fr-FR')} {x?.unite}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(r.valeur, ctx.devise)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(r.valeur, ctx.devise, ctx.lang)}</td>
               </tr>
             )
           })}

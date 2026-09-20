@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -10,6 +11,7 @@ const aujourdhui = () => new Date().toISOString().slice(0, 10)
 
 export default async function TresoreriePage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const o = await chargerOptions()
   const supabase = await createClient()
   const [{ data: soldes }, { data: reglements }, { data: operations }, { data: comptes }, { data: financements }] = await Promise.all([
@@ -31,66 +33,66 @@ export default async function TresoreriePage() {
 
   return (
     <>
-      <PageHeader titre="Trésorerie" description="Encaissements des créances, paiements fournisseurs et autres opérations, avec leurs écritures.">
+      <PageHeader titre={t('Trésorerie')} description={t('Encaissements des créances, paiements fournisseurs et autres opérations, avec leurs écritures.')}>
         <SimpleCreateForm
-          titre="Règlement tiers"
+          titre={t('Règlement tiers')}
           disabled={!peutEcrire}
           action={addReglement}
           champs={[
-            { name: 'date', label: 'Date', type: 'date', required: true, defaultValue: aujourdhui() },
+            { name: 'date', label: t('Date'), type: 'date', required: true, defaultValue: aujourdhui() },
             {
-              name: 'sens', label: 'Sens', type: 'select', required: true,
+              name: 'sens', label: t('Sens'), type: 'select', required: true,
               options: [
-                { value: 'encaissement', label: 'Encaissement (client / producteur)' },
-                { value: 'paiement', label: 'Paiement (fournisseur)' },
+                { value: 'encaissement', label: t('Encaissement (client / producteur)') },
+                { value: 'paiement', label: t('Paiement (fournisseur)') },
               ],
             },
-            { name: 'tiers_id', label: 'Tiers', type: 'select', required: true, options: o.tousTiers.map((t) => ({ value: t.id, label: t.label })) },
-            { name: 'montant', label: 'Montant', type: 'number', step: '0.01', required: true },
-            { name: 'compte_tresorerie_id', label: 'Compte de trésorerie', type: 'select', required: true, options: optCt },
-            { name: 'reference', label: 'Référence (chèque, virement…)' },
+            { name: 'tiers_id', label: t('Tiers'), type: 'select', required: true, options: o.tousTiers.map((t) => ({ value: t.id, label: t.label })) },
+            { name: 'montant', label: t('Montant'), type: 'number', step: '0.01', required: true },
+            { name: 'compte_tresorerie_id', label: t('Compte de trésorerie'), type: 'select', required: true, options: optCt },
+            { name: 'reference', label: t('Référence (chèque, virement…)') },
             {
-              name: 'nature', label: 'Nature du paiement', type: 'select', defaultValue: 'courant',
+              name: 'nature', label: t('Nature du paiement'), type: 'select', defaultValue: 'courant',
               options: [
-                { value: 'courant', label: 'Fournisseur courant (dette 401)' },
-                { value: 'immobilisation', label: 'Fournisseur d’investissements (dette 481)' },
+                { value: 'courant', label: t('Fournisseur courant (dette 401)') },
+                { value: 'immobilisation', label: t('Fournisseur d’investissements (dette 481)') },
               ],
             },
             {
-              name: 'contrat_financement_id', label: 'Financement utilisé (crédit de campagne / fonds de commercialisation)', type: 'select',
+              name: 'contrat_financement_id', label: t('Financement utilisé (crédit de campagne / fonds de commercialisation)'), type: 'select',
               options: financements?.map((f) => ({ value: f.id, label: `${f.code} — ${f.libelle}` })),
             },
           ]}
         />
         <SimpleCreateForm
-          titre="Autre opération"
+          titre={t('Autre opération')}
           disabled={!peutEcrire}
           action={addOperationTresorerie}
           champs={[
-            { name: 'date', label: 'Date', type: 'date', required: true, defaultValue: aujourdhui() },
+            { name: 'date', label: t('Date'), type: 'date', required: true, defaultValue: aujourdhui() },
             {
-              name: 'sens', label: 'Sens', type: 'select', required: true,
-              options: [{ value: 'encaissement', label: 'Encaissement' }, { value: 'decaissement', label: 'Décaissement' }],
+              name: 'sens', label: t('Sens'), type: 'select', required: true,
+              options: [{ value: 'encaissement', label: t('Encaissement') }, { value: 'decaissement', label: t('Décaissement') }],
             },
-            { name: 'montant', label: 'Montant', type: 'number', step: '0.01', required: true },
-            { name: 'compte_tresorerie_id', label: 'Compte de trésorerie', type: 'select', required: true, options: optCt },
+            { name: 'montant', label: t('Montant'), type: 'number', step: '0.01', required: true },
+            { name: 'compte_tresorerie_id', label: t('Compte de trésorerie'), type: 'select', required: true, options: optCt },
             {
-              name: 'contrepartie_compte_id', label: 'Compte de contrepartie', type: 'select', required: true,
+              name: 'contrepartie_compte_id', label: t('Compte de contrepartie'), type: 'select', required: true,
               options: comptes?.map((c) => ({ value: c.id, label: `${c.numero} — ${c.libelle}` })),
             },
-            { name: 'libelle', label: 'Libellé', required: true },
-            { name: 'departement_id', label: 'Département (obligatoire pour charges/produits)', type: 'select', options: o.departements.map((d) => ({ value: d.id, label: d.label })) },
-            { name: 'secteur_id', label: 'Secteur / projet (doit appartenir au département)', type: 'select', options: o.secteurs.map((s) => ({ value: s.id, label: s.label })) },
-            { name: 'campagne_id', label: 'Campagne', type: 'select', options: o.campagnes.map((c) => ({ value: c.id, label: c.label })) },
+            { name: 'libelle', label: t('Libellé'), required: true },
+            { name: 'departement_id', label: t('Département (obligatoire pour charges/produits)'), type: 'select', options: o.departements.map((d) => ({ value: d.id, label: d.label })) },
+            { name: 'secteur_id', label: t('Secteur / projet (doit appartenir au département)'), type: 'select', options: o.secteurs.map((s) => ({ value: s.id, label: s.label })) },
+            { name: 'campagne_id', label: t('Campagne'), type: 'select', options: o.campagnes.map((c) => ({ value: c.id, label: c.label })) },
           ]}
         />
         <SimpleCreateForm
-          titre="Nouveau compte"
+          titre={t('Nouveau compte')}
           disabled={!peutEcrire}
           action={addCompteTresorerie}
           champs={[
-            { name: 'nom', label: 'Nom', required: true },
-            { name: 'type', label: 'Type', type: 'select', required: true, options: [{ value: 'banque', label: 'Banque' }, { value: 'caisse', label: 'Caisse' }] },
+            { name: 'nom', label: t('Nom'), required: true },
+            { name: 'type', label: t('Type'), type: 'select', required: true, options: [{ value: 'banque', label: t('Banque') }, { value: 'caisse', label: t('Caisse') }] },
           ]}
         />
       </PageHeader>
@@ -100,23 +102,23 @@ export default async function TresoreriePage() {
           <Card key={s.compte_tresorerie_id}>
             <p className="text-sm text-foreground-muted">{s.nom} ({s.type === 'banque' ? 'banque' : 'caisse'})</p>
             <p className={`mt-1 text-xl font-semibold tabular-nums ${Number(s.solde) < 0 ? 'text-danger' : ''}`}>
-              {formatMontant(s.solde, ctx.devise)}
+              {formatMontant(s.solde, ctx.devise, ctx.lang)}
             </p>
           </Card>
         ))}
         <Card>
-          <p className="text-sm text-foreground-muted">Trésorerie totale</p>
-          <p className="mt-1 text-xl font-semibold tabular-nums">{formatMontant(total, ctx.devise)}</p>
+          <p className="text-sm text-foreground-muted">{t('Trésorerie totale')}</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums">{formatMontant(total, ctx.devise, ctx.lang)}</p>
         </Card>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Règlements récents</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Règlements récents')}</h2>
       <div className="mb-6">
         <TableWrap>
           <thead>
             <tr>
-              <th className={th}>N°</th><th className={th}>Date</th><th className={th}>Tiers</th>
-              <th className={th}>Compte</th><th className={th}>Référence</th><th className={`${th} text-right`}>Montant</th>
+              <th className={th}>N°</th><th className={th}>{t('Date')}</th><th className={th}>{t('Tiers')}</th>
+              <th className={th}>{t('Compte')}</th><th className={th}>{t('Référence')}</th><th className={`${th} text-right`}>{t('Montant')}</th>
             </tr>
           </thead>
           <tbody>
@@ -126,12 +128,12 @@ export default async function TresoreriePage() {
               return (
                 <tr key={r.id}>
                   <td className={td}>{r.numero}</td>
-                  <td className={td}>{formatDate(r.date_reglement)}</td>
+                  <td className={td}>{formatDate(r.date_reglement, ctx.lang)}</td>
                   <td className={td}>{t?.nom}</td>
                   <td className={td}>{c?.code}</td>
                   <td className={td}>{r.reference ?? '—'}</td>
                   <td className={`${td} text-right tabular-nums ${r.sens === 'paiement' ? 'text-danger' : 'text-success'}`}>
-                    {r.sens === 'paiement' ? '−' : '+'}{formatMontant(r.montant, ctx.devise)}
+                    {r.sens === 'paiement' ? '−' : '+'}{formatMontant(r.montant, ctx.devise, ctx.lang)}
                   </td>
                 </tr>
               )
@@ -140,12 +142,12 @@ export default async function TresoreriePage() {
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Autres opérations</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Autres opérations')}</h2>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>N°</th><th className={th}>Date</th><th className={th}>Libellé</th>
-            <th className={th}>Compte</th><th className={`${th} text-right`}>Montant</th>
+            <th className={th}>N°</th><th className={th}>{t('Date')}</th><th className={th}>{t('Libellé')}</th>
+            <th className={th}>{t('Compte')}</th><th className={`${th} text-right`}>{t('Montant')}</th>
           </tr>
         </thead>
         <tbody>
@@ -154,11 +156,11 @@ export default async function TresoreriePage() {
             return (
               <tr key={r.id}>
                 <td className={td}>{r.numero}</td>
-                <td className={td}>{formatDate(r.date_operation)}</td>
+                <td className={td}>{formatDate(r.date_operation, ctx.lang)}</td>
                 <td className={td}>{r.libelle}</td>
                 <td className={td}>{c?.code}</td>
                 <td className={`${td} text-right tabular-nums ${r.sens === 'decaissement' ? 'text-danger' : 'text-success'}`}>
-                  {r.sens === 'decaissement' ? '−' : '+'}{formatMontant(r.montant, ctx.devise)}
+                  {r.sens === 'decaissement' ? '−' : '+'}{formatMontant(r.montant, ctx.devise, ctx.lang)}
                 </td>
               </tr>
             )

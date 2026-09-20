@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { MOIS } from '@/lib/rh'
 import { formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -21,6 +22,7 @@ export default async function RapportMensuelPage({
   searchParams: Promise<{ annee?: string; mois?: string }>
 }) {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const p = await searchParams
   const now = new Date()
   const annee = Number(p.annee) || now.getFullYear()
@@ -38,7 +40,7 @@ export default async function RapportMensuelPage({
     ? await supabase.from('v_evolution_mensuelle').select('mois, produits, charges').eq('exercice_id', exercice.id).eq('mois', mois)
     : { data: [] }
 
-  const fm = (v: number) => formatMontant(v, ctx.devise)
+  const fm = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
   const comptes = [...new Map((mouvements ?? []).map((m) => [m.compte_tresorerie_id, m.nom])).entries()]
   const tresorerie = comptes.map(([id, nom]) => {
     const lignes = (mouvements ?? []).filter((m) => m.compte_tresorerie_id === id)
@@ -55,38 +57,38 @@ export default async function RapportMensuelPage({
     const cur = activite?.find((a) => a.rubrique === r && a.annee === annee && a.mois === mois)
     const prev = activite?.find((a) => a.rubrique === r && a.annee === precedent.annee && a.mois === precedent.mois)
     const m = Number(cur?.montant ?? 0), mp = Number(prev?.montant ?? 0)
-    return { rubrique: RUBRIQUES[r], nb: Number(cur?.nb ?? 0), montant: m, variation: mp > 0 ? `${(((m - mp) / mp) * 100).toFixed(0)} %` : '—' }
+    return { rubrique: t(RUBRIQUES[r]), nb: Number(cur?.nb ?? 0), montant: m, variation: mp > 0 ? `${(((m - mp) / mp) * 100).toFixed(0)} %` : '—' }
   })
   const produits = Number(evolution?.[0]?.produits ?? 0)
   const charges = Number(evolution?.[0]?.charges ?? 0)
-  const titre = `${MOIS[mois - 1]} ${annee}`
+  const titre = `${t(MOIS[mois - 1])} ${annee}`
 
   return (
     <>
-      <PageHeader titre={`Rapport mensuel — ${titre}`} description="Trésorerie, activité et résultat du mois.">
+      <PageHeader titre={`${t('Rapport mensuel')} — ${titre}`} description={t('Trésorerie, activité et résultat du mois.')}>
         <form method="get" className="flex flex-wrap items-center gap-2">
-          <select name="mois" defaultValue={mois} aria-label="Mois" className="h-10 rounded-lg border border-surface-border bg-surface px-3 text-sm">
-            {MOIS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+          <select name="mois" defaultValue={mois} aria-label={t('Mois')} className="h-10 rounded-lg border border-surface-border bg-surface px-3 text-sm">
+            {MOIS.map((m, i) => <option key={m} value={i + 1}>{t(m)}</option>)}
           </select>
-          <input name="annee" type="number" defaultValue={annee} min={2000} max={2100} aria-label="Année" className="h-10 w-24 rounded-lg border border-surface-border bg-surface px-3 text-sm" />
-          <button type="submit" className="h-10 rounded-lg border border-surface-border bg-surface px-3 text-sm">Afficher</button>
+          <input name="annee" type="number" defaultValue={annee} min={2000} max={2100} aria-label={t('Année')} className="h-10 w-24 rounded-lg border border-surface-border bg-surface px-3 text-sm" />
+          <button type="submit" className="h-10 rounded-lg border border-surface-border bg-surface px-3 text-sm">{t('Afficher')}</button>
         </form>
-        <ExportButtons titre={`Rapport mensuel de trésorerie — ${titre}`} sousTitre={ctx.organisationNom} fichier={`rapport-tresorerie-${annee}-${mois}`}
-          colonnes={['Compte', 'Ouverture', 'Encaissements', 'Décaissements', 'Clôture']}
+        <ExportButtons titre={`${t('Rapport mensuel de trésorerie')} — ${titre}`} sousTitre={ctx.organisationNom} fichier={`rapport-tresorerie-${annee}-${mois}`}
+          colonnes={[t('Compte'), t('Ouverture'), t('Encaissements'), t('Décaissements'), t('Clôture')]}
           lignes={[...tresorerie.map((t) => [t.nom, t.ouverture, t.enc, t.dec, t.cloture]), ['Total', totalT.ouverture, totalT.enc, totalT.dec, totalT.cloture]]} />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card><p className="text-sm text-foreground-muted">Trésorerie en fin de mois</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(totalT.cloture)}</p></Card>
-        <Card><p className="text-sm text-foreground-muted">Flux net du mois</p><p className={`mt-1 text-xl font-semibold tabular-nums ${totalT.enc - totalT.dec < 0 ? 'text-danger' : 'text-success'}`}>{fm(totalT.enc - totalT.dec)}</p></Card>
-        <Card><p className="text-sm text-foreground-muted">Produits du mois</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(produits)}</p></Card>
-        <Card><p className="text-sm text-foreground-muted">Résultat du mois</p><p className={`mt-1 text-xl font-semibold tabular-nums ${produits - charges < 0 ? 'text-danger' : 'text-success'}`}>{fm(produits - charges)}</p><p className="text-xs text-foreground-muted">charges : {fm(charges)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Trésorerie en fin de mois')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(totalT.cloture)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Flux net du mois')}</p><p className={`mt-1 text-xl font-semibold tabular-nums ${totalT.enc - totalT.dec < 0 ? 'text-danger' : 'text-success'}`}>{fm(totalT.enc - totalT.dec)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Produits du mois')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{fm(produits)}</p></Card>
+        <Card><p className="text-sm text-foreground-muted">{t('Résultat du mois')}</p><p className={`mt-1 text-xl font-semibold tabular-nums ${produits - charges < 0 ? 'text-danger' : 'text-success'}`}>{fm(produits - charges)}</p><p className="text-xs text-foreground-muted">{t('charges :')} {fm(charges)}</p></Card>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Trésorerie</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Trésorerie')}</h2>
       <div className="mb-6">
         <TableWrap>
-          <thead><tr><th className={th}>Compte</th><th className={`${th} text-right`}>Ouverture</th><th className={`${th} text-right`}>Encaissements</th><th className={`${th} text-right`}>Décaissements</th><th className={`${th} text-right`}>Clôture</th></tr></thead>
+          <thead><tr><th className={th}>{t('Compte')}</th><th className={`${th} text-right`}>{t('Ouverture')}</th><th className={`${th} text-right`}>{t('Encaissements')}</th><th className={`${th} text-right`}>{t('Décaissements')}</th><th className={`${th} text-right`}>{t('Clôture')}</th></tr></thead>
           <tbody>
             {tresorerie.map((t) => (
               <tr key={t.nom}>
@@ -98,7 +100,7 @@ export default async function RapportMensuelPage({
               </tr>
             ))}
             <tr className="font-semibold">
-              <td className={td}>Total</td>
+              <td className={td}>{t('Total')}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(totalT.ouverture)}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(totalT.enc)}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(totalT.dec)}</td>
@@ -108,9 +110,9 @@ export default async function RapportMensuelPage({
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Rapport d&apos;activité</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Rapport d’activité')}</h2>
       <TableWrap>
-        <thead><tr><th className={th}>Rubrique</th><th className={`${th} text-right`}>Opérations</th><th className={`${th} text-right`}>Montant</th><th className={`${th} text-right`}>Variation vs mois précédent</th></tr></thead>
+        <thead><tr><th className={th}>{t('Rubrique')}</th><th className={`${th} text-right`}>{t('Opérations')}</th><th className={`${th} text-right`}>{t('Montant')}</th><th className={`${th} text-right`}>{t('Variation vs mois précédent')}</th></tr></thead>
         <tbody>
           {act.map((a) => (
             <tr key={a.rubrique}>

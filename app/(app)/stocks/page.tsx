@@ -1,10 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 
 export default async function StocksPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const [{ data: stock }, { data: produits }, { data: magasins }, { data: contrats }] = await Promise.all([
     supabase.from('v_stock').select('*'),
@@ -27,18 +29,18 @@ export default async function StocksPage() {
   return (
     <>
       <PageHeader
-        titre="État des stocks"
-        description="Valorisation au coût moyen unitaire pondéré (CUMP). Le stock consigné n'est pas valorisé : il appartient au fournisseur."
+        titre={t('État des stocks')}
+        description={t('Valorisation au coût moyen unitaire pondéré (CUMP). Le stock consigné n’est pas valorisé : il appartient au fournisseur.')}
       />
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Produit</th>
-            <th className={th}>Magasin</th>
-            <th className={th}>Propriété</th>
-            <th className={`${th} text-right`}>Quantité</th>
-            <th className={`${th} text-right`}>CUMP</th>
-            <th className={`${th} text-right`}>Valeur</th>
+            <th className={th}>{t('Produit')}</th>
+            <th className={th}>{t('Magasin')}</th>
+            <th className={th}>{t('Propriété')}</th>
+            <th className={`${th} text-right`}>{t('Quantité')}</th>
+            <th className={`${th} text-right`}>{t('CUMP')}</th>
+            <th className={`${th} text-right`}>{t('Valeur')}</th>
           </tr>
         </thead>
         <tbody>
@@ -47,16 +49,16 @@ export default async function StocksPage() {
               <td className={td}>{l.produit?.code} — {l.produit?.nom}</td>
               <td className={td}>{l.magasin}</td>
               <td className={td}>
-                {l.propriete === 'propre' ? 'Propre' : <span className="rounded bg-warning/15 px-1.5 py-0.5 text-xs">Consigné ({l.contrat})</span>}
+                {l.propriete === 'propre' ? t('Propre') : <span className="rounded bg-warning/15 px-1.5 py-0.5 text-xs">{t('Consigné ({c})', { c: l.contrat })}</span>}
               </td>
               <td className={`${td} text-right tabular-nums`}>{Number(l.quantite).toLocaleString('fr-FR')} {l.produit?.unite}</td>
-              <td className={`${td} text-right tabular-nums`}>{l.cump != null ? formatMontant(l.cump, ctx.devise) : '—'}</td>
-              <td className={`${td} text-right tabular-nums`}>{l.propriete === 'propre' ? formatMontant(l.valeur, ctx.devise) : '—'}</td>
+              <td className={`${td} text-right tabular-nums`}>{l.cump != null ? formatMontant(l.cump, ctx.devise, ctx.lang) : '—'}</td>
+              <td className={`${td} text-right tabular-nums`}>{l.propriete === 'propre' ? formatMontant(l.valeur, ctx.devise, ctx.lang) : '—'}</td>
             </tr>
           ))}
           <tr className="font-semibold">
-            <td className={td} colSpan={5}>Valeur du stock propre</td>
-            <td className={`${td} text-right tabular-nums`}>{formatMontant(valeurTotale, ctx.devise)}</td>
+            <td className={td} colSpan={5}>{t('Valeur du stock propre')}</td>
+            <td className={`${td} text-right tabular-nums`}>{formatMontant(valeurTotale, ctx.devise, ctx.lang)}</td>
           </tr>
         </tbody>
       </TableWrap>

@@ -2,25 +2,29 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { creerT } from '@/lib/i18n'
+import { langueNavigateur } from '@/lib/i18n-server'
 
 export async function signIn(formData: FormData) {
+  const t = creerT(await langueNavigateur())
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({
     email: String(formData.get('email') ?? '').trim(),
     password: String(formData.get('password') ?? ''),
   })
-  if (error) return { error: 'Email ou mot de passe incorrect.' }
+  if (error) return { error: t('Email ou mot de passe incorrect.') }
   redirect('/')
 }
 
 export async function signUp(formData: FormData) {
+  const t = creerT(await langueNavigateur())
   const organisation = String(formData.get('organisation') ?? '').trim()
   const nomComplet = String(formData.get('nom_complet') ?? '').trim()
   const pays = String(formData.get('pays') ?? 'SN')
   const password = String(formData.get('password') ?? '')
 
-  if (!organisation || !nomComplet) return { error: 'Tous les champs sont obligatoires.' }
-  if (password.length < 8) return { error: 'Le mot de passe doit contenir au moins 8 caractères.' }
+  if (!organisation || !nomComplet) return { error: t('Tous les champs sont obligatoires.') }
+  if (password.length < 8) return { error: t('Le mot de passe doit contenir au moins 8 caractères.') }
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
@@ -34,7 +38,7 @@ export async function signUp(formData: FormData) {
 
   // Confirmation d'email activée : pas de session immédiate.
   if (!data.session) {
-    return { success: 'Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse.' }
+    return { success: t('Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse.') }
   }
   redirect('/')
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ExportButtons } from '@/components/ExportButtons'
@@ -58,9 +59,10 @@ type Synthese = ReturnType<typeof synthese>
 
 export default async function EtatsPage({ searchParams }: { searchParams: Promise<{ exercice?: string }> }) {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const { exercice } = await searchParams
   const supabase = await createClient()
-  const fm = (v: number) => formatMontant(v, ctx.devise)
+  const fm = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
 
   const { data: exercices } = await supabase
     .from('exercices_comptables')
@@ -122,31 +124,31 @@ export default async function EtatsPage({ searchParams }: { searchParams: Promis
     ['Liquidité', 'Trésorerie nette', fm(N.tresoActif - N.crediteurs5), N1 ? fm(N1.tresoActif - N1.crediteurs5) : undefined, 'Trésorerie active − crédits de trésorerie'],
     ['Endettement', 'Endettement', pct(N.dettesFin, N.capitauxPropres), N1 ? pct(N1.dettesFin, N1.capitauxPropres) : undefined, 'Dettes financières ÷ capitaux propres'],
     ['Endettement', 'Autonomie financière', pct(N.capitauxPropres, N.actif), N1 ? pct(N1.capitauxPropres, N1.actif) : undefined, 'Capitaux propres ÷ total de l’actif'],
-    ['Efficacité', 'Rotation des stocks', N.consoStocks > 0 ? `${ratio(N.consoStocks, N.stocks, 1)} tours` : '—', N1 ? (N1.consoStocks > 0 ? `${ratio(N1.consoStocks, N1.stocks, 1)} tours` : '—') : undefined, 'Variation de stocks consommés (603) ÷ stocks'],
-    ['Efficacité', 'Délai de recouvrement des créances', N.ca > 0 ? `${Math.round((N.creancesClients / N.ca) * 365)} jours` : '—', N1 ? (N1.ca > 0 ? `${Math.round((N1.creancesClients / N1.ca) * 365)} jours` : '—') : undefined, 'Créances clients (411) ÷ ventes (70) × 365'],
+    ['Efficacité', 'Rotation des stocks', N.consoStocks > 0 ? `${ratio(N.consoStocks, N.stocks, 1)} ${t('tours')}` : '—', N1 ? (N1.consoStocks > 0 ? `${ratio(N1.consoStocks, N1.stocks, 1)} ${t('tours')}` : '—') : undefined, 'Variation de stocks consommés (603) ÷ stocks'],
+    ['Efficacité', 'Délai de recouvrement des créances', N.ca > 0 ? `${Math.round((N.creancesClients / N.ca) * 365)} ${t('jours')}` : '—', N1 ? (N1.ca > 0 ? `${Math.round((N1.creancesClients / N1.ca) * 365)} ${t('jours')}` : '—') : undefined, 'Créances clients (411) ÷ ventes (70) × 365'],
   ]
 
   const cell = (v: number | undefined) => (v === undefined ? '—' : fm(v))
-  const enteteN1 = precedent ? libN1 : `${libN1} (aucun exercice antérieur)`
+  const enteteN1 = precedent ? libN1 : `${libN1} (${t('aucun exercice antérieur')})`
 
   return (
     <>
-      <PageHeader titre="États financiers et ratios" description={`Exercice ${libN} comparé à ${precedent ? libN1 : 'l’exercice précédent (aucun exercice antérieur)'} — tirés de la balance, mis à jour à chaque écriture.`}>
-        <ExerciceFilter exercices={exercices ?? []} selectionne={courant?.id} />
-        <ExportButtons titre="Compte de résultat comparatif" sousTitre={`${ctx.organisationNom} — ${libN} / ${libN1}`} fichier={`compte-resultat-${libN}`}
-          colonnes={['Compte', 'Libellé', 'Nature', libN, libN1]}
+      <PageHeader titre={t('États financiers et ratios')} description={`${t('Exercice')} ${libN} ${t('comparé à')} ${precedent ? libN1 : t('l’exercice précédent (aucun exercice antérieur)')} — ${t('tirés de la balance, mis à jour à chaque écriture.')}`}>
+        <ExerciceFilter libelleAria={t('Exercice')} libelleBouton={t('Afficher')} exercices={exercices ?? []} selectionne={courant?.id} />
+        <ExportButtons titre={t('Compte de résultat comparatif')} sousTitre={`${ctx.organisationNom} — ${libN} / ${libN1}`} fichier={`compte-resultat-${libN}`}
+          colonnes={[t('Compte'), t('Libellé'), t('Nature'), libN, libN1]}
           lignes={[
-            ...produitsCR.map((c) => [c.numero, c.libelle, 'Produit', c.n, c.n1 ?? '']),
-            ...chargesCR.map((c) => [c.numero, c.libelle, 'Charge', c.n, c.n1 ?? '']),
-            ['', 'Résultat de l’exercice', '', N.resultat, N1 ? N1.resultat : ''],
+            ...produitsCR.map((c) => [c.numero, c.libelle, t('Produit'), c.n, c.n1 ?? '']),
+            ...chargesCR.map((c) => [c.numero, c.libelle, t('Charge'), c.n, c.n1 ?? '']),
+            ['', t('Résultat de l’exercice'), '', N.resultat, N1 ? N1.resultat : ''],
           ]} />
-        <ExportButtons titre="Bilan comparatif" sousTitre={`${ctx.organisationNom} — ${libN} / ${libN1}`} fichier={`bilan-${libN}`}
-          colonnes={['Poste', libN, libN1]}
+        <ExportButtons titre={t('Bilan comparatif')} sousTitre={`${ctx.organisationNom} — ${libN} / ${libN1}`} fichier={`bilan-${libN}`}
+          colonnes={[t('Poste'), libN, libN1]}
           lignes={[
-            ...actifRows.map(([l, n, n1]) => [`Actif — ${l}`, n, n1 ?? '']),
-            ['Total actif', N.actif, N1 ? N1.actif : ''],
-            ...passifRows.map(([l, n, n1]) => [`Passif — ${l}`, n, n1 ?? '']),
-            ['Total passif', N.passif, N1 ? N1.passif : ''],
+            ...actifRows.map(([l, n, n1]) => [`${t('Actif')} — ${t(l)}`, n, n1 ?? '']),
+            [t('Total actif'), N.actif, N1 ? N1.actif : ''],
+            ...passifRows.map(([l, n, n1]) => [`${t('Passif')} — ${t(l)}`, n, n1 ?? '']),
+            [t('Total passif'), N.passif, N1 ? N1.passif : ''],
           ]} />
       </PageHeader>
 
@@ -158,72 +160,72 @@ export default async function EtatsPage({ searchParams }: { searchParams: Promis
           ['Trésorerie nette', N.tresoActif - N.crediteurs5, N1 ? N1.tresoActif - N1.crediteurs5 : undefined],
         ] as [string, number, number | undefined][]).map(([libelle, n, n1]) => (
           <Card key={libelle}>
-            <p className="text-sm text-foreground-muted">{libelle}</p>
+            <p className="text-sm text-foreground-muted">{t(libelle)}</p>
             <p className={`mt-1 text-xl font-semibold tabular-nums ${libelle === 'Résultat' ? (n < 0 ? 'text-danger' : 'text-success') : ''}`}>{fm(n)}</p>
             <p className="text-xs text-foreground-muted">{libN1} : {cell(n1)} ({variation(n, n1)})</p>
           </Card>
         ))}
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Bilan simplifié comparatif</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Bilan simplifié comparatif')}</h2>
       <div className="mb-6 grid gap-4 xl:grid-cols-2">
         <TableWrap>
-          <thead><tr><th className={th}>Actif</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={`${th} text-right`}>Var.</th></tr></thead>
+          <thead><tr><th className={th}>{t('Actif')}</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={`${th} text-right`}>{t('Var.')}</th></tr></thead>
           <tbody>
             {actifRows.map(([l, n, n1]) => (
-              <tr key={l}><td className={td}>{l}</td><td className={`${td} text-right tabular-nums`}>{fm(n)}</td><td className={`${td} text-right tabular-nums text-foreground-muted`}>{cell(n1)}</td><td className={`${td} text-right`}>{variation(n, n1)}</td></tr>
+              <tr key={l}><td className={td}>{t(l)}</td><td className={`${td} text-right tabular-nums`}>{fm(n)}</td><td className={`${td} text-right tabular-nums text-foreground-muted`}>{cell(n1)}</td><td className={`${td} text-right`}>{variation(n, n1)}</td></tr>
             ))}
-            <tr className="font-semibold"><td className={td}>Total actif</td><td className={`${td} text-right tabular-nums`}>{fm(N.actif)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.actif)}</td><td className={`${td} text-right`}>{variation(N.actif, N1?.actif)}</td></tr>
+            <tr className="font-semibold"><td className={td}>{t('Total actif')}</td><td className={`${td} text-right tabular-nums`}>{fm(N.actif)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.actif)}</td><td className={`${td} text-right`}>{variation(N.actif, N1?.actif)}</td></tr>
           </tbody>
         </TableWrap>
         <TableWrap>
-          <thead><tr><th className={th}>Passif</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={`${th} text-right`}>Var.</th></tr></thead>
+          <thead><tr><th className={th}>{t('Passif')}</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={`${th} text-right`}>{t('Var.')}</th></tr></thead>
           <tbody>
             {passifRows.map(([l, n, n1]) => (
-              <tr key={l}><td className={td}>{l}</td><td className={`${td} text-right tabular-nums`}>{fm(n)}</td><td className={`${td} text-right tabular-nums text-foreground-muted`}>{cell(n1)}</td><td className={`${td} text-right`}>{variation(n, n1)}</td></tr>
+              <tr key={l}><td className={td}>{t(l)}</td><td className={`${td} text-right tabular-nums`}>{fm(n)}</td><td className={`${td} text-right tabular-nums text-foreground-muted`}>{cell(n1)}</td><td className={`${td} text-right`}>{variation(n, n1)}</td></tr>
             ))}
-            <tr className="font-semibold"><td className={td}>Total passif</td><td className={`${td} text-right tabular-nums`}>{fm(N.passif)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.passif)}</td><td className={`${td} text-right`}>{variation(N.passif, N1?.passif)}</td></tr>
+            <tr className="font-semibold"><td className={td}>{t('Total passif')}</td><td className={`${td} text-right tabular-nums`}>{fm(N.passif)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.passif)}</td><td className={`${td} text-right`}>{variation(N.passif, N1?.passif)}</td></tr>
           </tbody>
         </TableWrap>
       </div>
       {(Math.abs(N.actif - N.passif) > 0.5 || (N1 && Math.abs(N1.actif - N1.passif) > 0.5)) && (
         <p className="mb-6 text-sm text-warning">
-          Écart actif / passif ({fm(N.actif - N.passif)}) : vérifiez les comptes d&apos;une classe non reprise au bilan (ex. classe 8 ou à-nouveaux hors résultat).
+          {t('Écart actif / passif ({e}) : vérifiez les comptes d’une classe non reprise au bilan (ex. classe 8 ou à-nouveaux hors résultat).', { e: fm(N.actif - N.passif) })}
         </p>
       )}
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Ratios</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Ratios')}</h2>
       <div className="mb-6">
         <TableWrap>
-          <thead><tr><th className={th}>Famille</th><th className={th}>Ratio</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={th}>Calcul</th></tr></thead>
+          <thead><tr><th className={th}>{t('Famille')}</th><th className={th}>{t('Ratio')}</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={th}>{t('Calcul')}</th></tr></thead>
           <tbody>
             {ratios.map(([famille, nom, valeur, valeurN1, calcul]) => (
               <tr key={nom}>
-                <td className={td}>{famille}</td><td className={td}>{nom}</td>
+                <td className={td}>{t(famille)}</td><td className={td}>{t(nom)}</td>
                 <td className={`${td} text-right font-medium tabular-nums`}>{valeur}</td>
                 <td className={`${td} text-right tabular-nums text-foreground-muted`}>{valeurN1 ?? '—'}</td>
-                <td className={`${td} text-xs text-foreground-muted`}>{calcul}</td>
+                <td className={`${td} text-xs text-foreground-muted`}>{t(calcul)}</td>
               </tr>
             ))}
           </tbody>
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Compte de résultat comparatif</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Compte de résultat comparatif')}</h2>
       <TableWrap>
-        <thead><tr><th className={th}>Compte</th><th className={th}>Libellé</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={`${th} text-right`}>Var.</th></tr></thead>
+        <thead><tr><th className={th}>{t('Compte')}</th><th className={th}>{t('Libellé')}</th><th className={`${th} text-right`}>{libN}</th><th className={`${th} text-right`}>{enteteN1}</th><th className={`${th} text-right`}>{t('Var.')}</th></tr></thead>
         <tbody>
-          <tr><td className={`${td} bg-sidebar font-semibold`} colSpan={5}>Produits</td></tr>
+          <tr><td className={`${td} bg-sidebar font-semibold`} colSpan={5}>{t('Produits')}</td></tr>
           {produitsCR.map((c) => (
             <tr key={c.numero}><td className={td}>{c.numero}</td><td className={td}>{c.libelle}</td><td className={`${td} text-right tabular-nums`}>{fm(c.n)}</td><td className={`${td} text-right tabular-nums text-foreground-muted`}>{cell(c.n1)}</td><td className={`${td} text-right`}>{variation(c.n, c.n1)}</td></tr>
           ))}
-          <tr className="font-semibold"><td className={td} colSpan={2}>Total produits</td><td className={`${td} text-right tabular-nums`}>{fm(N.produits + N.autres)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1 ? N1.produits + N1.autres : undefined)}</td><td className={`${td} text-right`}>{variation(N.produits + N.autres, N1 ? N1.produits + N1.autres : undefined)}</td></tr>
-          <tr><td className={`${td} bg-sidebar font-semibold`} colSpan={5}>Charges</td></tr>
+          <tr className="font-semibold"><td className={td} colSpan={2}>{t('Total produits')}</td><td className={`${td} text-right tabular-nums`}>{fm(N.produits + N.autres)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1 ? N1.produits + N1.autres : undefined)}</td><td className={`${td} text-right`}>{variation(N.produits + N.autres, N1 ? N1.produits + N1.autres : undefined)}</td></tr>
+          <tr><td className={`${td} bg-sidebar font-semibold`} colSpan={5}>{t('Charges')}</td></tr>
           {chargesCR.map((c) => (
             <tr key={c.numero}><td className={td}>{c.numero}</td><td className={td}>{c.libelle}</td><td className={`${td} text-right tabular-nums`}>{fm(c.n)}</td><td className={`${td} text-right tabular-nums text-foreground-muted`}>{cell(c.n1)}</td><td className={`${td} text-right`}>{variation(c.n, c.n1)}</td></tr>
           ))}
-          <tr className="font-semibold"><td className={td} colSpan={2}>Total charges</td><td className={`${td} text-right tabular-nums`}>{fm(N.charges)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.charges)}</td><td className={`${td} text-right`}>{variation(N.charges, N1?.charges)}</td></tr>
-          <tr className="font-semibold"><td className={td} colSpan={2}>Résultat de l&apos;exercice</td><td className={`${td} text-right tabular-nums ${N.resultat < 0 ? 'text-danger' : ''}`}>{fm(N.resultat)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.resultat)}</td><td className={`${td} text-right`}>{variation(N.resultat, N1?.resultat)}</td></tr>
+          <tr className="font-semibold"><td className={td} colSpan={2}>{t('Total charges')}</td><td className={`${td} text-right tabular-nums`}>{fm(N.charges)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.charges)}</td><td className={`${td} text-right`}>{variation(N.charges, N1?.charges)}</td></tr>
+          <tr className="font-semibold"><td className={td} colSpan={2}>{t('Résultat de l’exercice')}</td><td className={`${td} text-right tabular-nums ${N.resultat < 0 ? 'text-danger' : ''}`}>{fm(N.resultat)}</td><td className={`${td} text-right tabular-nums`}>{cell(N1?.resultat)}</td><td className={`${td} text-right`}>{variation(N.resultat, N1?.resultat)}</td></tr>
         </tbody>
       </TableWrap>
     </>

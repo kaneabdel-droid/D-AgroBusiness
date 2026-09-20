@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
@@ -22,6 +23,7 @@ export default async function RelevePage({
   searchParams: Promise<{ tiers?: string; du?: string; au?: string }>
 }) {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const { tiers: tiersId, du, au } = await searchParams
   const supabase = await createClient()
 
@@ -66,74 +68,74 @@ export default async function RelevePage({
   return (
     <>
       <PageHeader
-        titre="Relevé de compte"
-        description="Mouvements d'un tiers (client, producteur ou fournisseur) sur la période choisie, avec solde progressif."
+        titre={t('Relevé de compte')}
+        description={t('Mouvements d’un tiers (client, producteur ou fournisseur) sur la période choisie, avec solde progressif.')}
       />
       <Card className="mb-6">
         <form method="get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5 lg:col-span-2">
-            <Label htmlFor="tiers">Tiers</Label>
+            <Label htmlFor="tiers">{t('Tiers')}</Label>
             <Select id="tiers" name="tiers" defaultValue={tiersId ?? ''} required>
-              <option value="">Choisir…</option>
+              <option value="">{t('Choisir…')}</option>
               {tiersListe?.map((t) => <option key={t.id} value={t.id}>{t.code} — {t.nom}</option>)}
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="du">Du</Label>
+            <Label htmlFor="du">{t('Du')}</Label>
             <Input id="du" name="du" type="date" defaultValue={debut} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="au">Au</Label>
+            <Label htmlFor="au">{t('Au')}</Label>
             <Input id="au" name="au" type="date" defaultValue={fin} />
           </div>
-          <div className="sm:col-span-2 lg:col-span-4"><Button type="submit">Afficher le relevé</Button></div>
+          <div className="sm:col-span-2 lg:col-span-4"><Button type="submit">{t('Afficher le relevé')}</Button></div>
         </form>
       </Card>
 
       {tiers && (
         <>
           <h2 className="mb-2 font-heading text-lg font-semibold">
-            {tiers.code} — {tiers.nom} · du {formatDate(debut)} au {formatDate(fin)}
+            {tiers.code} — {tiers.nom} · {t('du')} {formatDate(debut, ctx.lang)} {t('au')} {formatDate(fin, ctx.lang)}
           </h2>
           <TableWrap>
             <thead>
               <tr>
-                <th className={th}>Date</th>
-                <th className={th}>Pièce</th>
-                <th className={th}>Libellé</th>
-                <th className={`${th} text-right`}>Débit</th>
-                <th className={`${th} text-right`}>Crédit</th>
-                <th className={`${th} text-right`}>Solde</th>
+                <th className={th}>{t('Date')}</th>
+                <th className={th}>{t('Pièce')}</th>
+                <th className={th}>{t('Libellé')}</th>
+                <th className={`${th} text-right`}>{t('Débit')}</th>
+                <th className={`${th} text-right`}>{t('Crédit')}</th>
+                <th className={`${th} text-right`}>{t('Solde')}</th>
               </tr>
             </thead>
             <tbody>
               <tr className="italic">
-                <td className={td} colSpan={5}>Report à nouveau (avant le {formatDate(debut)})</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(reportAnterieur, ctx.devise)}</td>
+                <td className={td} colSpan={5}>{t('Report à nouveau (avant le {d})', { d: formatDate(debut, ctx.lang) })}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(reportAnterieur, ctx.devise, ctx.lang)}</td>
               </tr>
               {avecSolde.map(({ l, solde }, i) => {
                 const e = un(l.ecritures)!
                 return (
                   <tr key={i}>
-                    <td className={td}>{formatDate(e.date_ecriture)}</td>
+                    <td className={td}>{formatDate(e.date_ecriture, ctx.lang)}</td>
                     <td className={td}>{un(e.journaux)?.code}-{e.numero}</td>
                     <td className={td}>{l.libelle ?? e.libelle}</td>
-                    <td className={`${td} text-right tabular-nums`}>{Number(l.debit) ? formatMontant(l.debit, ctx.devise) : ''}</td>
-                    <td className={`${td} text-right tabular-nums`}>{Number(l.credit) ? formatMontant(l.credit, ctx.devise) : ''}</td>
-                    <td className={`${td} text-right tabular-nums`}>{formatMontant(solde, ctx.devise)}</td>
+                    <td className={`${td} text-right tabular-nums`}>{Number(l.debit) ? formatMontant(l.debit, ctx.devise, ctx.lang) : ''}</td>
+                    <td className={`${td} text-right tabular-nums`}>{Number(l.credit) ? formatMontant(l.credit, ctx.devise, ctx.lang) : ''}</td>
+                    <td className={`${td} text-right tabular-nums`}>{formatMontant(solde, ctx.devise, ctx.lang)}</td>
                   </tr>
                 )
               })}
               <tr className="font-semibold">
-                <td className={td} colSpan={3}>Totaux de la période</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(totalDebit, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(totalCredit, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(soldeFinal, ctx.devise)}</td>
+                <td className={td} colSpan={3}>{t('Totaux de la période')}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(totalDebit, ctx.devise, ctx.lang)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(totalCredit, ctx.devise, ctx.lang)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(soldeFinal, ctx.devise, ctx.lang)}</td>
               </tr>
             </tbody>
           </TableWrap>
           <p className="mt-2 text-sm text-foreground-muted">
-            Solde positif : le tiers vous doit ce montant. Solde négatif : vous lui devez ce montant.
+            {t('Solde positif : le tiers vous doit ce montant. Solde négatif : vous lui devez ce montant.')}
           </p>
         </>
       )}

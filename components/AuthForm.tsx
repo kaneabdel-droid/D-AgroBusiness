@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PAYS } from '@/lib/pays'
+import { creerT, type Lang } from '@/lib/i18n'
 import { signIn, signUp } from '@/app/auth/actions'
 
-export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
+export function AuthForm({ mode, lang = 'fr' }: { mode: 'login' | 'signup'; lang?: Lang }) {
+  const t = creerT(lang)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -25,19 +27,19 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
       {mode === 'signup' && (
         <>
           <div className="space-y-1.5">
-            <Label htmlFor="organisation">Nom de l&apos;entreprise</Label>
+            <Label htmlFor="organisation">{t('Nom de l’entreprise')}</Label>
             <Input id="organisation" name="organisation" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="nom_complet">Votre nom complet</Label>
+            <Label htmlFor="nom_complet">{t('Votre nom complet')}</Label>
             <Input id="nom_complet" name="nom_complet" required autoComplete="name" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pays">Pays</Label>
+            <Label htmlFor="pays">{t('Pays')}</Label>
             <Select id="pays" name="pays" defaultValue="SN">
               {PAYS.map((p) => (
                 <option key={p.code} value={p.code}>
-                  {p.nom}
+                  {t(p.nom)}
                 </option>
               ))}
             </Select>
@@ -45,11 +47,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         </>
       )}
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('Email')}</Label>
         <Input id="email" name="email" type="email" required autoComplete="email" />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="password">Mot de passe</Label>
+        <Label htmlFor="password">{t('Mot de passe')}</Label>
         <Input
           id="password"
           name="password"
@@ -68,7 +70,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         </p>
       )}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? 'Patientez…' : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
+        {pending ? t('Patientez…') : mode === 'login' ? t('Se connecter') : t('Créer mon compte')}
       </Button>
     </form>
   )

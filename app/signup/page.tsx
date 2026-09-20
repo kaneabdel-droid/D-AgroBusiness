@@ -1,20 +1,24 @@
 import Link from 'next/link'
 import { AuthForm } from '@/components/AuthForm'
 import { Card } from '@/components/ui/card'
+import { creerT } from '@/lib/i18n'
+import { langueNavigateur } from '@/lib/i18n-server'
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const lang = await langueNavigateur()
+  const t = creerT(lang)
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-10">
       <Card className="w-full max-w-md">
-        <h1 className="font-heading text-2xl font-semibold">Créer votre organisation</h1>
+        <h1 className="font-heading text-2xl font-semibold">{t('Créer votre organisation')}</h1>
         <p className="mb-6 mt-1 text-sm text-foreground-muted">
-          Plan comptable, départements et journaux sont préparés automatiquement selon votre pays.
+          {t('Plan comptable, départements et journaux sont préparés automatiquement selon votre pays.')}
         </p>
-        <AuthForm mode="signup" />
+        <AuthForm mode="signup" lang={lang} />
         <p className="mt-6 text-center text-sm text-foreground-muted">
-          Déjà inscrit ?{' '}
+          {t('Déjà inscrit ?')}{' '}
           <Link href="/login" className="font-medium text-primary underline">
-            Se connecter
+            {t('Se connecter')}
           </Link>
         </p>
       </Card>

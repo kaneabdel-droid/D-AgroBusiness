@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -12,6 +13,7 @@ export default async function VentesPage({
   searchParams: Promise<{ type?: string }>
 }) {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const { type: typeParam } = await searchParams
   const type = typeParam === 'marche' ? 'marche' : 'distribution'
   const supabase = await createClient()
@@ -28,22 +30,22 @@ export default async function VentesPage({
   return (
     <>
       <PageHeader
-        titre={distribution ? 'Distribution aux producteurs' : 'Ventes marché'}
+        titre={distribution ? t('Distribution aux producteurs') : t('Ventes marché')}
         description={
           distribution
-            ? 'Intrants et prestations facturés à crédit ; la créance se règle en nature ou en espèces.'
-            : 'Produits finis et sous-produits vendus à des clients externes.'
+            ? t('Intrants et prestations facturés à crédit ; la créance se règle en nature ou en espèces.')
+            : t('Produits finis et sous-produits vendus à des clients externes.')
         }
       >
         <Button asChild variant="outline">
           <Link href={`/ventes?type=${distribution ? 'marche' : 'distribution'}`}>
-            {distribution ? 'Voir les ventes marché' : 'Voir la distribution'}
+            {distribution ? t('Voir les ventes marché') : t('Voir la distribution')}
           </Link>
         </Button>
         {peutEcrire && (
           <Button asChild>
             <Link href={`/ventes/nouvelle?type=${type}`}>
-              <Plus className="h-4 w-4" aria-hidden /> {distribution ? 'Nouvelle distribution' : 'Nouvelle vente'}
+              <Plus className="h-4 w-4" aria-hidden /> {distribution ? t('Nouvelle distribution') : t('Nouvelle vente')}
             </Link>
           </Button>
         )}
@@ -52,11 +54,11 @@ export default async function VentesPage({
         <thead>
           <tr>
             <th className={th}>N°</th>
-            <th className={th}>Date</th>
-            <th className={th}>{distribution ? 'Producteur' : 'Client'}</th>
-            <th className={th}>Campagne</th>
-            <th className={`${th} text-right`}>HT</th>
-            <th className={`${th} text-right`}>TTC</th>
+            <th className={th}>{t('Date')}</th>
+            <th className={th}>{distribution ? t('Producteur') : t('Client')}</th>
+            <th className={th}>{t('Campagne')}</th>
+            <th className={`${th} text-right`}>{t('HT')}</th>
+            <th className={`${th} text-right`}>{t('TTC')}</th>
           </tr>
         </thead>
         <tbody>
@@ -66,11 +68,11 @@ export default async function VentesPage({
             return (
               <tr key={v.id}>
                 <td className={td}>{v.numero}</td>
-                <td className={td}>{formatDate(v.date_vente)}</td>
+                <td className={td}>{formatDate(v.date_vente, ctx.lang)}</td>
                 <td className={td}>{c?.nom}</td>
                 <td className={td}>{camp?.code ?? '—'}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(v.total_ht, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(v.total_ttc, ctx.devise)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(v.total_ht, ctx.devise, ctx.lang)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(v.total_ttc, ctx.devise, ctx.lang)}</td>
               </tr>
             )
           })}

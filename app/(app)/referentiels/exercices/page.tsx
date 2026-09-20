@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -7,6 +8,7 @@ import { addExercice } from '../actions'
 
 export default async function ExercicesPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: exercices } = await supabase
     .from('exercices_comptables')
@@ -17,36 +19,36 @@ export default async function ExercicesPage() {
   return (
     <>
       <PageHeader
-        titre="Exercices comptables"
-        description="Aucune écriture ne peut être saisie hors d'un exercice ouvert."
+        titre={t('Exercices comptables')}
+        description={t('Aucune écriture ne peut être saisie hors d’un exercice ouvert.')}
       >
         <SimpleCreateForm
-          titre="Nouvel exercice"
+          titre={t('Nouvel exercice')}
           disabled={!peutEcrire}
           action={addExercice}
           champs={[
-            { name: 'libelle', label: 'Libellé', required: true, placeholder: 'ex. Exercice 2026' },
-            { name: 'date_debut', label: 'Début', type: 'date', required: true },
-            { name: 'date_fin', label: 'Fin', type: 'date', required: true },
+            { name: 'libelle', label: t('Libellé'), required: true, placeholder: t('ex. Exercice 2026') },
+            { name: 'date_debut', label: t('Début'), type: 'date', required: true },
+            { name: 'date_fin', label: t('Fin'), type: 'date', required: true },
           ]}
         />
       </PageHeader>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Libellé</th>
-            <th className={th}>Début</th>
-            <th className={th}>Fin</th>
-            <th className={th}>Statut</th>
+            <th className={th}>{t('Libellé')}</th>
+            <th className={th}>{t('Début')}</th>
+            <th className={th}>{t('Fin')}</th>
+            <th className={th}>{t('Statut')}</th>
           </tr>
         </thead>
         <tbody>
           {exercices?.map((e) => (
             <tr key={e.id}>
               <td className={td}>{e.libelle}</td>
-              <td className={td}>{formatDate(e.date_debut)}</td>
-              <td className={td}>{formatDate(e.date_fin)}</td>
-              <td className={td}>{e.statut === 'ouvert' ? 'Ouvert' : 'Clôturé'}</td>
+              <td className={td}>{formatDate(e.date_debut, ctx.lang)}</td>
+              <td className={td}>{formatDate(e.date_fin, ctx.lang)}</td>
+              <td className={td}>{e.statut === 'ouvert' ? t('Ouvert') : t('Clôturé')}</td>
             </tr>
           ))}
         </tbody>

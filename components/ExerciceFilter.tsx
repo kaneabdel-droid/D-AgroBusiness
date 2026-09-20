@@ -5,18 +5,22 @@ import { Button } from '@/components/ui/button'
 export function ExerciceFilter({
   exercices,
   selectionne,
+  libelleAria = 'Exercice',
+  libelleBouton = 'Afficher',
 }: {
   exercices: { id: string; libelle: string }[]
   selectionne: string | undefined
+  libelleAria?: string
+  libelleBouton?: string
 }) {
   return (
     <form className="flex gap-2" method="get">
-      <Select name="exercice" defaultValue={selectionne} aria-label="Exercice">
+      <Select name="exercice" defaultValue={selectionne} aria-label={libelleAria}>
         {exercices.map((e) => (
           <option key={e.id} value={e.id}>{e.libelle}</option>
         ))}
       </Select>
-      <Button type="submit" variant="outline">Afficher</Button>
+      <Button type="submit" variant="outline">{libelleBouton}</Button>
     </form>
   )
 }

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader } from '@/components/ui/card'
 import { DocumentForm } from '@/components/DocumentForm'
@@ -10,6 +11,7 @@ export default async function NouvelleVentePage({
   searchParams: Promise<{ type?: string }>
 }) {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   if (!['admin', 'comptable', 'chef_departement'].includes(ctx.role)) redirect('/ventes')
   const { type } = await searchParams
   const distribution = type !== 'marche'
@@ -18,11 +20,11 @@ export default async function NouvelleVentePage({
   return (
     <>
       <PageHeader
-        titre={distribution ? 'Nouvelle distribution' : 'Nouvelle vente marché'}
+        titre={distribution ? t('Nouvelle distribution') : t('Nouvelle vente marché')}
         description={
           distribution
-            ? 'Facture au producteur : sortie de stock au CUMP et créance sur le producteur.'
-            : 'Facture client : sortie de stock au CUMP et créance client.'
+            ? t('Facture au producteur : sortie de stock au CUMP et créance sur le producteur.')
+            : t('Facture client : sortie de stock au CUMP et créance client.')
         }
       />
       <DocumentForm

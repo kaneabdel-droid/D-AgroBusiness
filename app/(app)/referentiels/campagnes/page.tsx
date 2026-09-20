@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -7,6 +8,7 @@ import { addCampagne } from '../actions'
 
 export default async function CampagnesPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: campagnes } = await supabase
     .from('campagnes')
@@ -17,29 +19,29 @@ export default async function CampagnesPage() {
   return (
     <>
       <PageHeader
-        titre="Campagnes agricoles"
-        description="Troisième axe analytique : une campagne peut chevaucher deux exercices comptables."
+        titre={t('Campagnes agricoles')}
+        description={t('Troisième axe analytique : une campagne peut chevaucher deux exercices comptables.')}
       >
         <SimpleCreateForm
-          titre="Nouvelle campagne"
+          titre={t('Nouvelle campagne')}
           disabled={!peutEcrire}
           action={addCampagne}
           champs={[
-            { name: 'code', label: 'Code', required: true, placeholder: 'ex. HIV-2026' },
-            { name: 'libelle', label: 'Libellé', required: true, placeholder: 'ex. Contre-saison chaude 2026' },
-            { name: 'date_debut', label: 'Début', type: 'date', required: true },
-            { name: 'date_fin', label: 'Fin', type: 'date', required: true },
+            { name: 'code', label: t('Code'), required: true, placeholder: t('ex. HIV-2026') },
+            { name: 'libelle', label: t('Libellé'), required: true, placeholder: t('ex. Contre-saison chaude 2026') },
+            { name: 'date_debut', label: t('Début'), type: 'date', required: true },
+            { name: 'date_fin', label: t('Fin'), type: 'date', required: true },
           ]}
         />
       </PageHeader>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Code</th>
-            <th className={th}>Libellé</th>
-            <th className={th}>Début</th>
-            <th className={th}>Fin</th>
-            <th className={th}>Statut</th>
+            <th className={th}>{t('Code')}</th>
+            <th className={th}>{t('Libellé')}</th>
+            <th className={th}>{t('Début')}</th>
+            <th className={th}>{t('Fin')}</th>
+            <th className={th}>{t('Statut')}</th>
           </tr>
         </thead>
         <tbody>
@@ -47,9 +49,9 @@ export default async function CampagnesPage() {
             <tr key={c.id}>
               <td className={td}>{c.code}</td>
               <td className={td}>{c.libelle}</td>
-              <td className={td}>{formatDate(c.date_debut)}</td>
-              <td className={td}>{formatDate(c.date_fin)}</td>
-              <td className={td}>{c.statut === 'ouverte' ? 'Ouverte' : 'Clôturée'}</td>
+              <td className={td}>{formatDate(c.date_debut, ctx.lang)}</td>
+              <td className={td}>{formatDate(c.date_fin, ctx.lang)}</td>
+              <td className={td}>{c.statut === 'ouverte' ? t('Ouverte') : t('Clôturée')}</td>
             </tr>
           ))}
         </tbody>

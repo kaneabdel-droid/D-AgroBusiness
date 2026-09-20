@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Factory } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ type Sortie = { quantite: number; valeur: number; rendement_reel_pct: number; pr
 
 export default async function UsinePage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const o = await chargerOptions()
   const supabase = await createClient()
   const [{ data: nomenclatures }, { data: ordres }] = await Promise.all([
@@ -29,31 +31,31 @@ export default async function UsinePage() {
   const champsSorties: Champ[] = []
   for (let i = 1; i <= 4; i++) {
     champsSorties.push(
-      { name: `produit_${i}`, label: i === 1 ? 'Produit principal' : `Sous-produit / produit ${i}`, type: 'select', required: i === 1, options: finis },
-      { name: `rendement_${i}`, label: `Rendement ${i} (% de la matière)`, type: 'number', step: '0.01', required: i === 1 },
+      { name: `produit_${i}`, label: i === 1 ? t('Produit principal') : t('Sous-produit / produit {i}', { i }), type: 'select', required: i === 1, options: finis },
+      { name: `rendement_${i}`, label: t('Rendement {i} (% de la matière)', { i }), type: 'number', step: '0.01', required: i === 1 },
     )
   }
 
   return (
     <>
       <PageHeader
-        titre="Usine de transformation"
-        description="Matière première → produits finis et sous-produits. La valeur (matière au CUMP + frais imputés) est répartie au prorata de la valeur de marché."
+        titre={t('Usine de transformation')}
+        description={t('Matière première → produits finis et sous-produits. La valeur (matière au CUMP + frais imputés) est répartie au prorata de la valeur de marché.')}
       >
         {peutEcrire && (
           <Button asChild>
-            <Link href="/usine/nouvel-of"><Factory className="h-4 w-4" aria-hidden /> Nouvel ordre de fabrication</Link>
+            <Link href="/usine/nouvel-of"><Factory className="h-4 w-4" aria-hidden /> {t('Nouvel ordre de fabrication')}</Link>
           </Button>
         )}
         <SimpleCreateForm
-          titre="Nouvelle nomenclature"
+          titre={t('Nouvelle nomenclature')}
           disabled={!peutEcrire}
           action={addNomenclature}
           champs={[
-            { name: 'code', label: 'Code', required: true },
-            { name: 'libelle', label: 'Libellé', required: true, placeholder: 'ex. Décorticage du paddy' },
+            { name: 'code', label: t('Code'), required: true },
+            { name: 'libelle', label: t('Libellé'), required: true, placeholder: t('ex. Décorticage du paddy') },
             {
-              name: 'matiere_id', label: 'Matière première', type: 'select', required: true,
+              name: 'matiere_id', label: t('Matière première'), type: 'select', required: true,
               options: o.produits.filter((p) => ['produit_agricole', 'semence', 'intrant'].includes(p.categorie)).map((p) => ({ value: p.id, label: p.label })),
             },
             ...champsSorties,
@@ -61,12 +63,12 @@ export default async function UsinePage() {
         />
       </PageHeader>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Nomenclatures</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Nomenclatures')}</h2>
       <div className="mb-6">
         <TableWrap>
           <thead>
             <tr>
-              <th className={th}>Code</th><th className={th}>Libellé</th><th className={th}>Matière</th><th className={th}>Sorties (rendement prévu)</th>
+              <th className={th}>{t('Code')}</th><th className={th}>{t('Libellé')}</th><th className={th}>{t('Matière')}</th><th className={th}>{t('Sorties (rendement prévu)')}</th>
             </tr>
           </thead>
           <tbody>
@@ -90,17 +92,17 @@ export default async function UsinePage() {
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">Ordres de fabrication</h2>
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Ordres de fabrication')}</h2>
       <TableWrap>
         <thead>
           <tr>
             <th className={th}>N°</th>
-            <th className={th}>Date</th>
-            <th className={`${th} text-right`}>Matière</th>
-            <th className={`${th} text-right`}>Coût matière</th>
-            <th className={`${th} text-right`}>Frais</th>
-            <th className={`${th} text-right`}>Valeur produite</th>
-            <th className={th}>Produits obtenus (quantité · rendement · coût unitaire)</th>
+            <th className={th}>{t('Date')}</th>
+            <th className={`${th} text-right`}>{t('Matière')}</th>
+            <th className={`${th} text-right`}>{t('Coût matière')}</th>
+            <th className={`${th} text-right`}>{t('Frais')}</th>
+            <th className={`${th} text-right`}>{t('Valeur produite')}</th>
+            <th className={th}>{t('Produits obtenus (quantité · rendement · coût unitaire)')}</th>
           </tr>
         </thead>
         <tbody>
@@ -110,17 +112,17 @@ export default async function UsinePage() {
             return (
               <tr key={of.id}>
                 <td className={td}>{of.numero}<span className="block text-xs text-foreground-muted">{nom?.code}</span></td>
-                <td className={td}>{formatDate(of.date_of)}</td>
+                <td className={td}>{formatDate(of.date_of, ctx.lang)}</td>
                 <td className={`${td} text-right tabular-nums`}>{Number(of.quantite_matiere).toLocaleString('fr-FR')} {mat?.unite}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(of.cout_matiere, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(of.frais_imputes, ctx.devise)}</td>
-                <td className={`${td} text-right tabular-nums`}>{formatMontant(of.valeur_totale, ctx.devise)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(of.cout_matiere, ctx.devise, ctx.lang)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(of.frais_imputes, ctx.devise, ctx.lang)}</td>
+                <td className={`${td} text-right tabular-nums`}>{formatMontant(of.valeur_totale, ctx.devise, ctx.lang)}</td>
                 <td className={td}>
                   {(of.of_sorties as unknown as Sortie[]).map((s, i) => {
                     const pr = Array.isArray(s.produits) ? s.produits[0] : s.produits
                     return (
                       <span key={i} className="block">
-                        {pr?.nom} : {Number(s.quantite).toLocaleString('fr-FR')} {pr?.unite} · {Number(s.rendement_reel_pct)} % · {formatMontant(Number(s.valeur) / Number(s.quantite), ctx.devise)}/{pr?.unite}
+                        {pr?.nom} : {Number(s.quantite).toLocaleString('fr-FR')} {pr?.unite} · {Number(s.rendement_reel_pct)} % · {formatMontant(Number(s.valeur) / Number(s.quantite), ctx.devise, ctx.lang)}/{pr?.unite}
                       </span>
                     )
                   })}

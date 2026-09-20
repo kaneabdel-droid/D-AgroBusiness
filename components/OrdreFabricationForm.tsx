@@ -1,12 +1,14 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
+import { LOCALES } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { lancerTransformation } from '@/app/(app)/production/actions'
+import { useT } from '@/components/I18nProvider'
 
 type Opt = { id: string; label: string }
 export type NomenclatureOpt = {
@@ -25,6 +27,7 @@ export function OrdreFabricationForm({
   campagnes: Opt[]
   departementParDefaut: string
 }) {
+  const { t, lang } = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [erreur, setErreur] = useState<string | null>(null)
@@ -81,87 +84,86 @@ export function OrdreFabricationForm({
     <div className="space-y-4">
       <Card className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="date">{t('Date')}</Label>
           <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="space-y-1.5 lg:col-span-2">
-          <Label htmlFor="nom">Nomenclature</Label>
+          <Label htmlFor="nom">{t('Nomenclature')}</Label>
           <Select id="nom" value={nomId} onChange={(e) => { setNomId(e.target.value); setReels({}) }}>
-            <option value="">Choisir…</option>
+            <option value="">{t('Choisir…')}</option>
             {nomenclatures.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="matiere">Quantité de {nom?.matiere ?? 'matière première'}</Label>
+          <Label htmlFor="matiere">{t('Quantité de {m}', { m: nom?.matiere ?? t('matière première') })}</Label>
           <Input id="matiere" type="number" min="0" step="0.001" inputMode="decimal" value={matiere} onChange={(e) => setMatiere(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="src">Magasin matière</Label>
+          <Label htmlFor="src">{t('Magasin matière')}</Label>
           <Select id="src" value={src} onChange={(e) => setSrc(e.target.value)}>
             {magasins.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="dst">Magasin produits finis</Label>
+          <Label htmlFor="dst">{t('Magasin produits finis')}</Label>
           <Select id="dst" value={dst} onChange={(e) => setDst(e.target.value)}>
             {magasins.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="dep">Département</Label>
+          <Label htmlFor="dep">{t('Département')}</Label>
           <Select id="dep" value={dep} onChange={(e) => setDep(e.target.value)}>
             {departements.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="camp">Campagne</Label>
+          <Label htmlFor="camp">{t('Campagne')}</Label>
           <Select id="camp" value={camp} onChange={(e) => setCamp(e.target.value)}>
             <option value="">—</option>
             {campagnes.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="frais">Frais de transformation imputés</Label>
+          <Label htmlFor="frais">{t('Frais de transformation imputés')}</Label>
           <Input id="frais" type="number" min="0" step="0.01" inputMode="decimal" value={frais} onChange={(e) => setFrais(e.target.value)} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="obs">Observation</Label>
+          <Label htmlFor="obs">{t('Observation')}</Label>
           <Input id="obs" value={observation} onChange={(e) => setObservation(e.target.value)} />
         </div>
       </Card>
 
       {nom && (
         <Card>
-          <h2 className="mb-3 font-heading text-lg font-semibold">Produits obtenus</h2>
+          <h2 className="mb-3 font-heading text-lg font-semibold">{t('Produits obtenus')}</h2>
           <div className="space-y-3">
             {lignes.map((l) => (
               <div key={l.produit_id} className="grid items-end gap-3 sm:grid-cols-4">
                 <div className="sm:col-span-2">
                   <p className="text-sm font-medium">
-                    {l.label} {l.principal && <span className="ml-1 rounded bg-sidebar px-1.5 py-0.5 text-xs">principal</span>}
+                    {l.label} {l.principal && <span className="ml-1 rounded bg-sidebar px-1.5 py-0.5 text-xs">{t('principal')}</span>}
                   </p>
-                  <p className="text-xs text-foreground-muted">Rendement prévu {l.rendement} % → {l.prevu.toLocaleString('fr-FR')} {l.unite}</p>
+                  <p className="text-xs text-foreground-muted">{t('Rendement prévu {r} % → {q} {u}', { r: l.rendement, q: l.prevu.toLocaleString(LOCALES[lang]), u: l.unite })}</p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor={`q-${l.produit_id}`}>Quantité réelle ({l.unite})</Label>
+                  <Label htmlFor={`q-${l.produit_id}`}>{t('Quantité réelle ({u})', { u: l.unite })}</Label>
                   <Input id={`q-${l.produit_id}`} type="number" min="0" step="0.001" inputMode="decimal"
                     value={reels[l.produit_id] ?? ''} placeholder={String(l.prevu)}
                     onChange={(e) => setReels((r) => ({ ...r, [l.produit_id]: e.target.value }))} />
                 </div>
-                <p className="pb-2 text-sm tabular-nums">Rendement réel : {l.rendementReel.toFixed(1)} %</p>
+                <p className="pb-2 text-sm tabular-nums">{t('Rendement réel : {r} %', { r: l.rendementReel.toFixed(1) })}</p>
               </div>
             ))}
           </div>
           <p className="mt-3 text-sm text-foreground-muted">
-            Total obtenu : {totalSorties.toLocaleString('fr-FR')} pour {qte.toLocaleString('fr-FR')} de matière
-            (écart / pertes : {(qte - totalSorties).toLocaleString('fr-FR')}, si les unités sont identiques).
+            {t('Total obtenu : {a} pour {b} de matière (écart / pertes : {c}, si les unités sont identiques).', { a: totalSorties.toLocaleString(LOCALES[lang]), b: qte.toLocaleString(LOCALES[lang]), c: (qte - totalSorties).toLocaleString(LOCALES[lang]) })}
           </p>
         </Card>
       )}
 
       <div className="flex items-center gap-3">
         <Button type="button" onClick={envoyer} disabled={pending || !nomId || qte <= 0 || !dep}>
-          {pending ? 'Enregistrement…' : 'Lancer la transformation'}
+          {pending ? t('Enregistrement…') : t('Lancer la transformation')}
         </Button>
         {erreur && <p role="alert" className="text-sm text-danger">{erreur}</p>}
       </div>

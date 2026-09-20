@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addCompte } from '../../referentiels/actions'
@@ -11,6 +12,7 @@ const CLASSES: Record<number, string> = {
 
 export default async function PlanComptablePage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: comptes } = await supabase
     .from('comptes_comptables')
@@ -22,25 +24,25 @@ export default async function PlanComptablePage() {
   return (
     <>
       <PageHeader
-        titre="Plan comptable"
-        description={`Référentiel ${ctx.referentiel}. Les comptes de classe 6 et 7 exigent une imputation par département.`}
+        titre={t('Plan comptable')}
+        description={`${t('Référentiel')} ${ctx.referentiel}. ${t('Les comptes de classe 6 et 7 exigent une imputation par département.')}`}
       >
         <SimpleCreateForm
-          titre="Nouveau compte"
+          titre={t('Nouveau compte')}
           disabled={!peutEcrire}
           action={addCompte}
           champs={[
-            { name: 'numero', label: 'Numéro', required: true, placeholder: 'ex. 60211' },
-            { name: 'libelle', label: 'Libellé', required: true },
+            { name: 'numero', label: t('Numéro'), required: true, placeholder: t('ex. 60211') },
+            { name: 'libelle', label: t('Libellé'), required: true },
           ]}
         />
       </PageHeader>
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Numéro</th>
-            <th className={th}>Libellé</th>
-            <th className={th}>Classe</th>
+            <th className={th}>{t('Numéro')}</th>
+            <th className={th}>{t('Libellé')}</th>
+            <th className={th}>{t('Classe')}</th>
           </tr>
         </thead>
         <tbody>
@@ -48,7 +50,7 @@ export default async function PlanComptablePage() {
             <tr key={c.id}>
               <td className={td}>{c.numero}</td>
               <td className={td}>{c.libelle}</td>
-              <td className={td}>{c.classe} — {CLASSES[c.classe] ?? ''}</td>
+              <td className={td}>{c.classe} — {t(CLASSES[c.classe] ?? '')}</td>
             </tr>
           ))}
         </tbody>

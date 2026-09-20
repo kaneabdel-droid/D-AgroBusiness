@@ -1,11 +1,13 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addMagasin } from '../../operations/actions'
 
 export default async function MagasinsPage() {
   const ctx = await getContexte()
+  const t = creerT(ctx.lang)
   const supabase = await createClient()
   const [{ data: magasins }, { data: departements }] = await Promise.all([
     supabase.from('magasins').select('*, departements(nom)').order('code'),
@@ -15,17 +17,17 @@ export default async function MagasinsPage() {
 
   return (
     <>
-      <PageHeader titre="Magasins" description="Lieux de stockage des intrants, produits agricoles et produits finis.">
+      <PageHeader titre={t('Magasins')} description={t('Lieux de stockage des intrants, produits agricoles et produits finis.')}>
         <SimpleCreateForm
-          titre="Nouveau magasin"
+          titre={t('Nouveau magasin')}
           disabled={!peutEcrire}
           action={addMagasin}
           champs={[
-            { name: 'code', label: 'Code', required: true },
-            { name: 'nom', label: 'Nom', required: true },
+            { name: 'code', label: t('Code'), required: true },
+            { name: 'nom', label: t('Nom'), required: true },
             {
               name: 'departement_id',
-              label: 'Département',
+              label: t('Département'),
               type: 'select',
               options: departements?.map((d) => ({ value: d.id, label: d.nom })),
             },
@@ -35,9 +37,9 @@ export default async function MagasinsPage() {
       <TableWrap>
         <thead>
           <tr>
-            <th className={th}>Code</th>
-            <th className={th}>Nom</th>
-            <th className={th}>Département</th>
+            <th className={th}>{t('Code')}</th>
+            <th className={th}>{t('Nom')}</th>
+            <th className={th}>{t('Département')}</th>
           </tr>
         </thead>
         <tbody>
