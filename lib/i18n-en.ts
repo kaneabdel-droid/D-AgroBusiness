@@ -1130,4 +1130,9 @@ export const EN: Record<string, string> = {
   "Lot bloqué : expédition impossible": "Lot blocked: shipment impossible",
   "Lot périmé : expédition impossible": "Lot expired: shipment impossible",
   "Quantité expédiée supérieure à la quantité du lot (§)": "Shipped quantity exceeds the lot quantity (§)",
+  "Ventes à rattacher à ce lot": "Sales to link to this lot",
+  "Ventes de ce produit dont la sortie n’est pas encore rattachée à un lot. Vérifiez la quantité puis confirmez : l’expédition est alors enregistrée avec le client et la date de la vente.": "Sales of this product whose output is not yet linked to a lot. Check the quantity then confirm: the shipment is then recorded with the customer and the date of the sale.",
+  "Vente": "Sale",
+  "Reste à rattacher": "Left to link",
+  "Confirmer la sortie du lot": "Confirm shipment from the lot",
 }

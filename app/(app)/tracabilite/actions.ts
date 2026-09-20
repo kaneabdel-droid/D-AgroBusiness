@@ -73,3 +73,8 @@ export async function lierLot(lotId: string, sens: 'amont' | 'aval', formData: F
 export async function changerStatut(lotId: string, statut: 'libere' | 'bloque'): Promise<Resultat> {
   return rpc('changer_statut_lot', { lot_id: lotId, statut })
 }
+
+/** Confirme qu'une quantité d'une vente est bien sortie de ce lot (date et client repris de la vente). */
+export async function confirmerVente(lotId: string, venteId: string, tiersId: string, date: string, quantite: number): Promise<Resultat> {
+  return rpc('enregistrer_expedition', { lot_id: lotId, vente_id: venteId, tiers_id: tiersId, date, quantite })
+}

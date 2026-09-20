@@ -1108,4 +1108,9 @@ export const AR: Record<string, string> = {
   "Lot bloqué : expédition impossible": "الدفعة محظورة: الشحن غير ممكن",
   "Lot périmé : expédition impossible": "الدفعة منتهية الصلاحية: الشحن غير ممكن",
   "Quantité expédiée supérieure à la quantité du lot (§)": "الكمية المشحونة تتجاوز كمية الدفعة (§)",
+  "Ventes à rattacher à ce lot": "المبيعات المراد ربطها بهذه الدفعة",
+  "Ventes de ce produit dont la sortie n’est pas encore rattachée à un lot. Vérifiez la quantité puis confirmez : l’expédition est alors enregistrée avec le client et la date de la vente.": "مبيعات هذا المنتج التي لم يُربط خروجها بدفعة بعد. تحقق من الكمية ثم أكّد: يُسجَّل الشحن عندئذ مع العميل وتاريخ البيع.",
+  "Vente": "البيع",
+  "Reste à rattacher": "المتبقي للربط",
+  "Confirmer la sortie du lot": "تأكيد خروج الدفعة",
 }

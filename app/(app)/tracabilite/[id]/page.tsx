@@ -9,7 +9,8 @@ import { COULEURS_STATUT, ORIGINES_LOT, STATUTS_LOT } from '@/lib/tracabilite'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { ActionButton } from '@/components/ActionButton'
-import { ajouterControle, ajouterExpedition, changerStatut, lierLot } from '../actions'
+import { ConfirmerVente } from '@/components/ConfirmerVente'
+import { ajouterControle, ajouterExpedition, changerStatut, confirmerVente, lierLot } from '../actions'
 
 type Lien = { lot_id: string; niveau: number }
 
@@ -41,6 +42,22 @@ export default async function LotPage({ params }: { params: Promise<{ id: string
   ])
   const parId = new Map((lotsLies ?? []).map((l) => [l.id, l]))
   const numeroDe = (lotId: string) => (lotId === id ? lot.numero : parId.get(lotId)?.numero ?? '')
+
+  // Ventes du même produit à rattacher à ce lot : la quantité déjà rattachée (à ce lot ou à un autre) est déduite
+  const [{ data: lignesVente }, { data: dejaRattache }] = await Promise.all([
+    supabase.from('ventes_lignes').select('vente_id, quantite, ventes(numero, date_vente, client_id, tiers:client_id(code, nom))').eq('produit_id', lot.produit_id).order('created_at', { ascending: false }).limit(100),
+    supabase.from('lot_expeditions').select('vente_id, quantite, lots!inner(produit_id)').eq('lots.produit_id', lot.produit_id).not('vente_id', 'is', null),
+  ])
+  const rattache = new Map<string, number>()
+  for (const r of dejaRattache ?? []) rattache.set(r.vente_id as string, (rattache.get(r.vente_id as string) ?? 0) + Number(r.quantite))
+  const resteLot = Number(lot.quantite_initiale) - Number(lot.quantite_expediee)
+  const propositions = (lignesVente ?? [])
+    .map((l) => {
+      const v = (Array.isArray(l.ventes) ? l.ventes[0] : l.ventes) as { numero: string; date_vente: string; client_id: string; tiers: unknown } | null
+      const reste = Number(l.quantite) - (rattache.get(l.vente_id) ?? 0)
+      return { l, v, reste: Math.min(reste, resteLot) }
+    })
+    .filter((x) => x.v && x.reste > 0)
 
   const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
   const aujourdhui = new Date().toISOString().slice(0, 10)
@@ -180,6 +197,31 @@ export default async function LotPage({ params }: { params: Promise<{ id: string
           </tbody>
         </TableWrap>
       </div>
+
+      {peutEcrire && lot.statut !== 'bloque' && propositions.length > 0 && (
+        <>
+          <h2 className="mb-2 font-heading text-lg font-semibold">{t('Ventes à rattacher à ce lot')}</h2>
+          <p className="mb-2 text-sm text-foreground-muted">{t('Ventes de ce produit dont la sortie n’est pas encore rattachée à un lot. Vérifiez la quantité puis confirmez : l’expédition est alors enregistrée avec le client et la date de la vente.')}</p>
+          <div className="mb-6">
+            <TableWrap>
+              <thead>
+                <tr><th className={th}>{t('Vente')}</th><th className={th}>{t('Date')}</th><th className={th}>{t('Client')}</th><th className={`${th} text-right`}>{t('Reste à rattacher')}</th><th className={th}></th></tr>
+              </thead>
+              <tbody>
+                {propositions.map(({ l, v, reste }) => (
+                  <tr key={l.vente_id + String(l.quantite)}>
+                    <td className={td}>{v!.numero}</td>
+                    <td className={td}>{formatDate(v!.date_vente, ctx.lang)}</td>
+                    <td className={td}>{nomTiers(v!.tiers)}</td>
+                    <td className={`${td} text-right tabular-nums`}>{num(reste)} {lot.unite}</td>
+                    <td className={td}><ConfirmerVente maxQuantite={reste} action={confirmerVente.bind(null, id, l.vente_id, v!.client_id, v!.date_vente)} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+          </div>
+        </>
+      )}
 
       <h2 className="mb-2 font-heading text-lg font-semibold">{t('Rappel de lot : destinataires concernés')}</h2>
       <p className="mb-2 text-sm text-foreground-muted">{t('Expéditions de ce lot et de tous les lots produits à partir de lui.')}</p>
