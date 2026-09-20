@@ -27,8 +27,8 @@ export function AuthForm({ mode, lang = 'fr' }: { mode: 'login' | 'signup'; lang
       {mode === 'signup' && (
         <>
           <div className="space-y-1.5">
-            <Label htmlFor="organisation">{t('Nom de l’entreprise')}</Label>
-            <Input id="organisation" name="organisation" required />
+            <Label htmlFor="organisation">{t('Nom de l’entreprise (laisser vide si vous avez été invité)')}</Label>
+            <Input id="organisation" name="organisation" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="nom_complet">{t('Votre nom complet')}</Label>

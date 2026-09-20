@@ -22,6 +22,8 @@ import {
   Factory,
   ShieldCheck,
   TrendingUp,
+  ScrollText,
+  UserCog,
   Wheat,
   ClipboardCheck,
   Receipt,
@@ -119,6 +121,13 @@ const NAV = [
       { href: '/pilotage/campagnes', label: 'Bilans de campagne', icon: Flag },
       { href: '/pilotage/rapport-mensuel', label: 'Rapport mensuel', icon: CalendarDays },
       { href: '/pilotage/tva', label: 'TVA', icon: Percent },
+    ],
+  },
+  {
+    titre: 'Administration',
+    items: [
+      { href: '/administration/equipe', label: 'Équipe', icon: UserCog },
+      { href: '/administration/audit', label: 'Journal d’audit', icon: ScrollText },
     ],
   },
   {

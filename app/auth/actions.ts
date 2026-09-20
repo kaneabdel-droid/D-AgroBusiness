@@ -23,15 +23,21 @@ export async function signUp(formData: FormData) {
   const pays = String(formData.get('pays') ?? 'SN')
   const password = String(formData.get('password') ?? '')
 
-  if (!organisation || !nomComplet) return { error: t('Tous les champs sont obligatoires.') }
+  const email = String(formData.get('email') ?? '').trim()
+  if (!nomComplet) return { error: t('Tous les champs sont obligatoires.') }
   if (password.length < 8) return { error: t('Le mot de passe doit contenir au moins 8 caractères.') }
 
   const supabase = await createClient()
+  // sans nom d'entreprise, la personne rejoint l'organisation qui l'a invitée : une invitation doit l'attendre
+  if (!organisation) {
+    const { data: invitee } = await supabase.rpc('invitation_en_attente', { p_email: email })
+    if (!invitee) return { error: t('Aucune invitation en attente pour cette adresse : indiquez le nom de votre entreprise pour créer un compte.') }
+  }
   const { data, error } = await supabase.auth.signUp({
-    email: String(formData.get('email') ?? '').trim(),
+    email,
     password,
     options: {
-      data: { organisation_nom: organisation, nom_complet: nomComplet, pays },
+      data: organisation ? { organisation_nom: organisation, nom_complet: nomComplet, pays } : { nom_complet: nomComplet },
     },
   })
   if (error) return { error: error.message }
