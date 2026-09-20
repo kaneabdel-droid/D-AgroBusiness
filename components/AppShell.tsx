@@ -20,6 +20,7 @@ import {
   HandCoins,
   Tractor,
   Factory,
+  ShieldCheck,
   Wheat,
   ClipboardCheck,
   Receipt,
@@ -86,6 +87,7 @@ const NAV = [
     items: [
       { href: '/production', label: 'Production agricole', icon: Wheat },
       { href: '/usine', label: 'Usine de transformation', icon: Factory },
+      { href: '/tracabilite', label: 'Traçabilité et qualité', icon: ShieldCheck },
     ],
   },
   {

@@ -39,7 +39,7 @@ const AR = dictionnaire('lib/i18n-ar.ts')
 const requis = new Map() // clé -> origine
 const ajouter = (texte, origine) => {
   const cle = texte.replace(/\\'/g, "'").trim()
-  if (!cle || cle.startsWith('/') || !/\p{L}{2,}/u.test(cle)) return   // les chemins de navigation ne sont pas des textes
+  if (!cle || cle.startsWith('/') || /^text-\w+$/.test(cle) ||!/\p{L}{2,}/u.test(cle)) return   // les chemins de navigation ne sont pas des textes
   if (!requis.has(cle)) requis.set(cle, origine)
 }
 

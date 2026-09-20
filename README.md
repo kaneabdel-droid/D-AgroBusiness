@@ -32,6 +32,7 @@ npm run typecheck  # tsc --noEmit
 - **Phase 2** : emprunts, crédit de campagne, fonds de commercialisation, crédit-bail, subventions d'investissement (reprise au taux de financement), parc matériel et amortissements.
 - **Phase 3** : production par secteur × campagne (coût analytique, rendement), usine de transformation (nomenclatures, ordres de fabrication, répartition matière + frais).
 - **Phase 4** : personnel, contrats, pointage, congés, paie paramétrable avec verrou de validation.
+- **Traçabilité et qualité** (migration 27) : lots créés automatiquement par chaque récolte et chaque fabrication (ou à la main pour les achats), filiation matière → produit fini, contrôles qualité avec blocage automatique d’un lot non conforme, expéditions refusées pour un lot bloqué ou périmé, rappel de lot (clients touchés en aval).
 
 ## Paie : impôt et TRIMF calculés automatiquement
 
