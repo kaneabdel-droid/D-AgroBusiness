@@ -58,3 +58,18 @@ Un administrateur doit valider le paramétrage avant tout calcul de paie ; toute
 Tout texte de l'interface, message d'erreur ou libellé doit exister en français, en anglais et en arabe. Le français sert de clé : `t('Texte')` côté serveur (`creerT(ctx.lang)`) ou `useT()` côté client, avec les traductions dans `lib/i18n-en.ts` et `lib/i18n-ar.ts`.
 
 `npm run i18n:check` (exécuté aussi automatiquement avant `npm run build`) recense tous les textes du code et des migrations et échoue s'il en manque un dans l'une des deux langues, si un marqueur `{nom}` ou `§` n'est pas conservé, si une traduction arabe ne contient pas d'arabe, ou si une clé est en double. Option `-- --orphelines` : liste les clés de dictionnaire devenues inutiles.
+
+## Abonnements et paiements
+
+Deux niveaux : **Standard** (10 000 F CFA / mois) et **Premium** (12 500 F CFA / mois). Le niveau Standard n'a pas accès aux ressources humaines (personnel, pointage, congés, paie, bulletins) : menu masqué, pages fermées et tables protégées dans la base (migration 31). Un mois seul est au prix plein ; à partir de 2 mois payés d'un coup, la remise est de 1 % par mois payé (durées proposées : 1, 3, 6 et 12 mois).
+
+| Durée | Standard | Premium |
+|---|---|---|
+| 1 mois | 10 000 | 12 500 |
+| 3 mois (−3 %) | 29 100 | 36 375 |
+| 6 mois (−6 %) | 56 400 | 70 500 |
+| 12 mois (−12 %) | 105 600 | 132 000 |
+
+Chaque organisation démarre par 7 jours d'essai avec l'accès Premium ; ensuite l'accès est fermé (redirection vers la page Abonnement) tant qu'aucun paiement n'a abouti. Un paiement prolonge l'abonnement à partir de son échéance ; le niveau ne change qu'à l'échéance.
+
+Prestataires (un compte plateforme par prestataire, variables dans `.env.example`) : **Bictorys** (Wave, Orange Money), **Moneroo** (carte bancaire), **Chariow** (Mobile Money et carte). Chariow débite le prix d'un produit préconfiguré : créer 8 produits dans la boutique Chariow aux montants ci-dessus et les déclarer dans `CHARIOW_PRODUITS` (`{"10000":"prod_…", …}`). Webhooks à déclarer chez chaque prestataire : `/api/webhooks/bictorys`, `/api/webhooks/moneroo`, `/api/webhooks/chariow?secret=<CHARIOW_WEBHOOK_SECRET>`. Un cron quotidien (`vercel.json`, `CRON_SECRET`) re-vérifie les paiements Chariow en attente. Aucun paiement n'est crédité sur la foi du seul webhook Chariow : le statut est relu auprès du prestataire.

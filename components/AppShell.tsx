@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   TrendingUp,
   ScrollText,
+  CreditCard,
   UserCog,
   Wheat,
   ClipboardCheck,
@@ -128,6 +129,7 @@ const NAV = [
     items: [
       { href: '/administration/equipe', label: 'Équipe', icon: UserCog },
       { href: '/administration/audit', label: 'Journal d’audit', icon: ScrollText },
+      { href: '/abonnement', label: 'Abonnement', icon: CreditCard },
     ],
   },
   {
@@ -147,11 +149,13 @@ export function AppShell({
   organisation,
   utilisateur,
   role,
+  accesRh,
   children,
 }: {
   organisation: string
   utilisateur: string
   role: string
+  accesRh: boolean
   children: React.ReactNode
 }) {
   const { t, lang } = useT()
@@ -161,7 +165,7 @@ export function AppShell({
 
   const nav = (
     <nav className="flex-1 space-y-6 overflow-y-auto p-4" aria-label={t('Navigation principale')}>
-      {NAV.map((groupe) => (
+      {NAV.filter((groupe) => accesRh || groupe.titre !== 'Personnel & paie').map((groupe) => (
         <div key={groupe.titre}>
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
             {t(groupe.titre)}

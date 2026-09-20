@@ -3,6 +3,7 @@ import { I18nProvider } from '@/components/I18nProvider'
 import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { ROLES } from '@/lib/pays'
+import { BandeauAbonnement } from '@/components/BandeauAbonnement'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getContexte()
@@ -13,7 +14,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         organisation={ctx.organisationNom}
         utilisateur={ctx.nomComplet ?? ctx.email ?? t('Utilisateur')}
         role={t(ROLES[ctx.role] ?? ctx.role)}
+        accesRh={ctx.accesRh}
       >
+        <BandeauAbonnement etat={ctx.abonnement} lang={ctx.lang} />
         {children}
       </AppShell>
     </I18nProvider>
