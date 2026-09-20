@@ -21,6 +21,7 @@ import {
   Tractor,
   Factory,
   ShieldCheck,
+  TrendingUp,
   Wheat,
   ClipboardCheck,
   Receipt,
@@ -81,6 +82,7 @@ const NAV = [
       { href: '/remboursements-nature', label: 'Remboursements en nature', icon: Semis },
       { href: '/tresorerie', label: 'Trésorerie', icon: Wallet },
       { href: '/tresorerie/rapprochement', label: 'Rapprochement bancaire', icon: ArrowLeftRight },
+      { href: '/tresorerie/previsionnel', label: 'Trésorerie prévisionnelle', icon: TrendingUp },
     ],
   },
   {
