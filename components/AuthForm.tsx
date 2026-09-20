@@ -17,7 +17,7 @@ export function AuthForm({ mode, lang = 'fr' }: { mode: 'login' | 'signup'; lang
     setMessage(null)
     startTransition(async () => {
       const res = await (mode === 'login' ? signIn(formData) : signUp(formData))
-      if (res && 'error' in res && res.error) setMessage({ type: 'error', text: res.error })
+      if (res && 'error' in res && res.error) setMessage({ type: 'error', text: t(res.error) })
       if (res && 'success' in res && res.success) setMessage({ type: 'success', text: res.success })
     })
   }

@@ -67,7 +67,7 @@ export function PointageForm({
             campagne_id: campagne || undefined,
           }))
       )
-      setMessage('error' in res ? { type: 'erreur', texte: res.error } : { type: 'ok', texte: t('Pointage enregistré.') })
+      setMessage('error' in res ? { type: 'erreur', texte: t(res.error) } : { type: 'ok', texte: t('Pointage enregistré.') })
     })
   }
 

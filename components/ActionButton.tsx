@@ -39,7 +39,7 @@ export function ActionButton({
       <Button type="button" size={size} variant={variant} onClick={onClick} disabled={pending}>
         {pending ? t('Patientez…') : label}
       </Button>
-      {erreur && <span role="alert" className="mt-1 max-w-xs text-xs text-danger">{erreur}</span>}
+      {erreur && <span role="alert" className="mt-1 max-w-xs text-xs text-danger">{t(erreur)}</span>}
     </span>
   )
 }
@@ -78,7 +78,7 @@ export function PayerEcheance({
       >
         {pending ? '…' : t('Payer')}
       </Button>
-      {erreur && <span role="alert" className="w-full text-xs text-danger">{erreur}</span>}
+      {erreur && <span role="alert" className="w-full text-xs text-danger">{t(erreur)}</span>}
     </div>
   )
 }

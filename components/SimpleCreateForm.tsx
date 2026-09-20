@@ -111,7 +111,7 @@ export function SimpleCreateForm({
         ))}
         {erreur && (
           <p role="alert" className="text-sm text-danger sm:col-span-2">
-            {erreur}
+            {t(erreur)}
           </p>
         )}
         <div className="flex gap-2 sm:col-span-2">

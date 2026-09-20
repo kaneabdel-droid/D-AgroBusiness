@@ -25,7 +25,7 @@ export function ContrepassationButton({ id }: { id: string }) {
       <Button type="button" size="sm" variant="outline" onClick={onClick} disabled={pending}>
         <Undo2 className="h-3.5 w-3.5" aria-hidden /> {t('Contre-passer')}
       </Button>
-      {erreur && <span role="alert" className="mt-1 text-xs text-danger">{erreur}</span>}
+      {erreur && <span role="alert" className="mt-1 text-xs text-danger">{t(erreur)}</span>}
     </span>
   )
 }

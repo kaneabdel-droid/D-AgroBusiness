@@ -250,7 +250,7 @@ export function DocumentForm({
           {pending ? t('Enregistrement…') : t(cfg.bouton)}
         </Button>
       </Card>
-      {erreur && <p role="alert" className="text-sm text-danger">{erreur}</p>}
+      {erreur && <p role="alert" className="text-sm text-danger">{t(erreur)}</p>}
     </div>
   )
 }

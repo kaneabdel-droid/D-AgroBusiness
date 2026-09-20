@@ -192,7 +192,7 @@ export function EcritureForm({
           {pending ? t('Enregistrement…') : t('Valider l’écriture')}
         </Button>
       </Card>
-      {erreur && <p role="alert" className="text-sm text-danger">{erreur}</p>}
+      {erreur && <p role="alert" className="text-sm text-danger">{t(erreur)}</p>}
     </div>
   )
 }

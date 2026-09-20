@@ -165,7 +165,7 @@ export function OrdreFabricationForm({
         <Button type="button" onClick={envoyer} disabled={pending || !nomId || qte <= 0 || !dep}>
           {pending ? t('Enregistrement…') : t('Lancer la transformation')}
         </Button>
-        {erreur && <p role="alert" className="text-sm text-danger">{erreur}</p>}
+        {erreur && <p role="alert" className="text-sm text-danger">{t(erreur)}</p>}
       </div>
     </div>
   )
