@@ -33,6 +33,7 @@ npm run typecheck  # tsc --noEmit
 - **Phase 3** : production par secteur × campagne (coût analytique, rendement), usine de transformation (nomenclatures, ordres de fabrication, répartition matière + frais).
 - **Phase 4** : personnel, contrats, pointage, congés, paie paramétrable avec verrou de validation.
 - **Traçabilité et qualité** (migration 27) : lots créés automatiquement par chaque récolte et chaque fabrication (ou à la main pour les achats), filiation matière → produit fini, contrôles qualité avec blocage automatique d’un lot non conforme, expéditions refusées pour un lot bloqué ou périmé, rappel de lot (clients touchés en aval).
+- **Rapprochement bancaire** (migration 28) : import d’un relevé CSV, pointage automatique (uniquement sans ambiguïté) ou manuel avec les écritures de la banque, comptabilisation des lignes absentes des livres (frais, agios), écart de rapprochement.
 
 ## Paie : impôt et TRIMF calculés automatiquement
 

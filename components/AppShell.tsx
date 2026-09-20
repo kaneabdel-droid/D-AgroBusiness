@@ -80,6 +80,7 @@ const NAV = [
       { href: '/ventes?type=marche', label: 'Ventes marché', icon: ArrowLeftRight },
       { href: '/remboursements-nature', label: 'Remboursements en nature', icon: Semis },
       { href: '/tresorerie', label: 'Trésorerie', icon: Wallet },
+      { href: '/tresorerie/rapprochement', label: 'Rapprochement bancaire', icon: ArrowLeftRight },
     ],
   },
   {
