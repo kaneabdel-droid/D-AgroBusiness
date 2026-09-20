@@ -78,7 +78,7 @@ export default async function EmployesPage() {
                 <td className={td}>{e.nom} {e.prenom}</td>
                 <td className={td}>{t(STATUTS_EMPLOYE[e.statut])}</td>
                 <td className={td}>{e.poste ?? '—'}</td>
-                <td className={td}>{dep?.nom}</td>
+                <td className={td}>{dep?.nom ? t(dep.nom) : ''}</td>
                 <td className={td}>{formatDate(e.date_embauche, ctx.lang)}</td>
                 <td className={`${td} text-right`}>{Number(e.parts_ir)}</td>
               </tr>

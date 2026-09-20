@@ -51,7 +51,7 @@ export default async function DepartementsPage() {
           {departements?.map((d) => (
             <tr key={d.id}>
               <td className={td}>{d.code}</td>
-              <td className={td}>{d.nom}</td>
+              <td className={td}>{t(d.nom)}</td>
               <td className={td}>{t(TYPES.find((x) => x.value === d.type)?.label ?? d.type)}</td>
             </tr>
           ))}

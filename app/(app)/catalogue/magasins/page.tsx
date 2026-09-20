@@ -49,7 +49,7 @@ export default async function MagasinsPage() {
               <tr key={m.id}>
                 <td className={td}>{m.code}</td>
                 <td className={td}>{m.nom}</td>
-                <td className={td}>{dep?.nom ?? '—'}</td>
+                <td className={td}>{dep?.nom ? t(dep.nom) : '—'}</td>
               </tr>
             )
           })}

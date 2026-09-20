@@ -32,7 +32,7 @@ export default async function EmployeDetailPage({ params }: { params: Promise<{ 
     <>
       <PageHeader
         titre={`${e.matricule} — ${e.nom} ${e.prenom ?? ''}`}
-        description={`${t(STATUTS_EMPLOYE[e.statut])}${e.poste ? ` · ${e.poste}` : ''} · ${dep?.nom}${sec ? ` / ${sec.nom}` : ''} · ${t('embauché le')} ${formatDate(e.date_embauche, ctx.lang)}`}
+        description={`${t(STATUTS_EMPLOYE[e.statut])}${e.poste ? ` · ${e.poste}` : ''} · ${dep?.nom ? t(dep.nom) : ''}${sec ? ` / ${sec.nom}` : ''} · ${t('embauché le')} ${formatDate(e.date_embauche, ctx.lang)}`}
       >
         <Link href="/rh/employes" className="text-sm text-primary underline">← {t('Personnel')}</Link>
         {peutEcrire && (

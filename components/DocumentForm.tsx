@@ -247,7 +247,7 @@ export function DocumentForm({
           </dl>
         ) : <span className="text-sm text-foreground-muted">{t('Stock consigné : aucune écriture comptable (hors bilan).')}</span>}
         <Button type="button" onClick={envoyer} disabled={pending || !tiersId}>
-          {pending ? 'Enregistrement…' : cfg.bouton}
+          {pending ? t('Enregistrement…') : t(cfg.bouton)}
         </Button>
       </Card>
       {erreur && <p role="alert" className="text-sm text-danger">{erreur}</p>}

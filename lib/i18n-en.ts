@@ -713,7 +713,7 @@ export const EN: Record<string, string> = {
   "Convention linéaire au mois : amortissement dès le mois de mise en service. À valider avec votre expert-comptable (prorata en jours, mode dégressif fiscal éventuel).": "Monthly straight-line convention: depreciation starts in the month of commissioning. To be validated with your accountant (daily pro rata, possible tax declining-balance method).",
   "Exercice": "Fiscal year",
   "Biens amortis": "Assets depreciated",
-  "Dotations": "Charges",
+  "Dotations": "Depreciation charges",
   "Reprises de subventions": "Grant releases",
   "Comptabiliser": "Post",
   "Comptabiliser les dotations de l’exercice « {e} » ?": "Post the depreciation charges of fiscal year “{e}”?",
@@ -953,5 +953,9 @@ export const EN: Record<string, string> = {
   "SSHFC — National Provident Fund (5 % salarié, non déductible du PAYE ; 10 % employeur)": "SSHFC — National Provident Fund (5% employee, not deductible from PAYE; 10% employer)",
   "D-AGROBUSINESS — Gestion intégrée de la chaîne de valeur agricole": "D-AGROBUSINESS — Integrated agricultural value-chain management",
   "Financement, intrants, parc matériel, production, usine de transformation, RH et comptabilité analytique pour les entreprises agro-industrielles.": "Financing, inputs, equipment fleet, production, processing plant, HR and analytical accounting for agro-industrial companies.",
+  "Distribution d'intrants": "Input distribution",
+  "Journal des achats": "Purchases journal", "Journal des ventes": "Sales journal", "Banque principale": "Main bank account",
+  "Journal de paie": "Payroll journal", "Journal des stocks": "Stock journal", "Opérations diverses": "Miscellaneous operations",
+  "À-nouveaux": "Opening balances", "Magasin central": "Central warehouse",
 
 }

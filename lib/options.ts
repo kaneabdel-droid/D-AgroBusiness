@@ -1,9 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
+import { getContexte } from '@/lib/session'
+import { creerT } from '@/lib/i18n'
 import type { ProduitOpt } from '@/components/DocumentForm'
 
 /** Listes de sélection communes aux formulaires opérationnels. */
 export async function chargerOptions() {
   const supabase = await createClient()
+  const t = creerT((await getContexte()).lang)   // les noms créés par la base à l'inscription sont traduits à l'affichage
   const [produits, magasins, campagnes, departements, secteurs, contrats, tiers, comptesTresorerie] =
     await Promise.all([
       supabase.from('produits').select('id, code, nom, categorie, unite, taux_tva, prix_reference').eq('actif', true).order('nom'),
@@ -32,15 +35,15 @@ export async function chargerOptions() {
         unite: p.unite,
       })
     ),
-    magasins: (magasins.data ?? []).map((m) => ({ id: m.id, label: `${m.code} — ${m.nom}` })),
+    magasins: (magasins.data ?? []).map((m) => ({ id: m.id, label: `${m.code} — ${t(m.nom)}` })),
     campagnes: (campagnes.data ?? []).map((c) => ({ id: c.id, label: `${c.code} — ${c.libelle}` })),
-    departements: (departements.data ?? []).map((d) => ({ id: d.id, label: d.nom })),
+    departements: (departements.data ?? []).map((d) => ({ id: d.id, label: t(d.nom) })),
     secteurs: (secteurs.data ?? []).map((s) => ({ id: s.id, label: s.nom, departement_id: s.departement_id })),
     contrats: (contrats.data ?? []).map((c) => {
       const f = Array.isArray(c.tiers) ? c.tiers[0] : c.tiers
       return { id: c.id, label: `${c.code} — ${f?.nom ?? ''} (${c.taux_commission} %)` }
     }),
-    comptesTresorerie: (comptesTresorerie.data ?? []).map((c) => ({ id: c.id, label: `${c.code} — ${c.nom}` })),
+    comptesTresorerie: (comptesTresorerie.data ?? []).map((c) => ({ id: c.id, label: `${c.code} — ${t(c.nom)}` })),
     producteurs: tiersDe('producteur'),
     clients: tiersDe('client'),
     fournisseurs: tiersDe('fournisseur'),

@@ -28,7 +28,7 @@ export default async function NouvelleEcriturePage() {
       />
       <EcritureForm
         devise={ctx.devise}
-        journaux={(journaux.data ?? []).map((j) => ({ id: j.id, label: `${j.code} — ${j.libelle}` }))}
+        journaux={(journaux.data ?? []).map((j) => ({ id: j.id, label: `${j.code} — ${t(j.libelle)}` }))}
         comptes={(comptes.data ?? []).map((c) => ({ id: c.id, label: `${c.numero} — ${c.libelle}`, classe: c.classe }))}
         tiers={(tiers.data ?? []).map((t) => ({ id: t.id, label: `${t.code} — ${t.nom}` }))}
         departements={(departements.data ?? []).map((d) => ({ id: d.id, label: d.nom }))}

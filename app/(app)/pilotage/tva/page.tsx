@@ -20,7 +20,8 @@ export default async function TvaPage({ searchParams }: { searchParams: Promise<
   ])
   const peutLiquider = ['admin', 'comptable'].includes(ctx.role)
 
-  const lignes = MOIS.map((nom, i) => {
+  const lignes = MOIS.map((mois, i) => {
+    const nom = t(mois)
     const m = mensuel?.find((x) => x.mois === i + 1)
     const liq = liquidations?.find((x) => x.mois === i + 1)
     const collectee = Number(m?.collectee ?? 0)

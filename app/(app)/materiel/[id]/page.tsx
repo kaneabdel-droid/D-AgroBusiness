@@ -33,7 +33,7 @@ export default async function MaterielDetailPage({ params }: { params: Promise<{
     <>
       <PageHeader
         titre={`${m.code} — ${m.designation}`}
-        description={`${t(CATEGORIES_MATERIEL.find((c) => c.value === m.categorie)?.label ?? '')} · ${dep?.nom} · ${m.mode_acquisition === 'credit_bail' ? t('crédit-bail') : t('achat')} ${t('auprès de')} ${four?.nom}`}
+        description={`${t(CATEGORIES_MATERIEL.find((c) => c.value === m.categorie)?.label ?? '')} · ${dep?.nom ? t(dep.nom) : ''} · ${m.mode_acquisition === 'credit_bail' ? t('crédit-bail') : t('achat')} ${t('auprès de')} ${four?.nom}`}
       >
         <Link href="/materiel" className="text-sm text-primary underline">{t('← Parc matériel')}</Link>
         {m.contrat_financement_id && (

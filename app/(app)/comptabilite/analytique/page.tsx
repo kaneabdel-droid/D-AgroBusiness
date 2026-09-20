@@ -29,7 +29,7 @@ export default async function AnalytiquePage({
     : { data: [] }
 
   const nom = (liste: { id: string; nom?: string; code?: string }[] | null, id: string | null) =>
-    id ? (liste?.find((x) => x.id === id)?.nom ?? liste?.find((x) => x.id === id)?.code ?? '?') : '—'
+    id ? t(liste?.find((x) => x.id === id)?.nom ?? liste?.find((x) => x.id === id)?.code ?? '?') : '—'
 
   const tri = [...(lignes ?? [])].sort((a, b) =>
     nom(departements, a.departement_id).localeCompare(nom(departements, b.departement_id))

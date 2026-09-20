@@ -90,7 +90,7 @@ export default async function MaterielPage() {
                   {m.designation}
                   {m.mode_acquisition === 'credit_bail' && <span className="ml-2 rounded bg-warning/15 px-1.5 py-0.5 text-xs">{t('crédit-bail')}</span>}
                 </td>
-                <td className={td}>{dep?.nom}</td>
+                <td className={td}>{dep?.nom ? t(dep.nom) : ''}</td>
                 <td className={td}>{formatDate(m.date_acquisition, ctx.lang)}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(m.cout_acquisition, ctx.devise, ctx.lang)}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(m.cumul_amortissement, ctx.devise, ctx.lang)}</td>

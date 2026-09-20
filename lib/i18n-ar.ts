@@ -931,5 +931,9 @@ export const AR: Record<string, string> = {
   "Rendement {i} (% de la matière)": "المردودية {i} (% من المادة)",
   "D-AGROBUSINESS — Gestion intégrée de la chaîne de valeur agricole": "D-AGROBUSINESS — التدبير المندمج لسلسلة القيمة الفلاحية",
   "Financement, intrants, parc matériel, production, usine de transformation, RH et comptabilité analytique pour les entreprises agro-industrielles.": "التمويل والمدخلات وحظيرة المعدات والإنتاج ومصنع التحويل والموارد البشرية والمحاسبة التحليلية للمقاولات الفلاحية الصناعية.",
+  "Distribution d'intrants": "توزيع المدخلات",
+  "Journal des achats": "يومية المشتريات", "Journal des ventes": "يومية المبيعات", "Banque principale": "الحساب البنكي الرئيسي",
+  "Journal de paie": "يومية الأجور", "Journal des stocks": "يومية المخزون", "Opérations diverses": "عمليات متنوعة",
+  "À-nouveaux": "الأرصدة المرحَّلة", "Magasin central": "المخزن المركزي",
 
 }

@@ -66,7 +66,7 @@ export default async function SecteursPage() {
               <tr key={s.id}>
                 <td className={td}>{s.code}</td>
                 <td className={td}>{s.nom}</td>
-                <td className={td}>{dep?.nom}</td>
+                <td className={td}>{dep?.nom ? t(dep.nom) : ''}</td>
                 <td className={td}>{s.nature === 'projet' ? t('Projet') : t('Secteur')}</td>
                 <td className={td}>{s.superficie_ha ?? '—'}</td>
               </tr>
