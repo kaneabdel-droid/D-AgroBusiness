@@ -36,6 +36,7 @@ npm run typecheck  # tsc --noEmit
 - **Rapprochement bancaire** (migration 28) : import d’un relevé CSV, pointage automatique (uniquement sans ambiguïté) ou manuel avec les écritures de la banque, comptabilisation des lignes absentes des livres (frais, agios), écart de rapprochement.
 - **Trésorerie prévisionnelle** (migration 29) : plan à 12 mois (soldes, échéances de financement, créances et dettes ouvertes avec délai de règlement paramétrable, prévisions saisies uniques ou mensuelles), alerte au premier mois de trésorerie négative.
   Les ventes futures sont estimées d’après l’historique (même mois des années précédentes, sinon moyenne des 12 derniers mois), retenues à 80 % par défaut (0 à 100 % au choix) et encaissées avec le délai des créances ; le mois en cours n’est pas estimé.
+  La masse salariale est reprise de la paie (moyenne des 3 dernières paies, reconduite chaque mois ; désactivable).
 
 ## Paie : impôt et TRIMF calculés automatiquement
 

@@ -2,8 +2,8 @@ import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
 import { creerT, LOCALES } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
-import { construirePlan, estimerVentes, indiceMois, moisSuivants, type Flux } from '@/lib/prevision'
-import { CATEGORIE_VENTES_ESTIMEES, CATEGORIE_CREANCES, CATEGORIE_DETTES, CATEGORIE_ECHEANCES, CATEGORIES_PREVISION } from '@/lib/tresorerie-previsionnelle'
+import { construirePlan, estimerPaie, estimerVentes, indiceMois, moisSuivants, type Flux } from '@/lib/prevision'
+import { CATEGORIE_PAIE_ESTIMEE, CATEGORIE_VENTES_ESTIMEES, CATEGORIE_CREANCES, CATEGORIE_DETTES, CATEGORIE_ECHEANCES, CATEGORIES_PREVISION } from '@/lib/tresorerie-previsionnelle'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { Select } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,8 +13,9 @@ import { addPrevision, supprimerPrevision } from './actions'
 
 const HORIZON = 12
 
-export default async function PrevisionnelPage({ searchParams }: { searchParams: Promise<{ delai?: string; ventes?: string }> }) {
-  const { delai: delaiParam, ventes: ventesParam } = await searchParams
+export default async function PrevisionnelPage({ searchParams }: { searchParams: Promise<{ delai?: string; ventes?: string; paie?: string }> }) {
+  const { delai: delaiParam, ventes: ventesParam, paie: paieParam } = await searchParams
+  const avecPaie = paieParam !== '0'
   const delai = Math.min(3, Math.max(0, Number(delaiParam) || 1))
   const partVentes = [0, 50, 70, 80, 90, 100].includes(Number(ventesParam)) && ventesParam !== undefined ? Number(ventesParam) : 80   // part des ventes estimées retenue (prudence)
   const ctx = await getContexte()
@@ -23,12 +24,13 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
   const aujourdhui = new Date().toISOString().slice(0, 10)
   const mois = moisSuivants(aujourdhui, HORIZON)
 
-  const [{ data: soldes }, { data: echeances }, { data: tiers }, { data: previsions }, { data: activite }] = await Promise.all([
+  const [{ data: soldes }, { data: echeances }, { data: tiers }, { data: previsions }, { data: activite }, { data: activitePaie }] = await Promise.all([
     supabase.from('v_soldes_tresorerie').select('solde'),
     supabase.from('echeances_financement').select('date_echeance, capital, interets').eq('statut', 'a_payer'),
     supabase.from('v_soldes_tiers').select('compte_numero, solde'),
     supabase.from('previsions_tresorerie').select('*').eq('actif', true).order('date_debut'),
     supabase.from('v_activite_mensuelle').select('annee, mois, montant').in('rubrique', ['distribution', 'vente_marche']).gte('annee', Number(aujourdhui.slice(0, 4)) - 2),
+    supabase.from('v_activite_mensuelle').select('annee, mois, montant').eq('rubrique', 'paie').gte('annee', Number(aujourdhui.slice(0, 4)) - 1),
   ])
 
   const soldeInitial = (soldes ?? []).reduce((s, x) => s + Number(x.solde), 0)
@@ -52,6 +54,9 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
       if (v > 0 && i + delai < HORIZON) flux.push({ mois: i + delai, categorie: CATEGORIE_VENTES_ESTIMEES, montant: Math.round(v * partVentes / 100) })
     })
   }
+  // masse salariale : moyenne des 3 dernières paies, reconduite chaque mois (payée le mois même)
+  const paie = estimerPaie((activitePaie ?? []).map((a) => ({ annee: Number(a.annee), mois: Number(a.mois), montant: Number(a.montant) })), mois, aujourdhui)
+  if (avecPaie) paie.valeurs.forEach((v, i) => { if (v > 0) flux.push({ mois: i, categorie: CATEGORIE_PAIE_ESTIMEE, montant: -v }) })
   for (const p of previsions ?? []) {
     const signe = p.sens === 'encaissement' ? 1 : -1
     if (p.recurrence === 'unique') {
@@ -83,7 +88,7 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
           champs={[
             { name: 'libelle', label: t('Libellé'), required: true },
             { name: 'sens', label: t('Sens'), type: 'select', required: true, options: [{ value: 'encaissement', label: t('Encaissement') }, { value: 'decaissement', label: t('Décaissement') }] },
-            { name: 'categorie', label: t('Catégorie'), type: 'select', defaultValue: 'autre', options: Object.entries(CATEGORIES_PREVISION).filter(([value]) => value !== CATEGORIE_VENTES_ESTIMEES).map(([value, label]) => ({ value, label: t(label) })) },
+            { name: 'categorie', label: t('Catégorie'), type: 'select', defaultValue: 'autre', options: Object.entries(CATEGORIES_PREVISION).filter(([value]) => value !== CATEGORIE_VENTES_ESTIMEES && value !== CATEGORIE_PAIE_ESTIMEE).map(([value, label]) => ({ value, label: t(label) })) },
             { name: 'montant', label: t('Montant'), type: 'number', step: '0.01', required: true },
             { name: 'date_debut', label: t('Date (ou premier mois)'), type: 'date', required: true, defaultValue: aujourdhui },
             { name: 'recurrence', label: t('Répétition'), type: 'select', defaultValue: 'unique', options: [{ value: 'unique', label: t('Une seule fois') }, { value: 'mensuelle', label: t('Chaque mois') }] },
@@ -122,6 +127,11 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
         <Select id="ventes" name="ventes" defaultValue={String(partVentes)} className="h-9 w-40">
           {[0, 50, 70, 80, 90, 100].map((n) => <option key={n} value={n}>{n === 0 ? t('0 % (sans estimation)') : `${n} %`}</option>)}
         </Select>
+        <label htmlFor="paie" className="ms-3">{t('Masse salariale reprise de la paie')}</label>
+        <Select id="paie" name="paie" defaultValue={avecPaie ? '1' : '0'} className="h-9 w-28">
+          <option value="1">{t('Oui')}</option>
+          <option value="0">{t('Non')}</option>
+        </Select>
         <Button type="submit" size="sm" variant="outline">{t('Recalculer')}</Button>
       </form>
 
@@ -130,6 +140,13 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
           {estimation.moisHistorique === 0
             ? t('Aucune vente dans l’historique : les ventes futures ne peuvent pas être estimées.')
             : t('Ventes estimées d’après l’historique (mois avec ventes : {n}) : même mois des années précédentes, sinon moyenne des 12 derniers mois, encaissées avec le même délai que les créances. Le mois en cours n’est pas estimé.', { n: estimation.moisHistorique })}
+        </p>
+      )}
+      {avecPaie && (
+        <p className="mb-2 text-sm text-foreground-muted">
+          {paie.moisHistorique === 0
+            ? t('Aucune paie enregistrée : la masse salariale n’est pas reprise. Saisissez vos salaires en prévision mensuelle.')
+            : t('Masse salariale : moyenne des 3 dernières paies ({n} par mois), reconduite chaque mois. Ne la saisissez pas en plus dans les prévisions.', { n: monnaie(paie.base) })}
         </p>
       )}
       <div className="mb-8">

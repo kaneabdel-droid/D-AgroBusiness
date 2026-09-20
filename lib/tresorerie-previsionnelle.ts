@@ -9,10 +9,12 @@ export const CATEGORIES_PREVISION: Record<string, string> = {
   investissement: 'Investissements',
   autre: 'Autres flux',
   vente_estimee: 'Ventes estimées (historique)',
+  paie_estimee: 'Salaires et charges (d’après la paie)',
 }
 
 /** Catégories alimentées automatiquement par la comptabilité (hors prévisions saisies). */
 export const CATEGORIE_VENTES_ESTIMEES = 'vente_estimee'
+export const CATEGORIE_PAIE_ESTIMEE = 'paie_estimee'
 export const CATEGORIE_CREANCES = 'vente'
 export const CATEGORIE_DETTES = 'fournisseur'
 export const CATEGORIE_ECHEANCES = 'financement'

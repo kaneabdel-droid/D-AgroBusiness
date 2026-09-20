@@ -1199,4 +1199,8 @@ export const EN: Record<string, string> = {
   "Aucune vente dans l’historique : les ventes futures ne peuvent pas être estimées.": "No sales in the history: future sales cannot be estimated.",
   "Ventes estimées (historique)": "Estimated sales (history)",
   "Ventes estimées d’après l’historique (mois avec ventes : {n}) : même mois des années précédentes, sinon moyenne des 12 derniers mois, encaissées avec le même délai que les créances. Le mois en cours n’est pas estimé.": "Sales estimated from the history (months with sales: {n}): same month of previous years, otherwise average of the last 12 months, collected with the same delay as receivables. The current month is not estimated.",
+  "Aucune paie enregistrée : la masse salariale n’est pas reprise. Saisissez vos salaires en prévision mensuelle.": "No payroll recorded: the payroll cost is not included. Enter your salaries as a monthly forecast.",
+  "Masse salariale : moyenne des 3 dernières paies ({n} par mois), reconduite chaque mois. Ne la saisissez pas en plus dans les prévisions.": "Payroll cost: average of the last 3 payrolls ({n} per month), repeated every month. Do not enter it again in the forecasts.",
+  "Masse salariale reprise de la paie": "Payroll cost taken from payroll",
+  "Salaires et charges (d’après la paie)": "Salaries and charges (from payroll)",
 }

@@ -85,3 +85,25 @@ export function estimerVentes(historique: VenteMensuelle[], horizon: string[], a
   })
   return { valeurs, methodes, moisHistorique: parCle.size }
 }
+
+export type PaieMensuelle = { annee: number; mois: number; montant: number }
+export type EstimationPaie = { valeurs: number[]; base: number; moisHistorique: number }
+
+/**
+ * Masse salariale à venir : moyenne du coût total des 3 dernières paies connues (mois en cours compris), reconduite chaque mois.
+ * Le mois en cours n'est ajouté que si sa paie n'existe pas encore ; sinon elle figure déjà dans la comptabilité.
+ */
+export function estimerPaie(historique: PaieMensuelle[], horizon: string[], aujourdhui: string): EstimationPaie {
+  const cle = (a: number, m: number) => a * 12 + (m - 1)
+  const courant = cle(Number(aujourdhui.slice(0, 4)), Number(aujourdhui.slice(5, 7)))
+  const parCle = new Map<number, number>()
+  for (const h of historique) {
+    const k = cle(h.annee, h.mois)
+    if (k <= courant && h.montant > 0) parCle.set(k, (parCle.get(k) ?? 0) + h.montant)
+  }
+  const derniers = [...parCle].sort((a, b) => b[0] - a[0]).slice(0, 3)
+  if (derniers.length === 0) return { valeurs: horizon.map(() => 0), base: 0, moisHistorique: 0 }
+  const base = Math.round(derniers.reduce((s, [, v]) => s + v, 0) / derniers.length)
+  const valeurs = horizon.map((_, i) => (i === 0 && parCle.has(courant) ? 0 : base))
+  return { valeurs, base, moisHistorique: parCle.size }
+}
