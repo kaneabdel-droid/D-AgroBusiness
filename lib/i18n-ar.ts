@@ -110,6 +110,7 @@ export const AR: Record<string, string> = {
   "CDD": "عقد محدد المدة",
   "Prestation de services": "عقد تقديم خدمات",
   "Présent": "حاضر",
+  "Absent": "غائب",
   "Demi-journée": "نصف يوم",
   "Congé payé": "عطلة مدفوعة",
   "Maladie": "عطلة مرضية",

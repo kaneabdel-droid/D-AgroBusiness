@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "i18n:check": "node scripts/verifier-i18n.mjs",
+    "prebuild": "node scripts/verifier-i18n.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

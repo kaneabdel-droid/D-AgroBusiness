@@ -47,3 +47,9 @@ Cette formule reproduit exactement le barème officiel de retenue à la source d
 Tout est paramétrable par organisation dans Paie → Paramètres (tranches, réductions, paliers de TRIMF, abattement, arrondi, cotisations), donc adaptable à un autre pays.
 Un mode « table » permet aussi d'importer une grille de retenue (CSV, `supabase/seed/bareme_retenue_sn_2013.csv` pour l'exemple sénégalais) pour les pays qui publient un barème par lignes.
 Un administrateur doit valider le paramétrage avant tout calcul de paie ; toute modification impose une nouvelle validation.
+
+## Règle des trois langues (français, anglais, arabe)
+
+Tout texte de l'interface, message d'erreur ou libellé doit exister en français, en anglais et en arabe. Le français sert de clé : `t('Texte')` côté serveur (`creerT(ctx.lang)`) ou `useT()` côté client, avec les traductions dans `lib/i18n-en.ts` et `lib/i18n-ar.ts`.
+
+`npm run i18n:check` (exécuté aussi automatiquement avant `npm run build`) recense tous les textes du code et des migrations et échoue s'il en manque un dans l'une des deux langues, si un marqueur `{nom}` ou `§` n'est pas conservé, si une traduction arabe ne contient pas d'arabe, ou si une clé est en double. Option `-- --orphelines` : liste les clés de dictionnaire devenues inutiles.

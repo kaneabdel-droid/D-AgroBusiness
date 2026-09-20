@@ -118,6 +118,7 @@ export const EN: Record<string, string> = {
   "CDD": "Fixed-term contract",
   "Prestation de services": "Service contract",
   "Présent": "Present",
+  "Absent": "Absent",
   "Demi-journée": "Half day",
   "Congé payé": "Paid leave",
   "Maladie": "Sick leave",
