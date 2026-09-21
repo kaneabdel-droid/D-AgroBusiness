@@ -61,12 +61,11 @@ Tout texte de l'interface, message d'erreur ou libellé doit exister en françai
 
 ## Abonnements et paiements
 
-Deux niveaux : **Standard** (10 000 F CFA / mois) et **Premium** (12 500 F CFA / mois). Le niveau Standard n'a pas accès aux ressources humaines (personnel, pointage, congés, paie, bulletins) : menu masqué, pages fermées et tables protégées dans la base (migration 31). Un mois seul est au prix plein ; à partir de 2 mois payés d'un coup, la remise est de 1 % par mois payé (durées proposées : 1, 3, 6 et 12 mois).
+Deux niveaux : **Standard** (10 000 F CFA / mois) et **Premium** (12 500 F CFA / mois). Le niveau Standard n'a pas accès aux ressources humaines (personnel, pointage, congés, paie, bulletins) : menu masqué, pages fermées et tables protégées dans la base (migration 31). Un mois seul est au prix plein ; à partir de 2 mois payés d'un coup, la remise est de 1 % par mois payé (durées proposées : 1, 6 et 12 mois).
 
 | Durée | Standard | Premium |
 |---|---|---|
 | 1 mois | 10 000 | 12 500 |
-| 3 mois (−3 %) | 29 100 | 36 375 |
 | 6 mois (−6 %) | 56 400 | 70 500 |
 | 12 mois (−12 %) | 105 600 | 132 000 |
 

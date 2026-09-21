@@ -7,7 +7,7 @@ export const NIVEAUX: Record<Niveau, { nom: string; prixMensuel: number }> = {
 }
 
 /** Durées proposées (en mois). Un mois seul est au prix plein ; à partir de 2 mois payés d'un coup, remise de 1 % par mois : 3 mois → 3 %, 12 mois → 12 %. */
-export const DUREES = [1, 3, 6, 12] as const
+export const DUREES = [1, 6, 12] as const
 export type Duree = (typeof DUREES)[number]
 
 export const estNiveau = (v: unknown): v is Niveau => v === 'standard' || v === 'premium'
