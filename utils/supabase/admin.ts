@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { fetchAvecDelai } from '@/utils/supabase/fetch'
 
 // Client "service role" utilisé uniquement par les routes serveur-à-serveur
 // (webhooks des prestataires de paiement) qui n'ont pas de session utilisateur
@@ -14,5 +15,6 @@ export function createAdminClient() {
 
   return createSupabaseClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: fetchAvecDelai },
   })
 }

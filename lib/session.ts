@@ -24,9 +24,10 @@ export type Contexte = {
 /** Contexte de l'utilisateur connecté (une requête par rendu grâce à cache). */
 export const getContexte = cache(async (): Promise<Contexte> => {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims vérifie la signature du jeton localement (le proxy a déjà validé la session auprès du serveur d'authentification
+  // à cette requête) : pas d'aller-retour réseau supplémentaire par page.
+  const { data: jeton } = await supabase.auth.getClaims()
+  const user = jeton?.claims?.sub ? { id: jeton.claims.sub, email: jeton.claims.email as string | undefined } : null
   if (!user) redirect('/login')
 
   const { data } = await supabase

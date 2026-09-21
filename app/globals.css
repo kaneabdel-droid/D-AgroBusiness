@@ -74,3 +74,45 @@ body {
 [dir="rtl"] .border-l { border-left-width: 0; border-right-width: 1px; }
 /* Les nombres, dates et montants restent lisibles de gauche à droite au milieu d'un texte arabe */
 [dir="rtl"] .tabular-nums { direction: ltr; unicode-bidi: plaintext; }
+
+/* Impression (A4) : seul le contenu de la page est imprimé — pas de menu, de boutons ni de filtres ; les tableaux
+   s'adaptent à la largeur de la feuille et ne coupent pas une ligne en deux. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  aside, header, nav, button, select, textarea, input[type="file"], input[type="checkbox"], summary,
+  form[method="get"], [role="status"], [role="alert"], .no-print {
+    display: none !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+  table {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 10.5px !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr, .break-inside-avoid {
+    break-inside: avoid;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+}

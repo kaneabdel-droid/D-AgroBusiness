@@ -14,10 +14,15 @@ Stack : Next.js 16 (App Router), Supabase (Postgres + RLS + Auth), Tailwind v4, 
 ## Commandes
 
 ```bash
-npm run dev        # serveur de développement
-npm run build      # build de production
-npm run lint       # eslint
-npm run typecheck  # tsc --noEmit
+npm run dev               # serveur de développement
+npm run build             # build de production (contrôle d'abord les traductions)
+npm run lint              # eslint
+npm run typecheck         # tsc --noEmit
+npm run i18n:check        # traductions fr/en/ar complètes
+npm run audit:securite    # RLS, fonctions security definer, secrets (voir docs/AUDIT.md)
+npm run audit:coherence   # cohérence des données (lecture seule, clé de service)
+npm run audit:index       # clés étrangères sans index
+npm run seed:demo         # crée l'entreprise de démonstration « Riz du Delta »
 ```
 
 ## Phase 0 — Fondations (livrée)

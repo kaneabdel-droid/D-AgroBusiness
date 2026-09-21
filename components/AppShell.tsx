@@ -224,7 +224,7 @@ export function AppShell({
   return (
     <div className="flex min-h-screen flex-1" dir={estRtl(lang) ? 'rtl' : 'ltr'}>
       {/* Bureau : barre latérale fixe */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-surface-border bg-sidebar lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-surface-border bg-sidebar lg:flex">
         <div className="border-b border-surface-border p-4">
           <p className="font-heading text-lg font-semibold text-primary">D-AGROBUSINESS</p>
           <p className="truncate text-xs text-foreground-muted">{organisation}</p>
@@ -258,7 +258,7 @@ export function AppShell({
               className="absolute inset-0 bg-black/40"
               onClick={() => setOuvert(false)}
             />
-            <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-sidebar shadow-xl">
+            <div className="absolute inset-y-0 start-0 flex w-72 max-w-[85vw] flex-col bg-sidebar shadow-xl">
               <div className="flex items-center justify-between border-b border-surface-border p-4">
                 <p className="font-heading text-lg font-semibold text-primary">D-AGROBUSINESS</p>
                 <button

@@ -88,7 +88,7 @@ export default async function BienvenuePage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-eau-clair text-primary"><Icon className="h-5 w-5" aria-hidden /></span>
               <h3 className="mt-5 font-heading text-lg font-semibold">{t(titre)}</h3>
               <p className="mt-2 flex-1 text-sm text-foreground-muted">{t(desc)}</p>
-              <Link href="/decouvrir-dagrobusiness" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover">
+              <Link href="/decouvrir-dagrobusiness" className="mt-4 inline-flex items-center gap-1 py-2 text-sm font-semibold text-primary hover:text-primary-hover">
                 {t('Découvrir')} <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden />
               </Link>
             </div>
