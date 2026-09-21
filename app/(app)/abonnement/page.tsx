@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
-import { finAcces, joursRestants, abonnementActif, NIVEAUX } from '@/lib/abonnement'
+import { finAcces, joursRestants, abonnementActif, NIVEAUX, type Niveau } from '@/lib/abonnement'
 import { hasBictorysKeys, hasChariowKeys, hasMonerooKeys } from '@/lib/payments/config'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { AbonnementForm } from '@/components/AbonnementForm'
@@ -32,12 +32,17 @@ export default async function AbonnementPage({ searchParams }: { searchParams: P
     <>
       <PageHeader
         titre={t('Abonnement')}
-        description={t('Deux niveaux : Standard et Premium (avec les ressources humaines). Payez plusieurs mois d’un coup et gagnez 1 % de remise par mois payé.')}
+        description={t('Trois niveaux : Standard, Medium (avec l’usine) et Premium (avec l’usine et les ressources humaines). Payez plusieurs mois d’un coup et gagnez 1 % de remise par mois payé.')}
       />
 
       {(expire === '1' || !actif) && (
         <p role="alert" className="mb-4 rounded-lg border border-danger p-3 text-sm text-danger">
           {e.verrouille ? t('Ce compte est verrouillé. Contactez le support.') : t('Votre accès a expiré. Choisissez un abonnement pour continuer.')}
+        </p>
+      )}
+      {requis === 'medium' && (
+        <p role="alert" className="mb-4 rounded-lg border border-surface-border bg-sidebar p-3 text-sm">
+          {t('L’usine de transformation est incluse à partir du niveau Medium.')}
         </p>
       )}
       {requis === 'premium' && (
@@ -89,7 +94,7 @@ export default async function AbonnementPage({ searchParams }: { searchParams: P
               {paiements.map((p) => (
                 <tr key={p.id}>
                   <td className={td}>{formatDate(p.created_at, ctx.lang)}</td>
-                  <td className={td}>{t(NIVEAUX[p.niveau as 'standard' | 'premium']?.nom ?? '')}</td>
+                  <td className={td}>{t(NIVEAUX[p.niveau as Niveau]?.nom ?? '')}</td>
                   <td className={td}>{t('{n} mois', { n: p.mois })}</td>
                   <td className={`${td} text-end tabular-nums`}>{fcfa(Number(p.montant))}</td>
                   <td className={`${td} ${p.statut === 'completed' ? 'text-success' : p.statut === 'failed' ? 'text-danger' : ''}`}>{t(STATUTS[p.statut])}</td>

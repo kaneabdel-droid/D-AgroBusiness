@@ -20,13 +20,18 @@ const MOYENS: Record<Moyen, string> = {
 const AVANTAGES: Record<Niveau, string[]> = {
   standard: [
     'Comptabilité, achats, ventes, stocks et trésorerie',
-    'Production, usine, traçabilité et qualité',
+    'Production agricole, traçabilité et qualité',
     'Financements, subventions et parc matériel',
     'Pilotage : budgets, états, TVA, prévisions',
+    'Sans l’usine de transformation ni les ressources humaines',
+  ],
+  medium: [
+    'Tout le niveau Standard',
+    'Usine de transformation (nomenclatures, ordres de fabrication)',
     'Sans les ressources humaines (personnel, pointage, congés, paie)',
   ],
   premium: [
-    'Tout le niveau Standard',
+    'Tout le niveau Medium',
     'Personnel, contrats et pointage',
     'Congés et absences',
     'Paie et bulletins de salaire',
@@ -66,7 +71,7 @@ export function AbonnementForm({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         {(Object.keys(NIVEAUX) as Niveau[]).map((n) => {
           const choisi = niveau === n
           const interdit = niveauBloque !== null && niveauBloque !== n

@@ -63,6 +63,10 @@ for (const f of [...fichiers('app'), ...fichiers('components'), ...fichiers('lib
   for (const b of src.matchAll(/const \w+: Record<[^=]*=\s*\{([\s\S]*?)\n?\}/g)) {
     for (const v of b[1].matchAll(/:\s*'((?:[^'\\\n]|\\.)*)'/g)) ajouter(v[1], f)
   }
+  // tables de listes de textes : const X: Record<K, string[]> = { clé: ['Texte', …] }
+  for (const b of src.matchAll(/const \w+: Record<[^=]*string\[\][^=]*=\s*\{([\s\S]*?)\n\}/g)) {
+    for (const v of b[1].matchAll(/'((?:[^'\\\n]|\\.)*)'/g)) ajouter(v[1], f)
+  }
   // séries de mois
   for (const b of src.matchAll(/const MOIS\s*=\s*\[([\s\S]*?)\]/g)) for (const v of b[1].matchAll(/'([^']+)'/g)) ajouter(v[1], f)
   // messages d'erreur renvoyés par les actions serveur

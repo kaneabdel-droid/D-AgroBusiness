@@ -150,12 +150,14 @@ export function AppShell({
   utilisateur,
   role,
   accesRh,
+  accesUsine,
   children,
 }: {
   organisation: string
   utilisateur: string
   role: string
   accesRh: boolean
+  accesUsine: boolean
   children: React.ReactNode
 }) {
   const { t, lang } = useT()
@@ -171,7 +173,7 @@ export function AppShell({
             {t(groupe.titre)}
           </p>
           <ul className="space-y-1">
-            {groupe.items.map(({ href, label, icon: Icon }) => {
+            {groupe.items.filter((item) => accesUsine || item.href !== '/usine').map(({ href, label, icon: Icon }) => {
               const [chemin, requete] = href.split('?')
               const actif =
                 chemin === '/'

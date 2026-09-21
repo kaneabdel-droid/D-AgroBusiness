@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         utilisateur={ctx.nomComplet ?? ctx.email ?? t('Utilisateur')}
         role={t(ROLES[ctx.role] ?? ctx.role)}
         accesRh={ctx.accesRh}
+        accesUsine={ctx.accesUsine}
       >
         <BandeauAbonnement etat={ctx.abonnement} lang={ctx.lang} />
         {children}

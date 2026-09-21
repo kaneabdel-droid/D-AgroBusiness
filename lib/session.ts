@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { langDe, type Lang } from '@/lib/i18n'
 import { langueChoisie } from '@/lib/i18n-server'
-import { accesRh, estNiveau, type EtatAbonnement } from '@/lib/abonnement'
+import { accesRh, accesUsine, estNiveau, type EtatAbonnement } from '@/lib/abonnement'
 
 export type Contexte = {
   userId: string
@@ -18,6 +18,7 @@ export type Contexte = {
   lang: Lang
   abonnement: EtatAbonnement
   accesRh: boolean
+  accesUsine: boolean
 }
 
 /** Contexte de l'utilisateur connecté (une requête par rendu grâce à cache). */
@@ -56,6 +57,7 @@ export const getContexte = cache(async (): Promise<Contexte> => {
     lang: (await langueChoisie()) ?? langDe(org?.pays),
     abonnement,
     accesRh: accesRh(abonnement),
+    accesUsine: accesUsine(abonnement),
   }
 })
 

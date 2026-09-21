@@ -1298,4 +1298,12 @@ export const AR: Record<string, string> = {
   "par mois": "شهريًا",
   "{n} mois": "{n} شهر",
   "Premium": "بريميوم",
+  "Cette fonction est réservée aux abonnements Medium et Premium": "هذه الميزة مخصصة لاشتراكي ميديوم وبريميوم",
+  "L’usine de transformation est incluse à partir du niveau Medium.": "المصنع التحويلي مشمول ابتداءً من مستوى ميديوم.",
+  "Production agricole, traçabilité et qualité": "الإنتاج الزراعي والتتبع والجودة",
+  "Sans l’usine de transformation ni les ressources humaines": "بدون المصنع التحويلي ولا الموارد البشرية",
+  "Tout le niveau Medium": "كل ما في مستوى ميديوم",
+  "Trois niveaux : Standard, Medium (avec l’usine) et Premium (avec l’usine et les ressources humaines). Payez plusieurs mois d’un coup et gagnez 1 % de remise par mois payé.": "ثلاثة مستويات: قياسي، ميديوم (مع المصنع) وبريميوم (مع المصنع والموارد البشرية). ادفع عدة أشهر دفعة واحدة واحصل على خصم 1 % لكل شهر مدفوع.",
+  "Usine de transformation (nomenclatures, ordres de fabrication)": "المصنع التحويلي (قوائم المواد، أوامر التصنيع)",
+  "Medium": "ميديوم",
 }

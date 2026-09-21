@@ -1320,4 +1320,12 @@ export const EN: Record<string, string> = {
   "par mois": "per month",
   "{n} mois": "{n} month(s)",
   "Premium": "Premium",
+  "Cette fonction est réservée aux abonnements Medium et Premium": "This feature is reserved for the Medium and Premium subscriptions",
+  "L’usine de transformation est incluse à partir du niveau Medium.": "The processing plant is included from the Medium level.",
+  "Production agricole, traçabilité et qualité": "Agricultural production, traceability and quality",
+  "Sans l’usine de transformation ni les ressources humaines": "Without the processing plant or human resources",
+  "Tout le niveau Medium": "Everything in the Medium level",
+  "Trois niveaux : Standard, Medium (avec l’usine) et Premium (avec l’usine et les ressources humaines). Payez plusieurs mois d’un coup et gagnez 1 % de remise par mois payé.": "Three levels: Standard, Medium (with the plant) and Premium (with the plant and human resources). Pay several months at once and get a 1 % discount per month paid.",
+  "Usine de transformation (nomenclatures, ordres de fabrication)": "Processing plant (bills of materials, production orders)",
+  "Medium": "Medium",
 }

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
-import { NIVEAUX } from '@/lib/abonnement'
+import { NIVEAUX, type Niveau } from '@/lib/abonnement'
 import { fetchChariowSale, mapChariowStatus } from '@/lib/payments/chariow'
 import { verifyMonerooPayment } from '@/lib/payments/moneroo'
 import { applyPaymentResult } from '@/lib/payments/fulfill'
@@ -41,7 +41,7 @@ export default async function RetourPage({ searchParams }: { searchParams: Promi
         {statut === 'completed' ? (
           <>
             <p className="text-lg font-semibold text-success">{t('Paiement confirmé')}</p>
-            <p className="mt-2 text-sm">{t('Votre abonnement {niveau} est activé.', { niveau: NIVEAUX[paiement!.niveau as 'standard' | 'premium']?.nom ?? '' })}</p>
+            <p className="mt-2 text-sm">{t('Votre abonnement {niveau} est activé.', { niveau: NIVEAUX[paiement!.niveau as Niveau]?.nom ?? '' })}</p>
             <Link href="/" className="mt-4 inline-block font-medium text-primary underline">{t('Aller au tableau de bord')}</Link>
           </>
         ) : statut === 'failed' ? (
