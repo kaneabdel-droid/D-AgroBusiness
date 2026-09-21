@@ -3,7 +3,7 @@
  *
  * Compte plateforme unique (D-AGROBUSINESS encaisse ses propres abonnements). Chariow ne facture jamais un
  * montant libre : il débite le prix d'un "produit" préconfiguré dans sa boutique —
- * d'où le mapping montant -> product_id de la variable CHARIOW_PRODUITS (un produit par niveau et par durée).
+ * d'où un produit par niveau et par durée, identifié par une variable CHARIOW_PRODUCT_<NIVEAU>_<MOIS>.
  */
 
 import crypto from 'node:crypto'

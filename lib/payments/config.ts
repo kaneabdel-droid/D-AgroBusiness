@@ -13,10 +13,13 @@ export const chariowApiUrl = process.env.CHARIOW_API_URL || 'https://api.chariow
 
 /**
  * Chariow ne facture jamais un montant libre : il débite le prix d'un produit préconfiguré dans sa boutique.
- * CHARIOW_PRODUITS associe chaque montant (FCFA) à l'identifiant du produit, ex. {"10000":"prod_a","29100":"prod_b"}.
- * Les montants attendus sont listés dans la page Abonnement de l'application (README, section Abonnements).
+ * Un produit par niveau et par durée, dans une variable dédiée : CHARIOW_PRODUCT_STANDARD_1, CHARIOW_PRODUCT_PREMIUM_12, etc.
+ * (l'écriture CHARIOW_PRODUITS_<NIVEAU>_<MOIS> est aussi acceptée). Repli : CHARIOW_PRODUITS, un JSON {"montant":"produit"}.
  */
-export function chariowProduitPour(montant: number): string | null {
+export function chariowProduitPour(niveau: string, mois: number, montant: number): string | null {
+  const suffixe = `${niveau.toUpperCase()}_${mois}`
+  const direct = process.env[`CHARIOW_PRODUCT_${suffixe}`] || process.env[`CHARIOW_PRODUITS_${suffixe}`]
+  if (direct) return direct.trim()
   try {
     const carte = JSON.parse(process.env.CHARIOW_PRODUITS || '{}') as Record<string, string>
     return carte[String(montant)] ?? null

@@ -31,7 +31,7 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
   const montant = montantAbonnement(niveau, mois)
   let produit: string | null = null
   if (moyen === 'chariow') {
-    produit = chariowProduitPour(montant)
+    produit = chariowProduitPour(niveau, mois, montant)
     if (!produit) return { ok: false, error: 'Chariow n’est pas configuré pour ce montant.' }
     if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
   }
