@@ -55,4 +55,9 @@ Petites cibles tactiles : seuls les liens de texte dans les tableaux (17 px de h
 
 ## 6. Niveaux d'abonnement
 
-Vérifié en base et à l'écran : essai, Premium, Standard (menu RH masqué, pages fermées, tables protégées, calcul de paie refusé), compte expiré ou verrouillé (redirection vers la page Abonnement), webhooks signés, paiement rejoué sans double crédit. Le niveau Medium (usine) est vérifiable une fois la migration 32 appliquée.
+Vérifié en base et à l'écran : essai, Premium, Standard (menu RH masqué, pages fermées, tables protégées, calcul de paie refusé), compte expiré ou verrouillé (redirection vers la page Abonnement), webhooks signés, paiement rejoué sans double crédit. Niveau Medium : usine accessible (menu, pages, tables), RH fermées ; Standard : usine fermée à l'écran et en base (nomenclatures illisibles, lancement d'une transformation refusé). Page Abonnement : trois niveaux, durées 1, 6 et 12 mois, seul Chariow proposé (Wave, Orange Money et carte inactifs malgré des clés présentes).
+
+## 7. Démonstration et super-administration (navigateur réel, 47 contrôles)
+
+- Démo : un clic sur Direction, Comptable ou Ressources humaines ouvre une session sans mot de passe sur « Riz du Delta » (aussi en arabe, en RTL) ; balance, ventes, usine, lots dont un bloqué, relevé à rapprocher, salariés et paies, prévisions et états financiers sont visibles ; un compte de démo n'accède pas à `/admin`.
+- Super-admin : tableau de bord (démo exclue des chiffres réels), liste et fiche des entreprises, historique des paiements, configuration ; l'activation d'un moyen de paiement, l'enregistrement d'un produit Chariow et l'octroi manuel d'un abonnement (Medium, 1 mois : 12 500 F CFA, tracé comme paiement manuel) fonctionnent depuis l'interface.

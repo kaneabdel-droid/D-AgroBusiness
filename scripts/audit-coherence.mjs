@@ -77,11 +77,11 @@ const ecartVue = vStock.filter((v) => { const s = stock.get([v.organisation_id, 
 controle('la vue des stocks concorde avec les mouvements', ecartVue.length === 0)
 
 // ---------- Lots ----------
-const lots = await tout('v_lots', 'id, numero, quantite_initiale, quantite_expediee, statut, nb_non_conformes')
+const lots = await tout('v_lots', 'id, organisation_id, numero, quantite_initiale, quantite_expediee, statut, nb_non_conformes')
 controle('aucun lot expédié au-delà de sa quantité', lots.every((l) => Number(l.quantite_expediee) <= Number(l.quantite_initiale) + 0.0005))
 controle('aucun lot libéré avec un contrôle non conforme', lots.every((l) => !(l.statut === 'libere' && Number(l.nb_non_conformes) > 0)))
-const numeros = lots.map((l) => l.numero)
-controle('numéros de lots uniques', new Set(numeros).size === numeros.length)
+const numeros = lots.map((l) => `${l.organisation_id}|${l.numero}`)   // unicité par entreprise
+controle('numéros de lots uniques (par entreprise)', new Set(numeros).size === numeros.length)
 
 // ---------- Paie ----------
 const bulletins = await tout('bulletins_paie', 'id, brut, total_retenues, net_a_payer, charges_patronales, cout_total, statut')
