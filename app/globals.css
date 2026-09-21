@@ -8,8 +8,12 @@
   --foreground-muted: #475569;
   --sidebar: #F4F6F5;
 
-  --primary: #1E5631;
-  --primary-hover: #2F855A;
+  /* Identité D-AGROBUSINESS : bleu eau (primaire) et vert herbe (accent) */
+  --primary: #0B6E99;
+  --primary-hover: #085A7E;
+  --vert: #4E9F2E;
+  --vert-fonce: #2F6B1A;
+  --eau-clair: #DDF1F8;
   --primary-foreground: #FFFFFF;
   --secondary: #D97706;
   --danger: #DC2626;
@@ -28,6 +32,9 @@
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-vert: var(--vert);
+  --color-vert-fonce: var(--vert-fonce);
+  --color-eau-clair: var(--eau-clair);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-danger: var(--danger);

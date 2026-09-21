@@ -3,7 +3,7 @@ import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
 import { finAcces, joursRestants, abonnementActif, NIVEAUX, type Niveau } from '@/lib/abonnement'
-import { hasBictorysKeys, hasChariowKeys, hasMonerooKeys } from '@/lib/payments/config'
+import { moyensDisponibles } from '@/lib/payments/moyens'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { AbonnementForm } from '@/components/AbonnementForm'
 import { initierPaiement } from './actions'
@@ -21,11 +21,7 @@ export default async function AbonnementPage({ searchParams }: { searchParams: P
   const actif = abonnementActif(e)
   const paye = e.abonnementExpireLe !== null && e.abonnementExpireLe > new Date()
   const peutPayer = ['admin', 'direction'].includes(ctx.role)
-  const moyens = [
-    ...(hasBictorysKeys ? (['wave', 'orange'] as const) : []),
-    ...(hasMonerooKeys ? (['carte'] as const) : []),
-    ...(hasChariowKeys ? (['chariow'] as const) : []),
-  ]
+  const moyens = await moyensDisponibles()
   const fcfa = (v: number) => `${v.toLocaleString('fr-FR').replace(/ | /g, ' ')} F CFA`
 
   return (

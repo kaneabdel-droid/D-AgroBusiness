@@ -7,7 +7,8 @@ import { estDuree, estNiveau, montantAbonnement, NIVEAUX } from '@/lib/abonnemen
 import { initiateBictorysPayment } from '@/lib/payments/bictorys'
 import { initiateMonerooPayment } from '@/lib/payments/moneroo'
 import { initiateChariowPayment } from '@/lib/payments/chariow'
-import { chariowProduitPour, hasBictorysKeys, hasChariowKeys, hasMonerooKeys, siteUrl } from '@/lib/payments/config'
+import { siteUrl } from '@/lib/payments/config'
+import { moyensDisponibles, produitChariow } from '@/lib/payments/moyens'
 
 export type MoyenPaiement = 'wave' | 'orange' | 'carte' | 'chariow'
 type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
@@ -25,13 +26,12 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
   if (paye && e.niveau !== niveau) {
     return { ok: false, error: 'Changement de niveau impossible pendant un abonnement payé : il sera possible à son échéance.' }
   }
-  const disponible = { wave: hasBictorysKeys, orange: hasBictorysKeys, carte: hasMonerooKeys, chariow: hasChariowKeys }[moyen]
-  if (!disponible) return { ok: false, error: 'Ce moyen de paiement n’est pas encore configuré.' }
+  if (!(await moyensDisponibles()).includes(moyen)) return { ok: false, error: 'Ce moyen de paiement n’est pas encore configuré.' }
 
   const montant = montantAbonnement(niveau, mois)
   let produit: string | null = null
   if (moyen === 'chariow') {
-    produit = chariowProduitPour(niveau, mois, montant)
+    produit = await produitChariow(niveau, mois, montant)
     if (!produit) return { ok: false, error: 'Chariow n’est pas configuré pour ce montant.' }
     if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
   }
