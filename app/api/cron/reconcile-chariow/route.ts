@@ -11,7 +11,9 @@ export const runtime = 'nodejs'
  */
 export async function GET(req: Request) {
   const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const secret = process.env.CRON_SECRET
+  // sans secret configuré, la route reste fermée (sinon « Bearer undefined » serait accepté)
+  if (!secret || auth !== `Bearer ${secret}`) {
     return Response.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
