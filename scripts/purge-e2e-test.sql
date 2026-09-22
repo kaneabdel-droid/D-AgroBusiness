@@ -21,6 +21,7 @@ begin
   delete from journal_audit where organisation_id = any(v_orgs);
   delete from comptes_tresorerie where organisation_id = any(v_orgs);
   delete from magasins where organisation_id = any(v_orgs);
+  delete from parametres_comptables where organisation_id = any(v_orgs);
   delete from comptes_comptables where organisation_id = any(v_orgs);
   delete from journaux where organisation_id = any(v_orgs);
   delete from auth.users where id in (select id from utilisateurs where organisation_id = any(v_orgs));
