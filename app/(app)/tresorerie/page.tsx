@@ -5,6 +5,7 @@ import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
+import { ReglementTiersForm } from '@/components/ReglementTiersForm'
 import { addCompteTresorerie, addOperationTresorerie, addReglement } from '../operations/actions'
 
 const aujourdhui = () => new Date().toISOString().slice(0, 10)
@@ -34,35 +35,14 @@ export default async function TresoreriePage() {
   return (
     <>
       <PageHeader titre={t('Trésorerie')} description={t('Encaissements des créances, paiements fournisseurs et autres opérations, avec leurs écritures.')}>
-        <SimpleCreateForm
-          titre={t('Règlement tiers')}
+        <ReglementTiersForm
           disabled={!peutEcrire}
           action={addReglement}
-          champs={[
-            { name: 'date', label: t('Date'), type: 'date', required: true, defaultValue: aujourdhui() },
-            {
-              name: 'sens', label: t('Sens'), type: 'select', required: true,
-              options: [
-                { value: 'encaissement', label: t('Encaissement (client / producteur)') },
-                { value: 'paiement', label: t('Paiement (fournisseur)') },
-              ],
-            },
-            { name: 'tiers_id', label: t('Tiers'), type: 'select', required: true, options: o.tousTiers.map((t) => ({ value: t.id, label: t.label })) },
-            { name: 'montant', label: t('Montant'), type: 'number', step: '0.01', required: true },
-            { name: 'compte_tresorerie_id', label: t('Compte de trésorerie'), type: 'select', required: true, options: optCt },
-            { name: 'reference', label: t('Référence (chèque, virement…)') },
-            {
-              name: 'nature', label: t('Nature du paiement'), type: 'select', defaultValue: 'courant',
-              options: [
-                { value: 'courant', label: t('Fournisseur courant (dette 401)') },
-                { value: 'immobilisation', label: t('Fournisseur d’investissements (dette 481)') },
-              ],
-            },
-            {
-              name: 'contrat_financement_id', label: t('Financement utilisé (crédit de campagne / fonds de commercialisation)'), type: 'select',
-              options: financements?.map((f) => ({ value: f.id, label: `${f.code} — ${f.libelle}` })),
-            },
-          ]}
+          clients={o.clients}
+          producteurs={o.producteurs}
+          fournisseurs={o.fournisseurs}
+          comptesTresorerie={optCt.map((c) => ({ id: c.value, label: c.label }))}
+          financements={(financements ?? []).map((f) => ({ id: f.id, label: `${f.code} — ${f.libelle}` }))}
         />
         <SimpleCreateForm
           titre={t('Autre opération')}

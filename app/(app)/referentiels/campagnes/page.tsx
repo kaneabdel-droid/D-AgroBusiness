@@ -14,7 +14,7 @@ export default async function CampagnesPage() {
     .from('campagnes')
     .select('*')
     .order('date_debut', { ascending: false })
-  const peutEcrire = ['admin', 'direction', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = ['admin', 'direction', 'comptable', 'chef_departement'].includes(ctx.role)
 
   return (
     <>

@@ -166,6 +166,19 @@ export async function payerSalaires(periodeId: string, date: string, compteId: s
   return rpc('payer_salaires', { p: { periode_id: periodeId, date, compte_tresorerie_id: compteId } })
 }
 
+export async function ajouterLigneBulletin(formData: FormData): Promise<Resultat> {
+  return rpc('ajouter_ligne_bulletin', {
+    p_bulletin_id: txt(formData, 'bulletin_id'),
+    p_type: txt(formData, 'type'),
+    p_libelle: txt(formData, 'libelle'),
+    p_montant: num(formData, 'montant'),
+  })
+}
+
+export async function supprimerLigneBulletin(ligneId: string): Promise<Resultat> {
+  return rpc('supprimer_ligne_bulletin', { p_ligne_id: ligneId })
+}
+
 // ---------- Paramétrage de la paie ----------
 
 export async function majParametrage(formData: FormData): Promise<Resultat> {

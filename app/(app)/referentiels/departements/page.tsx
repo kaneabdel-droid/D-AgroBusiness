@@ -20,7 +20,7 @@ export default async function DepartementsPage() {
   const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: departements } = await supabase.from('departements').select('*').order('code')
-  const peutEcrire = ['admin', 'direction'].includes(ctx.role)
+  const peutEcrire = ['admin', 'direction', 'comptable'].includes(ctx.role)
 
   return (
     <>

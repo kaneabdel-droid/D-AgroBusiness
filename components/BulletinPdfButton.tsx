@@ -54,7 +54,8 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
 
     const corps: (string | { content: string; colSpan?: number; styles?: object })[][] = []
     for (const type of ['gain', 'retenue_absence', 'retenue_salariale', 'charge_patronale']) {
-      const lignes = data.lignes.filter((l) => l.type === type)
+      // Une rubrique à montant nul n'est pas imprimée.
+      const lignes = data.lignes.filter((l) => l.type === type && l.montant !== 0)
       if (lignes.length === 0) continue
       corps.push([{ content: t(TITRES[type]), colSpan: 4, styles: { fillColor: [230, 236, 233], fontStyle: 'bold' } }])
       for (const l of lignes) {
@@ -70,23 +71,37 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
       startY: 46,
       head: [[t('Libellé'), t('Base'), t('Taux'), `${t('Montant')} (${data.devise})`]],
       body: corps,
-      styles: { fontSize: 9 },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
-      headStyles: { fillColor: [30, 86, 49] },
+      styles: { fontSize: 9, overflow: 'linebreak' },
+      // Largeurs fixes sur Base/Taux/Montant (le libellé prend le reste) pour que le montant ne retourne jamais à la ligne.
+      columnStyles: {
+        0: { cellWidth: 'auto' },
+        1: { cellWidth: 28, halign: 'right' },
+        2: { cellWidth: 18, halign: 'right' },
+        3: { cellWidth: 34, halign: 'right' },
+      },
+      headStyles: { fillColor: [30, 86, 49], fontSize: 8 },
     })
 
-    const y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8
-    doc.setFontSize(11)
-    doc.text(`${t('Brut')} : ${fmt(data.brut)} ${data.devise}`, 14, y)
-    doc.text(`${t('Total retenues')} : ${fmt(data.retenues)} ${data.devise}`, 14, y + 6)
-    doc.setFontSize(13)
-    doc.text(`${t('NET À PAYER')} : ${fmt(data.net)} ${data.devise}`, 14, y + 15)
-    doc.setFontSize(9)
-    doc.text(`${t('Coût employeur')} : ${fmt(data.brut + data.chargesPatronales)} ${data.devise}`, 14, y + 22)
+    const yTot = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8
+    // Totaux sous forme de tableau à 2 lignes : la première ligne donne les titres, la seconde les montants.
+    autoTable(doc, {
+      startY: yTot,
+      head: [[t('Brut'), t('Total retenues'), t('NET À PAYER'), t('Coût employeur')]],
+      body: [[
+        `${fmt(data.brut)} ${data.devise}`,
+        `${fmt(data.retenues)} ${data.devise}`,
+        { content: `${fmt(data.net)} ${data.devise}`, styles: { fontStyle: 'bold', fontSize: 12 } },
+        `${fmt(data.brut + data.chargesPatronales)} ${data.devise}`,
+      ]],
+      styles: { fontSize: 10, halign: 'center', cellPadding: 3 },
+      headStyles: { fillColor: [30, 86, 49], fontSize: 9 },
+      theme: 'grid',
+    })
+    const y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
 
     // Signatures : sur une nouvelle page si trop peu de place ne reste en bas de celle-ci.
     const pageH = doc.internal.pageSize.getHeight()
-    let ySign = y + 45
+    let ySign = y + 20
     if (ySign > pageH - 25) {
       doc.addPage()
       ySign = 30
@@ -106,7 +121,7 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
     const fmt = (v: number) => v.toLocaleString(LOCALES[data.lang], { minimumFractionDigits: dec, maximumFractionDigits: dec })
     const rows: string[] = []
     for (const type of ['gain', 'retenue_absence', 'retenue_salariale', 'charge_patronale']) {
-      const ls = data.lignes.filter((l) => l.type === type)
+      const ls = data.lignes.filter((l) => l.type === type && l.montant !== 0)
       if (ls.length === 0) continue
       rows.push(`<tr class="section"><td colspan="4">${echapper(t(TITRES[type]))}</td></tr>`)
       for (const l of ls) {
@@ -117,10 +132,8 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
 <p>${echapper(t('Période'))} : ${echapper(data.periode)} — ${echapper(t('Matricule'))} : ${echapper(data.matricule)} — ${echapper(t('Nom'))} : ${echapper(data.nom)}</p>
 <p>${echapper(t('Statut'))} : ${echapper(data.statut)}${data.poste ? ` — ${echapper(data.poste)}` : ''} — ${echapper(t('Jours payés'))} : ${data.joursPayes}</p>
 <table><thead><tr><th>${echapper(t('Libellé'))}</th><th class="n">${echapper(t('Base'))}</th><th class="n">${echapper(t('Taux'))}</th><th class="n">${echapper(t('Montant'))} (${echapper(data.devise)})</th></tr></thead><tbody>${rows.join('')}</tbody></table>
-<p class="total">${echapper(t('Brut'))} : ${fmt(data.brut)} ${echapper(data.devise)}</p>
-<p class="total">${echapper(t('Total retenues'))} : ${fmt(data.retenues)} ${echapper(data.devise)}</p>
-<p class="total net">${echapper(t('NET À PAYER'))} : ${fmt(data.net)} ${echapper(data.devise)}</p>
-<p class="total">${echapper(t('Coût employeur'))} : ${fmt(data.brut + data.chargesPatronales)} ${echapper(data.devise)}</p>
+<table class="totaux"><thead><tr><th>${echapper(t('Brut'))}</th><th>${echapper(t('Total retenues'))}</th><th>${echapper(t('NET À PAYER'))}</th><th>${echapper(t('Coût employeur'))}</th></tr></thead>
+<tbody><tr><td>${fmt(data.brut)} ${echapper(data.devise)}</td><td>${fmt(data.retenues)} ${echapper(data.devise)}</td><td class="net">${fmt(data.net)} ${echapper(data.devise)}</td><td>${fmt(data.brut + data.chargesPatronales)} ${echapper(data.devise)}</td></tr></tbody></table>
 <div class="signatures"><div><div class="ligne"></div>${echapper(t('Signature de l’employé'))}</div><div><div class="ligne"></div>${echapper(t('Signature de l’employeur'))}</div></div>`
     imprimerHtml(`${t('bulletin')}-${data.matricule}`, corps, data.lang)
   }

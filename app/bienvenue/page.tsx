@@ -38,9 +38,9 @@ export default async function BienvenuePage() {
     <PagePublique lang={lang}>
       <EnTete lang={lang} />
 
-      {/* Héro : usine + rizière + tracteur en fond dégradé bleu eau → vert herbe */}
+      {/* Héro : photo réelle (baobab au coucher du soleil, libre de droits, sans marque ni logo) sous un dégradé bleu eau → vert herbe */}
       <section className="relative isolate overflow-hidden border-b border-surface-border">
-        <div className="absolute inset-0 -z-20 bg-cover bg-center rtl:-scale-x-100" style={{ backgroundImage: "url('/hero-agro.svg')" }} aria-hidden />
+        <div className="absolute inset-0 -z-20 bg-cover bg-center rtl:-scale-x-100" style={{ backgroundImage: "url('/hero-agro-baobab.jpg')" }} aria-hidden />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#053B5C]/85 via-[#075C8F]/35 to-transparent rtl:bg-gradient-to-l" aria-hidden />
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-32">
           <div className="max-w-xl text-white">

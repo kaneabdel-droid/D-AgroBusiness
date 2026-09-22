@@ -9,9 +9,10 @@ import { formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ActionButton, PayerEcheance } from '@/components/ActionButton'
 import { BulletinPdfButton } from '@/components/BulletinPdfButton'
-import { calculerPaie, payerSalaires, validerPaie } from '../../actions'
+import { LigneBulletinForm } from '@/components/LigneBulletinForm'
+import { ajouterLigneBulletin, calculerPaie, payerSalaires, supprimerLigneBulletin, validerPaie } from '../../actions'
 
-type Ligne = { ordre: number; code: string; libelle: string; type: string; base: number | null; taux: number | null; montant: number }
+type Ligne = { id: string; ordre: number; code: string; libelle: string; type: string; base: number | null; taux: number | null; montant: number; manuelle: boolean }
 
 export default async function PeriodePaiePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,7 +28,7 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
   const [{ data: bulletins }, { data: cotisations }] = await Promise.all([
     supabase
       .from('bulletins_paie')
-      .select('*, employes(matricule, nom, prenom, statut, poste), bulletins_lignes(ordre, code, libelle, type, base, taux, montant)')
+      .select('*, employes(matricule, nom, prenom, statut, poste), bulletins_lignes(id, ordre, code, libelle, type, base, taux, montant, manuelle)')
       .eq('periode_id', id)
       .order('created_at'),
     supabase.from('v_cotisations_periode').select('*').eq('periode_id', id).order('code'),
@@ -36,6 +37,7 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
   const peutCalculer = ['admin', 'rh'].includes(ctx.role) && periode.statut === 'ouverte'
   const peutValider = ['admin', 'comptable'].includes(ctx.role) && periode.statut === 'ouverte' && (bulletins?.length ?? 0) > 0
   const peutPayer = ['admin', 'comptable'].includes(ctx.role) && periode.statut === 'validee'
+  const peutInserer = ['admin', 'comptable', 'rh'].includes(ctx.role) && periode.statut === 'ouverte'
 
   const somme = (k: 'brut' | 'total_retenues' | 'net_a_payer' | 'charges_patronales' | 'cout_total') =>
     (bulletins ?? []).reduce((s, b) => s + Number(b[k]), 0)
@@ -95,7 +97,10 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
           <tbody>
             {bulletins?.map((b) => {
               const e = Array.isArray(b.employes) ? b.employes[0] : b.employes
-              const lignes = ([...(b.bulletins_lignes as Ligne[])]).sort((x, y) => x.ordre - y.ordre)
+              // Une rubrique à montant nul (ex. exonération, taux à 0) n'est pas affichée.
+              const lignes = ([...(b.bulletins_lignes as Ligne[])])
+                .filter((l) => Number(l.montant) !== 0)
+                .sort((x, y) => x.ordre - y.ordre)
               return (
                 <tr key={b.id}>
                   <td className={td}>
@@ -104,14 +109,30 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
                       <ul className="mt-2 space-y-1 text-xs text-foreground-muted">
                         {lignes.map((l, i) => (
                           <li key={i} className="flex justify-between gap-4">
-                            <span>{traduireLibelle(t, l.libelle)}{l.taux ? ` (${Number(l.taux)} %)` : ''}</span>
-                            <span className={`tabular-nums ${l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? 'text-danger' : ''}`}>
-                              {l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? '−' : l.type === 'charge_patronale' ? `${t('(employeur)')} ` : ''}
-                              {fm(l.montant)}
+                            <span>
+                              {traduireLibelle(t, l.libelle)}{l.taux ? ` (${Number(l.taux)} %)` : ''}
+                              {l.manuelle && <span className="ml-1 text-foreground-muted">({t('rubrique manuelle')})</span>}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <span className={`tabular-nums ${l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? 'text-danger' : ''}`}>
+                                {l.type === 'retenue_salariale' || l.type === 'retenue_absence' ? '−' : l.type === 'charge_patronale' ? `${t('(employeur)')} ` : ''}
+                                {fm(l.montant)}
+                              </span>
+                              {l.manuelle && peutInserer && b.statut === 'calcule' && (
+                                <ActionButton
+                                  label={t('Supprimer')}
+                                  size="sm"
+                                  confirmation={t('Supprimer la ligne {c} ?', { c: traduireLibelle(t, l.libelle) })}
+                                  action={supprimerLigneBulletin.bind(null, l.id)}
+                                />
+                              )}
                             </span>
                           </li>
                         ))}
                       </ul>
+                      {peutInserer && b.statut === 'calcule' && (
+                        <LigneBulletinForm bulletinId={b.id} action={ajouterLigneBulletin} />
+                      )}
                     </details>
                     <span className="text-xs text-foreground-muted">{t(STATUTS_EMPLOYE[e?.statut ?? ''] ?? '')}</span>
                     {b.avertissements && <p className="mt-1 text-xs text-warning">⚠ {b.avertissements}</p>}
