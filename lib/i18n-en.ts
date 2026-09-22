@@ -1465,4 +1465,6 @@ export const EN: Record<string, string> = {
   "Un emprunt d’investissement de 24 M F CFA avec son échéancier et ses remboursements.": "An investment loan of 24 M CFA francs with its schedule and repayments.",
   "Comptes, règlements, rapprochement bancaire et plan sur 12 mois.": "Accounts, settlements, bank reconciliation and a 12-month plan.",
   "Bilan, compte de résultat, ratios et suivi de la trésorerie de l’exercice en cours.": "Balance sheet, income statement, ratios and cash monitoring for the current financial year.",
+  "Signature de l’employé": "Employee signature",
+  "Signature de l’employeur": "Employer signature",
 }

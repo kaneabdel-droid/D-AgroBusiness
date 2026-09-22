@@ -29,6 +29,9 @@ export function imprimerHtml(titre: string, corps: string, lang: Lang) {
   td.n, th.n { text-align: end; direction: ltr; unicode-bidi: plaintext; }
   tr.section td { background: #e6ece9; font-weight: bold; }
   .total { margin-top: 12px; font-size: 13px; } .net { font-size: 16px; font-weight: bold; }
+  .signatures { display: flex; justify-content: space-between; gap: 24px; margin-top: 48px; }
+  .signatures div { flex: 1; text-align: center; font-size: 12px; }
+  .signatures .ligne { border-top: 1px solid #111; margin-bottom: 6px; height: 32px; }
   @media print { body { margin: 8mm; } }
 </style></head><body>${corps}</body></html>`)
   w.document.close()

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useT } from '@/components/I18nProvider'
 import { LOCALES, type Lang } from '@/lib/i18n'
 import { imprimerHtml, echapper } from '@/lib/impression'
+import { formatMontantExport } from '@/lib/utils'
 
 export type BulletinPdf = {
   organisation: string
@@ -37,7 +38,8 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
     if (data.lang === 'ar') return genererArabe()
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
-    const fmt = (v: number) => `${v.toLocaleString(LOCALES[data.lang], { minimumFractionDigits: data.devise === 'XOF' ? 0 : 2, maximumFractionDigits: data.devise === 'XOF' ? 0 : 2 })}`
+    // Espace normale (jamais l'espace insécable de toLocaleString, que jsPDF/Helvetica n'affiche pas) pour le séparateur de milliers.
+    const fmt = (v: number) => formatMontantExport(v, data.devise === 'XOF' ? 0 : 2, data.lang !== 'en')
 
     const doc = new jsPDF()
     doc.setFontSize(16)
@@ -82,6 +84,19 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
     doc.setFontSize(9)
     doc.text(`${t('Coût employeur')} : ${fmt(data.brut + data.chargesPatronales)} ${data.devise}`, 14, y + 22)
 
+    // Signatures : sur une nouvelle page si trop peu de place ne reste en bas de celle-ci.
+    const pageH = doc.internal.pageSize.getHeight()
+    let ySign = y + 45
+    if (ySign > pageH - 25) {
+      doc.addPage()
+      ySign = 30
+    }
+    doc.setFontSize(10)
+    doc.line(14, ySign, 80, ySign)
+    doc.line(130, ySign, 196, ySign)
+    doc.text(t('Signature de l’employé'), 47, ySign + 6, { align: 'center' })
+    doc.text(t('Signature de l’employeur'), 163, ySign + 6, { align: 'center' })
+
     doc.save(`${t('bulletin')}-${data.matricule}-${data.periode.replace(/\s+/g, '-')}.pdf`)
   }
 
@@ -105,7 +120,8 @@ export function BulletinPdfButton({ data }: { data: BulletinPdf }) {
 <p class="total">${echapper(t('Brut'))} : ${fmt(data.brut)} ${echapper(data.devise)}</p>
 <p class="total">${echapper(t('Total retenues'))} : ${fmt(data.retenues)} ${echapper(data.devise)}</p>
 <p class="total net">${echapper(t('NET À PAYER'))} : ${fmt(data.net)} ${echapper(data.devise)}</p>
-<p class="total">${echapper(t('Coût employeur'))} : ${fmt(data.brut + data.chargesPatronales)} ${echapper(data.devise)}</p>`
+<p class="total">${echapper(t('Coût employeur'))} : ${fmt(data.brut + data.chargesPatronales)} ${echapper(data.devise)}</p>
+<div class="signatures"><div><div class="ligne"></div>${echapper(t('Signature de l’employé'))}</div><div><div class="ligne"></div>${echapper(t('Signature de l’employeur'))}</div></div>`
     imprimerHtml(`${t('bulletin')}-${data.matricule}`, corps, data.lang)
   }
 

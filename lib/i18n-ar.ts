@@ -1443,4 +1443,6 @@ export const AR: Record<string, string> = {
   "Un emprunt d’investissement de 24 M F CFA avec son échéancier et ses remboursements.": "قرض استثماري بقيمة 24 مليون فرنك أفريقي مع جدوله وسداداته.",
   "Comptes, règlements, rapprochement bancaire et plan sur 12 mois.": "الحسابات والتسويات والمطابقة المصرفية وخطة لمدة 12 شهرًا.",
   "Bilan, compte de résultat, ratios et suivi de la trésorerie de l’exercice en cours.": "الميزانية العمومية وحساب النتائج والنسب ومتابعة الخزينة للسنة المالية الجارية.",
+  "Signature de l’employé": "توقيع الموظف",
+  "Signature de l’employeur": "توقيع صاحب العمل",
 }
