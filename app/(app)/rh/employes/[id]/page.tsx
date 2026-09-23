@@ -19,9 +19,10 @@ export default async function EmployeDetailPage({ params }: { params: Promise<{ 
 
   const { data: e } = await supabase.from('employes').select('*, departements(nom), secteurs_projets(nom)').eq('id', id).maybeSingle()
   if (!e) notFound()
-  const [{ data: contrats }, { data: solde }] = await Promise.all([
-    supabase.from('contrats_travail').select('*').eq('employe_id', id).order('date_debut', { ascending: false }),
+  const [{ data: contrats }, { data: solde }, { data: categories }] = await Promise.all([
+    supabase.from('contrats_travail').select('*, categories_salariales(code, libelle)').eq('employe_id', id).order('date_debut', { ascending: false }),
     supabase.from('v_soldes_conges').select('*').eq('employe_id', id).maybeSingle(),
+    supabase.from('categories_salariales').select('id, code, libelle').eq('actif', true).order('ordre'),
   ])
   const dep = Array.isArray(e.departements) ? e.departements[0] : e.departements
   const sec = Array.isArray(e.secteurs_projets) ? e.secteurs_projets[0] : e.secteurs_projets
@@ -44,7 +45,9 @@ export default async function EmployeDetailPage({ params }: { params: Promise<{ 
               { name: 'type', label: t('Type'), type: 'select', required: true, options: TYPES_CONTRAT.map((c) => ({ ...c, label: t(c.label) })) },
               { name: 'date_debut', label: t('Début'), type: 'date', required: true, defaultValue: new Date().toISOString().slice(0, 10) },
               { name: 'date_fin', label: t('Fin'), type: 'date' },
-              { name: 'salaire_base', label: t('Salaire de base mensuel (ou forfait prestataire)'), type: 'number', step: '0.01' },
+              { name: 'categorie_id', label: t('Catégorie salariale (donne le salaire de base ; vide : saisir librement)'), type: 'select', options: categories?.map((c) => ({ value: c.id, label: `${c.code} — ${c.libelle}` })) },
+              { name: 'salaire_base', label: t('Salaire de base mensuel (ignoré si une catégorie est choisie ; ou forfait prestataire)'), type: 'number', step: '0.01' },
+              { name: 'sursalaire', label: t('Sursalaire (libre, complète le salaire catégoriel jusqu’au brut négocié)'), type: 'number', step: '0.01' },
               { name: 'primes_mensuelles', label: t('Primes mensuelles'), type: 'number', step: '0.01' },
               { name: 'taux_journalier', label: t('Taux journalier (saisonniers, journaliers)'), type: 'number', step: '0.01' },
             ]}
@@ -66,22 +69,29 @@ export default async function EmployeDetailPage({ params }: { params: Promise<{ 
             <th className={th}>{t('Type')}</th>
             <th className={th}>{t('Début')}</th>
             <th className={th}>{t('Fin')}</th>
+            <th className={th}>{t('Catégorie')}</th>
             <th className={`${th} text-right`}>{t('Salaire de base')}</th>
+            <th className={`${th} text-right`}>{t('Sursalaire')}</th>
             <th className={`${th} text-right`}>{t('Primes')}</th>
             <th className={`${th} text-right`}>{t('Taux journalier')}</th>
           </tr>
         </thead>
         <tbody>
-          {contrats?.map((c) => (
+          {contrats?.map((c) => {
+            const cat = Array.isArray(c.categories_salariales) ? c.categories_salariales[0] : c.categories_salariales
+            return (
             <tr key={c.id}>
               <td className={td}>{t(TYPES_CONTRAT.find((x) => x.value === c.type)?.label ?? '')}</td>
               <td className={td}>{formatDate(c.date_debut, ctx.lang)}</td>
               <td className={td}>{c.date_fin ? formatDate(c.date_fin, ctx.lang) : t('En cours')}</td>
+              <td className={td}>{cat ? `${cat.code} — ${cat.libelle}` : '—'}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(c.salaire_base)}</td>
+              <td className={`${td} text-right tabular-nums`}>{Number(c.sursalaire) > 0 ? fm(c.sursalaire) : '—'}</td>
               <td className={`${td} text-right tabular-nums`}>{fm(c.primes_mensuelles)}</td>
               <td className={`${td} text-right tabular-nums`}>{c.taux_journalier != null ? fm(c.taux_journalier) : '—'}</td>
             </tr>
-          ))}
+            )
+          })}
         </tbody>
       </TableWrap>
     </>

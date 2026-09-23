@@ -63,6 +63,7 @@ export const MENUS: GroupeMenu[] = [
     titre: 'Personnel & paie',
     items: [
       { href: '/rh/employes', label: 'Personnel', requiertRh: true },
+      { href: '/rh/categories', label: 'Catégories salariales', requiertRh: true },
       { href: '/rh/pointage', label: 'Pointage', requiertRh: true },
       { href: '/rh/conges', label: 'Congés et absences', requiertRh: true },
       { href: '/rh/paie', label: 'Paie', requiertRh: true },

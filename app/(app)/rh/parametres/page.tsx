@@ -7,7 +7,7 @@ import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { ActionButton } from '@/components/ActionButton'
 import {
-  addForfait, addReductionFamille, chargerModelePaie, addRegle, addTrancheIr, basculerRegle, importerBareme, majParametrage,
+  addForfait, addPrimeAnciennete, addReductionFamille, chargerModelePaie, addRegle, addTrancheIr, basculerRegle, importerBareme, majParametrage,
   supprimerBareme, supprimerLigneParametre, supprimerRegle, validerParametrage,
 } from '../actions'
 
@@ -23,7 +23,7 @@ export default async function ParametresPaiePage() {
   const fmt = (v: number | string | null) => formatMontant(v, '', ctx.lang)
   const periodicites = PERIODICITES.map((p) => ({ ...p, label: t(p.label) }))
   const supabase = await createClient()
-  const [{ data: param }, { data: regles }, { data: versions }, { data: tranches }, { data: reductions }, { data: forfaits }] =
+  const [{ data: param }, { data: regles }, { data: versions }, { data: tranches }, { data: reductions }, { data: forfaits }, { data: anciennetes }] =
     await Promise.all([
       supabase.from('parametrage_paie').select('*').maybeSingle(),
       supabase.from('regles_paie').select('*').order('ordre').order('code'),
@@ -31,6 +31,7 @@ export default async function ParametresPaiePage() {
       supabase.from('bareme_ir').select('*').order('tranche_min'),
       supabase.from('reductions_famille').select('*').order('parts'),
       supabase.from('tranches_forfaitaires').select('*').order('periodicite').order('seuil_min'),
+      supabase.from('primes_anciennete').select('*').order('annees_min'),
     ])
   const admin = ctx.role === 'admin'
   const valide = !!param?.valide_le
@@ -109,6 +110,9 @@ export default async function ParametresPaiePage() {
             { name: 'reduction_pression_points', label: t('Diminution du taux de pression fiscale (points, ex. Mali : 2)'), type: 'number', step: '0.001', defaultValue: String(param?.reduction_pression_points ?? 0) },
             { name: 'abattement_pct', label: t('Mode calcul : abattement forfaitaire (%)'), type: 'number', step: '0.01', defaultValue: String(param?.abattement_pct ?? 0) },
             { name: 'abattement_plafond_annuel', label: t('Mode calcul : plafond annuel de l’abattement'), type: 'number', step: '0.01', defaultValue: param?.abattement_plafond_annuel != null ? String(param.abattement_plafond_annuel) : '' },
+            { name: 'heures_normales_mois', label: t('Heures normales par mois (base horaire de la catégorie, prime d’ancienneté)'), type: 'number', step: '0.01', defaultValue: String(param?.heures_normales_mois ?? 173.33) },
+            { name: 'mode_heures_sup', label: t('Heures supplémentaires'), type: 'select', required: true, defaultValue: param?.mode_heures_sup ?? 'pourcentage', options: [{ value: 'pourcentage', label: t('Nombre d’heures × salaire horaire de la catégorie × majoration') }, { value: 'forfait', label: t('Montant saisi directement par période') }] },
+            { name: 'majoration_heures_sup_pct', label: t('Mode « pourcentage » : majoration des heures supplémentaires (%)'), type: 'number', step: '0.01', defaultValue: String(param?.majoration_heures_sup_pct ?? 0) },
           ]}
         />
         <SimpleCreateForm
@@ -252,6 +256,33 @@ export default async function ParametresPaiePage() {
             { name: 'montant', label: t('Montant de la période (par personne)'), type: 'number', step: '0.01', required: true },
           ]} />
       </div>
+
+      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Prime d’ancienneté')}</h2>
+      <Card className="mb-4 text-sm text-foreground-muted">
+        {t('Barème par palier d’années de service, en % du salaire catégoriel de base (ou, s’il y a des heures supplémentaires sur la période, de (heures normales + heures sup) × salaire horaire de la catégorie). Ne s’applique qu’aux contrats rattachés à une catégorie salariale. Un employé ayant N années de service reçoit le taux du plus grand palier atteint.')}
+      </Card>
+      <div className="mb-2 flex flex-wrap gap-2">
+        <SimpleCreateForm titre={t('Palier d’ancienneté')} disabled={!admin} action={addPrimeAnciennete}
+          champs={[
+            { name: 'annees_min', label: t('À partir de (années de service)'), type: 'number', required: true },
+            { name: 'taux_pct', label: t('Taux (% du salaire catégoriel de base)'), type: 'number', step: '0.001', required: true },
+          ]} />
+      </div>
+      <div className="mb-6">
+        <Card>
+          <p className="mb-2 text-sm font-medium">{t('Paliers actuels')}</p>
+          {(anciennetes ?? []).length === 0 && <p className="text-xs text-foreground-muted">{t('Aucune ligne.')}</p>}
+          <ul className="grid gap-1 text-xs sm:grid-cols-2 lg:grid-cols-3">
+            {anciennetes?.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-2">
+                <span>{t('{n} ans : {t} %', { n: a.annees_min, t: Number(a.taux_pct) })}</span>
+                {admin && <ActionButton label={t('×')} action={supprimerLigneParametre.bind(null, 'primes_anciennete', a.id)} />}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
         {([
           [t('Tranches d’impôt'), tranches?.map((x) => ({ id: x.id, texte: `${fmt(x.tranche_min)} → ${x.tranche_max != null ? fmt(x.tranche_max) : '∞'} : ${Number(x.taux)} %` })), 'bareme_ir'],

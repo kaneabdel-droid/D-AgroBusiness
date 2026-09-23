@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { TYPES_CONGE } from '@/lib/rh'
 import { formatDate } from '@/lib/utils'
@@ -20,7 +21,7 @@ export default async function CongesPage() {
     supabase.from('v_soldes_conges').select('employe_id, annee, jours_acquis, jours_pris'),
   ])
   const peutDemander = ['admin', 'rh', 'chef_departement'].includes(ctx.role)
-  const peutTraiter = ['admin', 'rh'].includes(ctx.role)
+  const peutTraiter = peutMenu(ctx, '/rh/conges', ['admin', 'rh'], 'modifier')
 
   return (
     <>

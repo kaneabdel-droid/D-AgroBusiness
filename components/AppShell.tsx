@@ -78,6 +78,7 @@ const ICONES: Record<string, typeof LayoutDashboard> = {
   '/usine': Factory,
   '/tracabilite': ShieldCheck,
   '/rh/employes': Users,
+  '/rh/categories': Layers,
   '/rh/pointage': ClipboardCheck,
   '/rh/conges': CalendarRange,
   '/rh/paie': Receipt,

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT, traduireLibelle } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { MOIS, STATUTS_EMPLOYE } from '@/lib/rh'
@@ -10,7 +11,8 @@ import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ActionButton, PayerEcheance } from '@/components/ActionButton'
 import { BulletinPdfButton } from '@/components/BulletinPdfButton'
 import { LigneBulletinForm } from '@/components/LigneBulletinForm'
-import { ajouterLigneBulletin, calculerPaie, payerSalaires, supprimerLigneBulletin, validerPaie } from '../../actions'
+import { HeuresSupForm } from '@/components/HeuresSupForm'
+import { ajouterLigneBulletin, calculerPaie, enregistrerHeuresSup, payerSalaires, supprimerLigneBulletin, validerPaie } from '../../actions'
 
 type Ligne = { id: string; ordre: number; code: string; libelle: string; type: string; base: number | null; taux: number | null; montant: number; manuelle: boolean }
 
@@ -25,19 +27,23 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
   const { data: periode } = await supabase.from('periodes_paie').select('*').eq('id', id).maybeSingle()
   if (!periode) notFound()
 
-  const [{ data: bulletins }, { data: cotisations }] = await Promise.all([
+  const [{ data: bulletins }, { data: cotisations }, { data: employes }, { data: heuresExistantes }, { data: param }] = await Promise.all([
     supabase
       .from('bulletins_paie')
       .select('*, employes(matricule, nom, prenom, statut, poste), bulletins_lignes(id, ordre, code, libelle, type, base, taux, montant, manuelle)')
       .eq('periode_id', id)
       .order('created_at'),
     supabase.from('v_cotisations_periode').select('*').eq('periode_id', id).order('code'),
+    supabase.from('employes').select('id, matricule, nom, prenom').eq('actif', true).order('matricule'),
+    supabase.from('heures_supplementaires').select('employe_id, nombre_heures, montant_forfait').eq('periode_id', id),
+    supabase.from('parametrage_paie').select('mode_heures_sup').maybeSingle(),
   ])
   const libellePeriode = `${t(MOIS[periode.mois - 1])} ${periode.annee}`
   const peutCalculer = ['admin', 'rh'].includes(ctx.role) && periode.statut === 'ouverte'
-  const peutValider = ['admin', 'comptable'].includes(ctx.role) && periode.statut === 'ouverte' && (bulletins?.length ?? 0) > 0
-  const peutPayer = ['admin', 'comptable'].includes(ctx.role) && periode.statut === 'validee'
+  const peutValider = peutMenu(ctx, '/rh/paie', ['admin', 'comptable'], 'modifier') && periode.statut === 'ouverte' && (bulletins?.length ?? 0) > 0
+  const peutPayer = peutMenu(ctx, '/rh/paie', ['admin', 'comptable'], 'modifier') && periode.statut === 'validee'
   const peutInserer = ['admin', 'comptable', 'rh'].includes(ctx.role) && periode.statut === 'ouverte'
+  const peutSaisirHeuresSup = ['admin', 'rh', 'comptable'].includes(ctx.role) && periode.statut === 'ouverte'
 
   const somme = (k: 'brut' | 'total_retenues' | 'net_a_payer' | 'charges_patronales' | 'cout_total') =>
     (bulletins ?? []).reduce((s, b) => s + Number(b[k]), 0)
@@ -64,6 +70,25 @@ export default async function PeriodePaiePage({ params }: { params: Promise<{ id
         )}
         {peutPayer && <PayerEcheance comptes={o.comptesTresorerie} action={payerSalaires.bind(null, id)} />}
       </PageHeader>
+
+      {peutSaisirHeuresSup && (
+        <>
+          <h2 className="mb-2 font-heading text-lg font-semibold">{t('Heures supplémentaires')}</h2>
+          <p className="mb-2 text-sm text-foreground-muted">
+            {t('À saisir avant de calculer les bulletins.')}{' '}
+            {param?.mode_heures_sup === 'forfait'
+              ? t('Mode forfait : indiquez le montant à verser (les heures restent informatives).')
+              : t('Mode pourcentage : le montant est calculé à partir du salaire horaire de la catégorie de l’employé et de la majoration réglée dans Paie → Paramètres.')}
+          </p>
+          <HeuresSupForm
+            periodeId={id}
+            employes={(employes ?? []).map((e) => ({ id: e.id, label: `${e.matricule} — ${e.nom} ${e.prenom ?? ''}` }))}
+            existants={(heuresExistantes ?? []).map((h) => ({ employeId: h.employe_id, heures: Number(h.nombre_heures), montant: h.montant_forfait != null ? Number(h.montant_forfait) : null }))}
+            modeForfait={param?.mode_heures_sup === 'forfait'}
+            action={enregistrerHeuresSup}
+          />
+        </>
+      )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {([

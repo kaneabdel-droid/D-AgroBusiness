@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { MOIS } from '@/lib/rh'
@@ -18,7 +19,7 @@ export default async function TvaPage({ searchParams }: { searchParams: Promise<
     supabase.from('v_tva_mensuelle').select('*').eq('annee', annee),
     supabase.from('liquidations_tva').select('*').eq('annee', annee),
   ])
-  const peutLiquider = ['admin', 'comptable'].includes(ctx.role)
+  const peutLiquider = peutMenu(ctx, '/pilotage/tva', ['admin', 'comptable'], 'modifier')
 
   const lignes = MOIS.map((mois, i) => {
     const nom = t(mois)

@@ -79,6 +79,8 @@ export async function addContrat(employeId: string, formData: FormData): Promise
     salaire_base: num(formData, 'salaire_base') ?? 0,
     primes_mensuelles: num(formData, 'primes_mensuelles') ?? 0,
     taux_journalier: num(formData, 'taux_journalier') ?? null,
+    categorie_id: opt(formData, 'categorie_id') ?? null,
+    sursalaire: num(formData, 'sursalaire') ?? 0,
   })
   if (error) return message(error)
   rafraichir()
@@ -205,6 +207,9 @@ export async function majParametrage(formData: FormData): Promise<Resultat> {
       ricf_par_enfant_pct: num(formData, 'ricf_par_enfant_pct') ?? 0,
       ricf_max_enfants: num(formData, 'ricf_max_enfants') ?? 10,
       reduction_pression_points: num(formData, 'reduction_pression_points') ?? 0,
+      mode_heures_sup: txt(formData, 'mode_heures_sup') || 'pourcentage',
+      majoration_heures_sup_pct: num(formData, 'majoration_heures_sup_pct') ?? 0,
+      heures_normales_mois: num(formData, 'heures_normales_mois') ?? 173.33,
     })
     .eq('organisation_id', ctx.organisationId)
   if (error) return message(error)
@@ -366,12 +371,61 @@ export async function addForfait(formData: FormData): Promise<Resultat> {
 }
 
 export async function supprimerLigneParametre(
-  table: 'bareme_ir' | 'reductions_famille' | 'tranches_forfaitaires',
+  table: 'bareme_ir' | 'reductions_famille' | 'tranches_forfaitaires' | 'primes_anciennete',
   id: string
 ): Promise<Resultat> {
-  if (!['bareme_ir', 'reductions_famille', 'tranches_forfaitaires'].includes(table)) return { error: 'Table invalide.' }
+  if (!['bareme_ir', 'reductions_famille', 'tranches_forfaitaires', 'primes_anciennete'].includes(table)) return { error: 'Table invalide.' }
   const supabase = await createClient()
   const { error } = await supabase.from(table).delete().eq('id', id)
+  if (error) return message(error)
+  rafraichir()
+  return { success: true }
+}
+
+// ---------- Catégories salariales et prime d'ancienneté ----------
+
+export async function addCategorieSalariale(formData: FormData): Promise<Resultat> {
+  const ctx = await getContexte()
+  const supabase = await createClient()
+  const salaireBase = num(formData, 'salaire_base') ?? 0
+  let salaireHoraire = num(formData, 'salaire_horaire')
+  if (salaireHoraire == null) {
+    const { data: param } = await supabase.from('parametrage_paie').select('heures_normales_mois').maybeSingle()
+    salaireHoraire = salaireBase / (param?.heures_normales_mois ?? 173.33)
+  }
+  const { error } = await supabase.from('categories_salariales').insert({
+    organisation_id: ctx.organisationId,
+    code: txt(formData, 'code').toUpperCase(),
+    libelle: txt(formData, 'libelle'),
+    salaire_base: salaireBase,
+    salaire_horaire: salaireHoraire,
+    ordre: num(formData, 'ordre') ?? 10,
+  })
+  if (error) return message(error)
+  rafraichir()
+  return { success: true }
+}
+
+export async function addPrimeAnciennete(formData: FormData): Promise<Resultat> {
+  const ctx = await getContexte()
+  const supabase = await createClient()
+  const { error } = await supabase.from('primes_anciennete').upsert(
+    { organisation_id: ctx.organisationId, annees_min: num(formData, 'annees_min'), taux_pct: num(formData, 'taux_pct') },
+    { onConflict: 'organisation_id,annees_min' }
+  )
+  if (error) return message(error)
+  rafraichir()
+  return { success: true }
+}
+
+// ---------- Heures supplémentaires (par période, avant le calcul des bulletins) ----------
+
+export async function enregistrerHeuresSup(periodeId: string, entries: { employeId: string; heures: number; montant?: number }[]): Promise<Resultat> {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('enregistrer_heures_sup', {
+    p_periode_id: periodeId,
+    p: entries.map((e) => ({ employe_id: e.employeId, heures: e.heures, montant: e.montant ?? null })),
+  })
   if (error) return message(error)
   rafraichir()
   return { success: true }
