@@ -20,6 +20,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         organisation={ctx.organisationNom}
         utilisateur={ctx.nomComplet ?? ctx.email ?? t('Utilisateur')}
         role={t(ROLES[ctx.role] ?? ctx.role)}
+        roleCle={ctx.role}
+        permissions={ctx.permissions}
         accesRh={ctx.accesRh}
         accesUsine={ctx.accesUsine}
       >

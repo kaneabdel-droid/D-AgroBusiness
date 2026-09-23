@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -27,7 +28,7 @@ export default async function ReleveDetailPage({ params }: { params: Promise<{ i
     supabase.from('comptes_comptables').select('id, numero, libelle').eq('actif', true).order('numero'),
   ])
   const monnaie = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/tresorerie/rapprochement', ['admin', 'comptable'])
   const somme = (xs: { montant: number | string }[]) => xs.reduce((s, x) => s + Number(x.montant), 0)
 
   const nonPointeesLivres = (ecritures ?? []).filter((e) => !e.pointee)

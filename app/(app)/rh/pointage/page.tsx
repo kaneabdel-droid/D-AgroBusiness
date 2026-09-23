@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { STATUTS_EMPLOYE } from '@/lib/rh'
@@ -23,7 +24,7 @@ export default async function PointagePage({
     supabase.from('pointages').select('employe_id, statut').eq('date_pointage', date),
   ])
   const statutDuJour = new Map((pointages ?? []).map((p) => [p.employe_id, p.statut]))
-  const peutEcrire = ['admin', 'rh', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/rh/pointage', ['admin', 'rh', 'chef_departement'])
 
   return (
     <>

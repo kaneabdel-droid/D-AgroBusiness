@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { CATEGORIES } from '@/lib/catalogue'
@@ -12,7 +13,7 @@ export default async function ProduitsPage() {
   const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: produits } = await supabase.from('produits').select('*').order('code')
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/catalogue/produits', ['admin', 'comptable', 'chef_departement'])
 
   return (
     <>

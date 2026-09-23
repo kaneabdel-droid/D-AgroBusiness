@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Factory } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -25,7 +26,7 @@ export default async function UsinePage() {
       .order('date_of', { ascending: false })
       .limit(50),
   ])
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/usine', ['admin', 'comptable', 'chef_departement'])
   const finis = o.produits.filter((p) => ['produit_fini', 'sous_produit'].includes(p.categorie)).map((p) => ({ value: p.id, label: p.label }))
 
   const champsSorties: Champ[] = []

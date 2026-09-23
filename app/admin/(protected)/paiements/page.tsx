@@ -5,6 +5,8 @@ import { langueNavigateur } from '@/lib/i18n-server'
 import { NIVEAUX, type Niveau } from '@/lib/abonnement'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ActionButton } from '@/components/ActionButton'
+import { purgerPaiementsLatents, supprimerPaiement } from './actions'
 
 const STATUTS: Record<string, string> = { pending: 'En attente', completed: 'Payé', failed: 'Échoué' }
 
@@ -23,6 +25,7 @@ export default async function AdminPaiementsPage({ searchParams }: { searchParam
   const { data: paiements } = await requete
 
   const total = (paiements ?? []).filter((p) => p.statut === 'completed' && p.provider !== 'manuel').reduce((s, p) => s + Number(p.montant), 0)
+  const nbLatents = (paiements ?? []).filter((p) => p.statut === 'pending' || p.statut === 'failed').length
   const fcfa = (v: number) => `${v.toLocaleString('fr-FR').replace(/[  ]/g, ' ')} F CFA`
   const filtres: { label: string; value?: string }[] = [
     { label: 'Tous' }, { label: 'En attente', value: 'pending' }, { label: 'Payé', value: 'completed' }, { label: 'Échoué', value: 'failed' },
@@ -31,7 +34,7 @@ export default async function AdminPaiementsPage({ searchParams }: { searchParam
   return (
     <>
       <PageHeader titre={t('Paiements')} description={`${t('Encaissé (paiements en ligne)')} : ${fcfa(total)}`}>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {filtres.map((f) => (
             <Link
               key={f.label}
@@ -41,18 +44,26 @@ export default async function AdminPaiementsPage({ searchParams }: { searchParam
               {t(f.label)}
             </Link>
           ))}
+          {nbLatents > 0 && (
+            <ActionButton
+              label={t('Purger les paiements latents ({n})', { n: nbLatents })}
+              confirmation={t('Supprimer définitivement tous les paiements en attente et échoués affichés ? Les paiements payés ne sont jamais touchés.')}
+              action={purgerPaiementsLatents}
+            />
+          )}
         </div>
       </PageHeader>
       <TableWrap>
         <thead>
           <tr>
             <th className={th}>{t('Date')}</th><th className={th}>{t('Entreprise')}</th><th className={th}>{t('Niveau')}</th><th className={th}>{t('Durée')}</th>
-            <th className={`${th} text-end`}>{t('Montant')}</th><th className={th}>{t('Prestataire')}</th><th className={th}>{t('Statut')}</th>
+            <th className={`${th} text-end`}>{t('Montant')}</th><th className={th}>{t('Prestataire')}</th><th className={th}>{t('Statut')}</th><th className={th}></th>
           </tr>
         </thead>
         <tbody>
           {paiements?.map((p) => {
             const org = Array.isArray(p.organisations) ? p.organisations[0] : p.organisations
+            const latent = p.statut === 'pending' || p.statut === 'failed'
             return (
               <tr key={p.id}>
                 <td className={`${td} whitespace-nowrap`}>{formatDate(p.created_at, lang)}</td>
@@ -62,11 +73,20 @@ export default async function AdminPaiementsPage({ searchParams }: { searchParam
                 <td className={`${td} text-end tabular-nums`}>{fcfa(Number(p.montant))}</td>
                 <td className={`${td} capitalize`}>{p.provider === 'manuel' ? t('Manuel') : `${p.provider} · ${p.moyen_paiement}`}</td>
                 <td className={`${td} ${p.statut === 'completed' ? 'text-success' : p.statut === 'failed' ? 'text-danger' : ''}`}>{t(STATUTS[p.statut])}</td>
+                <td className={td}>
+                  {latent && (
+                    <ActionButton
+                      label={t('Supprimer')}
+                      confirmation={t('Supprimer ce paiement {s} ?', { s: t(STATUTS[p.statut]) })}
+                      action={supprimerPaiement.bind(null, p.id)}
+                    />
+                  )}
+                </td>
               </tr>
             )
           })}
           {(paiements ?? []).length === 0 && (
-            <tr><td colSpan={7} className={`${td} text-center text-foreground-muted`}>{t('Aucun paiement')}</td></tr>
+            <tr><td colSpan={8} className={`${td} text-center text-foreground-muted`}>{t('Aucun paiement')}</td></tr>
           )}
         </tbody>
       </TableWrap>

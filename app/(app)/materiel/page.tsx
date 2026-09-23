@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { CATEGORIES_MATERIEL, MODES_REMBOURSEMENT } from '@/lib/catalogue'
@@ -19,7 +20,7 @@ export default async function MaterielPage() {
     .from('v_materiels')
     .select('*, departements(nom)')
     .order('code')
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/materiel', ['admin', 'comptable'])
   const valeurBrute = (materiels ?? []).reduce((s, m) => s + Number(m.cout_acquisition), 0)
   const vnc = (materiels ?? []).reduce((s, m) => s + Number(m.valeur_nette_comptable), 0)
 

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/card'
 import { EcritureForm } from '@/components/EcritureForm'
@@ -8,7 +9,7 @@ import { EcritureForm } from '@/components/EcritureForm'
 export default async function NouvelleEcriturePage() {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
-  if (!['admin', 'comptable'].includes(ctx.role)) redirect('/comptabilite/ecritures')
+  if (!peutMenu(ctx, '/comptabilite/ecritures', ['admin', 'comptable'])) redirect('/comptabilite/ecritures')
 
   const supabase = await createClient()
   const [journaux, comptes, tiers, departements, secteurs, campagnes] = await Promise.all([

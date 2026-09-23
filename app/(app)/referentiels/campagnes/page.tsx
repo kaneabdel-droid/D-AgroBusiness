@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -14,7 +15,7 @@ export default async function CampagnesPage() {
     .from('campagnes')
     .select('*')
     .order('date_debut', { ascending: false })
-  const peutEcrire = ['admin', 'direction', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/referentiels/campagnes', ['admin', 'direction', 'comptable', 'chef_departement'])
 
   return (
     <>

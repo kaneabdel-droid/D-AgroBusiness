@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ export default async function EcrituresPage() {
   const contrepassees = new Set(
     (ecritures ?? []).map((e) => e.contrepassation_de).filter((v): v is string => !!v)
   )
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/comptabilite/ecritures', ['admin', 'comptable'])
 
   return (
     <>

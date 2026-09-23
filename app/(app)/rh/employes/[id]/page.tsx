@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { SITUATIONS, STATUTS_EMPLOYE, TYPES_CONTRAT } from '@/lib/rh'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -24,7 +25,7 @@ export default async function EmployeDetailPage({ params }: { params: Promise<{ 
   ])
   const dep = Array.isArray(e.departements) ? e.departements[0] : e.departements
   const sec = Array.isArray(e.secteurs_projets) ? e.secteurs_projets[0] : e.secteurs_projets
-  const peutEcrire = ['admin', 'rh'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/rh/employes', ['admin', 'rh'])
   const acquis = Number(solde?.jours_acquis ?? 0)
   const pris = Number(solde?.jours_pris ?? 0)
 

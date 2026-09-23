@@ -51,104 +51,64 @@ import { signOut } from '@/app/auth/actions'
 import { useT } from '@/components/I18nProvider'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { estRtl } from '@/lib/i18n'
+import { MENUS } from '@/lib/menus'
+import { permissionMenu, type Matrice } from '@/lib/permissions'
 
-const NAV = [
-  {
-    titre: 'Pilotage',
-    items: [{ href: '/', label: 'Tableau de bord', icon: LayoutDashboard }],
-  },
-  {
-    titre: 'Référentiels',
-    items: [
-      { href: '/referentiels/departements', label: 'Départements', icon: Building2 },
-      { href: '/referentiels/secteurs', label: 'Secteurs & projets', icon: Layers },
-      { href: '/referentiels/exercices', label: 'Exercices', icon: CalendarRange },
-      { href: '/referentiels/campagnes', label: 'Campagnes', icon: Sprout },
-      { href: '/referentiels/tiers', label: 'Tiers', icon: Users },
-    ],
-  },
-  {
-    titre: 'Catalogue & stocks',
-    items: [
-      { href: '/catalogue/produits', label: 'Produits', icon: Package },
-      { href: '/catalogue/magasins', label: 'Magasins', icon: Store },
-      { href: '/stocks', label: 'État des stocks', icon: Boxes },
-    ],
-  },
-  {
-    titre: 'Opérations',
-    items: [
-      { href: '/achats', label: 'Achats', icon: ShoppingCart },
-      { href: '/depot-vente', label: 'Dépôt-vente', icon: Handshake },
-      { href: '/ventes?type=distribution', label: 'Distribution producteurs', icon: Truck },
-      { href: '/ventes?type=marche', label: 'Ventes marché', icon: ArrowLeftRight },
-      { href: '/remboursements-nature', label: 'Remboursements en nature', icon: Semis },
-      { href: '/tresorerie', label: 'Trésorerie', icon: Wallet },
-      { href: '/tresorerie/rapprochement', label: 'Rapprochement bancaire', icon: ArrowLeftRight },
-      { href: '/tresorerie/previsionnel', label: 'Trésorerie prévisionnelle', icon: TrendingUp },
-    ],
-  },
-  {
-    titre: 'Production & usine',
-    items: [
-      { href: '/production', label: 'Production agricole', icon: Wheat },
-      { href: '/usine', label: 'Usine de transformation', icon: Factory },
-      { href: '/tracabilite', label: 'Traçabilité et qualité', icon: ShieldCheck },
-    ],
-  },
-  {
-    titre: 'Personnel & paie',
-    items: [
-      { href: '/rh/employes', label: 'Personnel', icon: Users },
-      { href: '/rh/pointage', label: 'Pointage', icon: ClipboardCheck },
-      { href: '/rh/conges', label: 'Congés et absences', icon: CalendarRange },
-      { href: '/rh/paie', label: 'Paie', icon: Receipt },
-      { href: '/rh/parametres', label: 'Paramètres de paie', icon: Settings },
-    ],
-  },
-  {
-    titre: 'Financement & matériel',
-    items: [
-      { href: '/financements', label: 'Emprunts et crédits', icon: Banknote },
-      { href: '/subventions', label: 'Subventions', icon: HandCoins },
-      { href: '/materiel', label: 'Parc matériel', icon: Tractor },
-    ],
-  },
-  {
-    titre: 'Pilotage',
-    items: [
-      { href: '/pilotage/budgets', label: 'Budgets', icon: PiggyBank },
-      { href: '/pilotage/etats', label: 'États et ratios', icon: LineChart },
-      { href: '/pilotage/campagnes', label: 'Bilans de campagne', icon: Flag },
-      { href: '/pilotage/rapport-mensuel', label: 'Rapport mensuel', icon: CalendarDays },
-      { href: '/pilotage/tva', label: 'TVA', icon: Percent },
-    ],
-  },
-  {
-    titre: 'Administration',
-    items: [
-      { href: '/administration/equipe', label: 'Équipe', icon: UserCog },
-      { href: '/administration/audit', label: 'Journal d’audit', icon: ScrollText },
-      { href: '/abonnement', label: 'Abonnement', icon: CreditCard },
-    ],
-  },
-  {
-    titre: 'Comptabilité',
-    items: [
-      { href: '/comptabilite/plan-comptable', label: 'Plan comptable', icon: BookOpen },
-      { href: '/comptabilite/ecritures', label: 'Écritures', icon: FileText },
-      { href: '/comptabilite/balance', label: 'Balance', icon: Scale },
-      { href: '/comptabilite/soldes-tiers', label: 'Créances et dettes', icon: Landmark },
-      { href: '/comptabilite/releve', label: 'Relevés de compte', icon: FileText },
-      { href: '/comptabilite/analytique', label: 'Résultat analytique', icon: BarChart3 },
-    ],
-  },
-]
+// Icônes par href : tenues à part du registre partagé lib/menus.ts (qui ne doit pas dépendre de lucide-react
+// côté admin/permissions, une page qui n'affiche pas d'icônes).
+const ICONES: Record<string, typeof LayoutDashboard> = {
+  '/': LayoutDashboard,
+  '/referentiels/departements': Building2,
+  '/referentiels/secteurs': Layers,
+  '/referentiels/exercices': CalendarRange,
+  '/referentiels/campagnes': Sprout,
+  '/referentiels/tiers': Users,
+  '/catalogue/produits': Package,
+  '/catalogue/magasins': Store,
+  '/stocks': Boxes,
+  '/achats': ShoppingCart,
+  '/depot-vente': Handshake,
+  '/ventes?type=distribution': Truck,
+  '/ventes?type=marche': ArrowLeftRight,
+  '/remboursements-nature': Semis,
+  '/tresorerie': Wallet,
+  '/tresorerie/rapprochement': ArrowLeftRight,
+  '/tresorerie/previsionnel': TrendingUp,
+  '/production': Wheat,
+  '/usine': Factory,
+  '/tracabilite': ShieldCheck,
+  '/rh/employes': Users,
+  '/rh/pointage': ClipboardCheck,
+  '/rh/conges': CalendarRange,
+  '/rh/paie': Receipt,
+  '/rh/parametres': Settings,
+  '/financements': Banknote,
+  '/subventions': HandCoins,
+  '/materiel': Tractor,
+  '/pilotage/budgets': PiggyBank,
+  '/pilotage/etats': LineChart,
+  '/pilotage/campagnes': Flag,
+  '/pilotage/rapport-mensuel': CalendarDays,
+  '/pilotage/tva': Percent,
+  '/administration/equipe': UserCog,
+  '/administration/permissions': ShieldCheck,
+  '/administration/audit': ScrollText,
+  '/abonnement': CreditCard,
+  '/comptabilite/plan-comptable': BookOpen,
+  '/comptabilite/ecritures': FileText,
+  '/comptabilite/balance': Scale,
+  '/comptabilite/soldes-tiers': Landmark,
+  '/comptabilite/releve': FileText,
+  '/comptabilite/analytique': BarChart3,
+}
+const NAV = MENUS.map((g) => ({ titre: g.titre, items: g.items.map((i) => ({ ...i, icon: ICONES[i.href] ?? LayoutDashboard })) }))
 
 export function AppShell({
   organisation,
   utilisateur,
   role,
+  roleCle,
+  permissions,
   accesRh,
   accesUsine,
   children,
@@ -156,6 +116,8 @@ export function AppShell({
   organisation: string
   utilisateur: string
   role: string
+  roleCle: string
+  permissions: Matrice
   accesRh: boolean
   accesUsine: boolean
   children: React.ReactNode
@@ -164,16 +126,21 @@ export function AppShell({
   const [ouvert, setOuvert] = useState(false)
   const pathname = usePathname()
   const typeVente = useSearchParams().get('type') === 'marche' ? 'marche' : 'distribution'
+  // Visibilité du menu : plafond de l'abonnement (RH/usine), puis restriction éventuelle de la matrice de permissions.
+  const visible = (item: { href: string; requiertRh?: boolean; requiertUsine?: boolean }) =>
+    (!item.requiertRh || accesRh) && (!item.requiertUsine || accesUsine) && permissionMenu(permissions, item.href, roleCle, 'lire')
 
   const nav = (
     <nav className="flex-1 space-y-6 overflow-y-auto p-4" aria-label={t('Navigation principale')}>
-      {NAV.filter((groupe) => accesRh || groupe.titre !== 'Personnel & paie').map((groupe) => (
+      {NAV.map((groupe) => ({ ...groupe, items: groupe.items.filter(visible) }))
+        .filter((groupe) => groupe.items.length > 0)
+        .map((groupe) => (
         <div key={groupe.titre}>
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
             {t(groupe.titre)}
           </p>
           <ul className="space-y-1">
-            {groupe.items.filter((item) => accesUsine || item.href !== '/usine').map(({ href, label, icon: Icon }) => {
+            {groupe.items.map(({ href, label, icon: Icon }) => {
               const [chemin, requete] = href.split('?')
               const actif =
                 chemin === '/'

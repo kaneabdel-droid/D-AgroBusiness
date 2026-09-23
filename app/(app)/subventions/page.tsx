@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -16,8 +17,8 @@ export default async function SubventionsPage() {
     supabase.from('v_subventions').select('*, tiers:bailleur_id(nom)').order('date_octroi', { ascending: false }),
     supabase.from('materiels').select('id, code, designation').order('code'),
   ])
-  const peutEcrire = ['admin', 'comptable', 'direction'].includes(ctx.role)
-  const peutEncaisser = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/subventions', ['admin', 'comptable', 'direction'])
+  const peutEncaisser = peutMenu(ctx, '/subventions', ['admin', 'comptable'], 'modifier')
 
   return (
     <>

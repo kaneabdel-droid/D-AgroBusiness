@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { langDe, type Lang } from '@/lib/i18n'
 import { langueChoisie } from '@/lib/i18n-server'
 import { accesRh, accesUsine, estNiveau, type EtatAbonnement } from '@/lib/abonnement'
+import type { Matrice } from '@/lib/permissions'
 
 export type Contexte = {
   userId: string
@@ -19,6 +20,7 @@ export type Contexte = {
   abonnement: EtatAbonnement
   accesRh: boolean
   accesUsine: boolean
+  permissions: Matrice
 }
 
 /** Contexte de l'utilisateur connecté (une requête par rendu grâce à cache). */
@@ -30,11 +32,15 @@ export const getContexte = cache(async (): Promise<Contexte> => {
   const user = jeton?.claims?.sub ? { id: jeton.claims.sub, email: jeton.claims.email as string | undefined } : null
   if (!user) redirect('/login')
 
-  const { data } = await supabase
-    .from('utilisateurs')
-    .select('nom_complet, role, actif, organisation_id, organisations(nom, devise, referentiel, pays, niveau, essai_expire_le, abonnement_expire_le, compte_verrouille)')
-    .eq('id', user.id)
-    .maybeSingle()
+  const [{ data }, { data: permData }] = await Promise.all([
+    supabase
+      .from('utilisateurs')
+      .select('nom_complet, role, actif, organisation_id, organisations(nom, devise, referentiel, pays, niveau, essai_expire_le, abonnement_expire_le, compte_verrouille)')
+      .eq('id', user.id)
+      .maybeSingle(),
+    // current_org_id() résout l'organisation côté serveur depuis auth.uid() : peut être lancée en parallèle.
+    supabase.from('parametres_permissions').select('matrice').maybeSingle(),
+  ])
 
   if (!data || !data.actif) redirect('/login?erreur=organisation')
 
@@ -59,6 +65,7 @@ export const getContexte = cache(async (): Promise<Contexte> => {
     abonnement,
     accesRh: accesRh(abonnement),
     accesUsine: accesUsine(abonnement),
+    permissions: (permData?.matrice as Matrice | undefined) ?? {},
   }
 })
 

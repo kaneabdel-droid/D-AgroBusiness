@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -17,7 +18,7 @@ export default async function RemboursementsNaturePage() {
     .select('id, numero, date_reception, quantite, prix_unitaire, montant, tiers:producteur_id(nom), produits(nom, unite)')
     .order('date_reception', { ascending: false })
     .limit(100)
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/remboursements-nature', ['admin', 'comptable', 'chef_departement'])
 
   return (
     <>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { SITUATIONS, STATUTS_EMPLOYE } from '@/lib/rh'
@@ -18,7 +19,7 @@ export default async function EmployesPage() {
     .from('employes')
     .select('*, departements(nom)')
     .order('matricule')
-  const peutEcrire = ['admin', 'rh'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/rh/employes', ['admin', 'rh'])
 
   const parStatut: Record<string, number> = {}
   for (const e of employes ?? []) if (e.actif) parStatut[e.statut] = (parStatut[e.statut] ?? 0) + 1

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,7 @@ export default async function AchatsPage() {
     .order('date_achat', { ascending: false })
     .order('numero', { ascending: false })
     .limit(100)
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/achats', ['admin', 'comptable'])
 
   return (
     <>

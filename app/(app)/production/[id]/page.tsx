@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT, LOCALES } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -29,7 +30,7 @@ export default async function ProductionDetailPage({ params }: { params: Promise
   ])
   const camp = Array.isArray(p.campagnes) ? p.campagnes[0] : p.campagnes
   const prod = Array.isArray(p.produits) ? p.produits[0] : p.produits
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role) && p.statut !== 'cloturee'
+  const peutEcrire = peutMenu(ctx, '/production', ['admin', 'comptable', 'chef_departement']) && p.statut !== 'cloturee'
   const aujourdhui = new Date().toISOString().slice(0, 10)
   const resteAAbsorber = Number(p.charges) - Number(p.valeur_recoltee)
 

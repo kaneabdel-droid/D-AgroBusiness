@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -15,7 +16,7 @@ export default async function AmortissementsPage() {
     supabase.from('exercices_comptables').select('id, libelle, date_debut, date_fin, statut').order('date_debut', { ascending: false }),
     supabase.from('dotations_amortissement').select('exercice_id, montant, reprise_subvention'),
   ])
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/materiel', ['admin', 'comptable'])
 
   const parExercice = new Map<string, { dotations: number; reprises: number; nb: number }>()
   for (const d of dotations ?? []) {

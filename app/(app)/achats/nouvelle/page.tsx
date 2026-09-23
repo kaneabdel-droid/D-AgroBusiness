@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader } from '@/components/ui/card'
@@ -8,7 +9,7 @@ import { DocumentForm } from '@/components/DocumentForm'
 export default async function NouvelAchatPage() {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
-  if (!['admin', 'comptable'].includes(ctx.role)) redirect('/achats')
+  if (!peutMenu(ctx, '/achats', ['admin', 'comptable'])) redirect('/achats')
   const o = await chargerOptions()
   return (
     <>

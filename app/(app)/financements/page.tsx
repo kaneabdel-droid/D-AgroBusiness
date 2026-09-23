@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { MODES_REMBOURSEMENT, TYPES_FINANCEMENT } from '@/lib/catalogue'
@@ -18,7 +19,7 @@ export default async function FinancementsPage() {
     .from('v_financements')
     .select('*, tiers:bailleur_id(nom)')
     .order('date_debut', { ascending: false })
-  const peutEcrire = ['admin', 'comptable', 'direction'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/financements', ['admin', 'comptable', 'direction'])
 
   const encours = (contrats ?? []).reduce((s, c) => s + Number(c.encours), 0)
   const prochaines = (contrats ?? []).filter((c) => c.prochaine_echeance).length

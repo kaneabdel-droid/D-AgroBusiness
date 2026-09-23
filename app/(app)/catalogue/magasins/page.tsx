@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -13,7 +14,7 @@ export default async function MagasinsPage() {
     supabase.from('magasins').select('*, departements(nom)').order('code'),
     supabase.from('departements').select('id, nom').eq('actif', true).order('nom'),
   ])
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/catalogue/magasins', ['admin', 'comptable', 'chef_departement'])
 
   return (
     <>

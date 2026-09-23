@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT, LOCALES } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { construirePlan, estimerPaie, estimerVentes, indiceMois, moisSuivants, type Flux } from '@/lib/prevision'
@@ -72,7 +73,7 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
   const plan = construirePlan(mois, soldeInitial, flux)
   const monnaie = (v: number) => formatMontant(v, ctx.devise, ctx.lang)
   const libelleMois = (m: string) => new Intl.DateTimeFormat(LOCALES[ctx.lang], { month: 'short', year: '2-digit', timeZone: 'UTC' }).format(new Date(`${m}-01T00:00:00Z`))
-  const peutEcrire = ['admin', 'comptable', 'direction'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/tresorerie/previsionnel', ['admin', 'comptable', 'direction'])
   const pireSolde = Math.min(...plan.soldeFin)
 
   return (

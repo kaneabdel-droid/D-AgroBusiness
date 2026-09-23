@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT, LOCALES } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate } from '@/lib/utils'
@@ -15,7 +16,7 @@ export default async function TracabilitePage() {
   const o = await chargerOptions()
   const supabase = await createClient()
   const { data: lots } = await supabase.from('v_lots').select('*').order('created_at', { ascending: false }).limit(500)
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/tracabilite', ['admin', 'comptable', 'chef_departement'])
   const aujourdhui = new Date().toISOString().slice(0, 10)
 
   return (

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
@@ -16,7 +17,7 @@ export default async function BudgetsPage() {
     supabase.from('budgets').select('*, exercices_comptables(libelle), campagnes(code)').order('created_at', { ascending: false }),
     supabase.from('exercices_comptables').select('id, libelle').order('date_debut', { ascending: false }),
   ])
-  const peutEcrire = ['admin', 'comptable', 'direction'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/pilotage/budgets', ['admin', 'comptable', 'direction'])
 
   return (
     <>

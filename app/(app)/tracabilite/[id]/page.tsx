@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT, LOCALES } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate } from '@/lib/utils'
@@ -59,7 +60,7 @@ export default async function LotPage({ params }: { params: Promise<{ id: string
     })
     .filter((x) => x.v && x.reste > 0)
 
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/tracabilite', ['admin', 'comptable', 'chef_departement'])
   const aujourdhui = new Date().toISOString().slice(0, 10)
   const optionsLots = (autres ?? []).map((l) => ({ value: l.id, label: `${l.numero} — ${l.produit_nom}` }))
   const num = (v: unknown) => Number(v).toLocaleString(LOCALES[ctx.lang])

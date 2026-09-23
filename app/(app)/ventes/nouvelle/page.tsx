@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader } from '@/components/ui/card'
@@ -12,9 +13,9 @@ export default async function NouvelleVentePage({
 }) {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
-  if (!['admin', 'comptable', 'chef_departement'].includes(ctx.role)) redirect('/ventes')
   const { type } = await searchParams
   const distribution = type !== 'marche'
+  if (!peutMenu(ctx, `/ventes?type=${distribution ? 'distribution' : 'marche'}`, ['admin', 'comptable', 'chef_departement'])) redirect('/ventes')
   const o = await chargerOptions()
 
   return (

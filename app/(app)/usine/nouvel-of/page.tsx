@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader } from '@/components/ui/card'
@@ -9,7 +10,7 @@ import { OrdreFabricationForm, type NomenclatureOpt } from '@/components/OrdreFa
 export default async function NouvelOrdreFabricationPage() {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
-  if (!['admin', 'comptable', 'chef_departement'].includes(ctx.role)) redirect('/usine')
+  if (!peutMenu(ctx, '/usine', ['admin', 'comptable', 'chef_departement'])) redirect('/usine')
   const o = await chargerOptions()
   const supabase = await createClient()
   const { data } = await supabase

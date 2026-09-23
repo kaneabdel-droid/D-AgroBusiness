@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { MODES_REMBOURSEMENT, TYPES_FINANCEMENT } from '@/lib/catalogue'
@@ -30,7 +31,7 @@ export default async function FinancementPage({ params }: { params: Promise<{ id
     supabase.from('tirages_financement').select('*').eq('contrat_id', id).order('date_tirage'),
   ])
   const bailleur = Array.isArray(c.tiers) ? c.tiers[0] : c.tiers
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/financements', ['admin', 'comptable'])
   const utilisable = c.type === 'credit_campagne' || c.type === 'fonds_commercialisation'
   const aucunePayee = !(echeances ?? []).some((e) => e.statut === 'payee')
   const comptes = o.comptesTresorerie

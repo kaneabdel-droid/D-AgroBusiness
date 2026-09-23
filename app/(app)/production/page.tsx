@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -19,7 +20,7 @@ export default async function ProductionPage() {
     .from('v_production_secteurs')
     .select('*, campagnes(code), produits(nom, unite)')
     .order('created_at', { ascending: false })
-  const peutEcrire = ['admin', 'direction', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/production', ['admin', 'direction', 'chef_departement'])
 
   return (
     <>

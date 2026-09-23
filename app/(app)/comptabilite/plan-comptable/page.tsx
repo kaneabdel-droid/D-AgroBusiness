@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -19,7 +20,7 @@ export default async function PlanComptablePage() {
     .select('id, numero, libelle, classe')
     .eq('actif', true)
     .order('numero')
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/comptabilite/plan-comptable', ['admin', 'comptable'])
 
   return (
     <>

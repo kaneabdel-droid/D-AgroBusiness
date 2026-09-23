@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
@@ -28,7 +29,7 @@ export default async function TresoreriePage() {
     supabase.from('comptes_comptables').select('id, numero, libelle').eq('actif', true).order('numero'),
     supabase.from('contrats_financement').select('id, code, libelle').in('type', ['credit_campagne', 'fonds_commercialisation']).eq('statut', 'actif').order('code'),
   ])
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/tresorerie', ['admin', 'comptable'])
   const total = (soldes ?? []).reduce((s, x) => s + Number(x.solde), 0)
   const optCt = o.comptesTresorerie.map((c) => ({ value: c.id, label: c.label }))
 

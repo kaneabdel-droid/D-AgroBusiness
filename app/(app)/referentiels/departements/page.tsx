@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -20,7 +21,7 @@ export default async function DepartementsPage() {
   const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: departements } = await supabase.from('departements').select('*').order('code')
-  const peutEcrire = ['admin', 'direction', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/referentiels/departements', ['admin', 'direction', 'comptable'])
 
   return (
     <>

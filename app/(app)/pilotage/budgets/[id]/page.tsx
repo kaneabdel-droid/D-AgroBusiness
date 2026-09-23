@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatMontant } from '@/lib/utils'
@@ -34,7 +35,7 @@ export default async function BudgetDetailPage({ params }: { params: Promise<{ i
     supabase.from('comptes_comptables').select('id, numero, libelle, classe').in('classe', [6, 7]).eq('actif', true).order('numero'),
   ])
   const ex = Array.isArray(b.exercices_comptables) ? b.exercices_comptables[0] : b.exercices_comptables
-  const peutEcrire = ['admin', 'comptable', 'direction'].includes(ctx.role) && b.statut === 'brouillon'
+  const peutEcrire = peutMenu(ctx, '/pilotage/budgets', ['admin', 'comptable', 'direction']) && b.statut === 'brouillon'
   const lignes = (suivi ?? []).map((l) => ({ ...l, budget: Number(l.budget), realise: Number(l.realise) })) as Ligne[]
   const nomDep = (i: string) => o.departements.find((d) => d.id === i)?.label ?? '?'
   const nomSec = (i: string | null) => (i ? (o.secteurs.find((s) => s.id === i)?.label ?? '?') : t('Tout le département'))

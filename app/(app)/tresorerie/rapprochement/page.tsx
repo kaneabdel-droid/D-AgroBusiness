@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate } from '@/lib/utils'
@@ -25,7 +26,7 @@ export default async function RapprochementPage() {
     total.set(l.releve_id, (total.get(l.releve_id) ?? 0) + 1)
     if (l.ligne_ecriture_id) pointees.set(l.releve_id, (pointees.get(l.releve_id) ?? 0) + 1)
   }
-  const peutEcrire = ['admin', 'comptable'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/tresorerie/rapprochement', ['admin', 'comptable'])
 
   return (
     <>

@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
+import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -17,7 +18,7 @@ export default async function TiersPage() {
   const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: tiers } = await supabase.from('tiers').select('*').order('nom')
-  const peutEcrire = ['admin', 'comptable', 'chef_departement'].includes(ctx.role)
+  const peutEcrire = peutMenu(ctx, '/referentiels/tiers', ['admin', 'comptable', 'chef_departement'])
 
   return (
     <>
