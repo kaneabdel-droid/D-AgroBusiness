@@ -12,8 +12,9 @@ export default async function SupportPage() {
     <>
       <PageHeader titre={t('Assistance')} description={t('Une question, un problème ? Contactez-nous directement.')} />
 
-      <div className="grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-1">
+      <div className="max-w-5xl space-y-6">
+        {/* Coordonnées côte à côte au-dessus du formulaire : l'adresse email tient sur une ligne. */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <Card className="flex items-start gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Phone className="h-5 w-5 text-primary" aria-hidden="true" />
@@ -42,7 +43,7 @@ export default async function SupportPage() {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">{t('Email')}</p>
               <p className="mt-1 text-sm text-foreground-muted">{t('Réponse par email sous 24 h ouvrées')}</p>
-              <p className="mt-2 whitespace-nowrap text-sm font-medium text-foreground" dir="ltr">
+              <p className="mt-2 font-medium text-foreground" dir="ltr">
                 <a href="mailto:support@dembasolution.com" className="transition-colors hover:text-primary">
                   support@dembasolution.com
                 </a>
@@ -51,7 +52,7 @@ export default async function SupportPage() {
           </Card>
         </div>
 
-        <Card className="lg:col-span-2">
+        <Card>
           <h2 className="mb-2 text-lg font-semibold text-foreground">{t('Envoyez-nous un message')}</h2>
           <p className="mb-6 text-sm text-foreground-muted">
             {t('Un bug, une question ? Décrivez votre demande : nous vous répondons directement par email.')}
