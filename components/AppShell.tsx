@@ -39,6 +39,7 @@ import {
   FileText,
   Layers,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   Scale,
@@ -179,6 +180,13 @@ export function AppShell({
       <p className="truncate text-sm font-medium">{utilisateur}</p>
       <p className="mb-3 text-xs text-foreground-muted">{role}</p>
       <LanguageSwitcher lang={lang} className="mb-3 flex-wrap" />
+      <Link
+        href="/support"
+        onClick={() => setOuvert(false)}
+        className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-surface"
+      >
+        <LifeBuoy className="h-4 w-4" aria-hidden /> {t('Assistance')}
+      </Link>
       <form action={signOut}>
         <button
           type="submit"
