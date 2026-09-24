@@ -33,7 +33,7 @@ export default async function SubventionsPage() {
           champs={[
             { name: 'code', label: t('Code'), required: true },
             { name: 'libelle', label: t('Libellé'), required: true },
-            { name: 'bailleur_id', label: t('Bailleur'), type: 'select', required: true, options: o.bailleurs.map((b) => ({ value: b.id, label: b.label })) },
+            { name: 'bailleur_id', label: t('Partenaire financier'), type: 'select', required: true, options: o.bailleurs.map((b) => ({ value: b.id, label: b.label })) },
             { name: 'montant_accorde', label: t('Montant accordé (ou laissez vide et indiquez le taux)'), type: 'number', step: '0.01' },
             { name: 'taux_subvention', label: t('ou taux de subvention (% du coût du matériel : 50, 70…)'), type: 'number', step: '0.01' },
             { name: 'date_octroi', label: t('Date d’octroi'), type: 'date', required: true, defaultValue: new Date().toISOString().slice(0, 10) },
@@ -60,7 +60,7 @@ export default async function SubventionsPage() {
           <tr>
             <th className={th}>{t('Code')}</th>
             <th className={th}>{t('Libellé')}</th>
-            <th className={th}>{t('Bailleur')}</th>
+            <th className={th}>{t('Partenaire financier')}</th>
             <th className={th}>{t('Octroi')}</th>
             <th className={`${th} text-right`}>{t('Taux du coût')}</th>
             <th className={`${th} text-right`}>{t('Accordé')}</th>

@@ -4,39 +4,29 @@ import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
-import { addTiers } from '../actions'
+import { addPartenaireFinancier } from '../actions'
 
-const TYPES = [
-  { value: 'producteur', label: 'Producteur' },
-  { value: 'fournisseur', label: 'Fournisseur' },
-  { value: 'client', label: 'Client' },
-]
-
-export default async function TiersPage() {
+export default async function PartenairesFinanciersPage() {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
   const supabase = await createClient()
-  // Les banques et bailleurs sont des partenaires financiers, gérés à part (Référentiels → Partenaires financiers)
-  // et non comme des tiers commerciaux, même s'ils restent techniquement une ligne de la table tiers (le
-  // sous-grand livre comptable — soldes, lettrage — s'appuie sur cette table pour tous les tiers sans distinction).
   const { data: tiersData } = await supabase.from('tiers').select('*').order('nom')
-  const tiers = (tiersData ?? []).filter((ti) => !(ti.types as string[]).includes('bailleur'))
-  const peutEcrire = peutMenu(ctx, '/referentiels/tiers', ['admin', 'comptable', 'chef_departement'])
+  const partenaires = (tiersData ?? []).filter((ti) => (ti.types as string[]).includes('bailleur'))
+  const peutEcrire = peutMenu(ctx, '/referentiels/partenaires-financiers', ['admin', 'comptable', 'direction'])
 
   return (
     <>
       <PageHeader
-        titre={t('Tiers')}
-        description={t('Un même tiers peut être à la fois producteur, client et fournisseur. Les banques et partenaires financiers sont gérés à part.')}
+        titre={t('Partenaires financiers')}
+        description={t('Banques et bailleurs de fonds : emprunts, crédits de campagne et subventions d’investissement. Distincts des tiers commerciaux (clients, fournisseurs, producteurs).')}
       >
         <SimpleCreateForm
-          titre={t('Nouveau tiers')}
+          titre={t('Nouveau partenaire financier')}
           disabled={!peutEcrire}
-          action={addTiers}
+          action={addPartenaireFinancier}
           champs={[
             { name: 'code', label: t('Code'), required: true },
             { name: 'nom', label: t('Nom / raison sociale'), required: true },
-            { name: 'types', label: t('Type(s)'), type: 'multiselect', options: TYPES.map((x) => ({ ...x, label: t(x.label) })) },
             { name: 'telephone', label: t('Téléphone'), type: 'tel' },
             { name: 'email', label: t('Email'), type: 'email' },
             { name: 'adresse', label: t('Adresse') },
@@ -49,18 +39,14 @@ export default async function TiersPage() {
           <tr>
             <th className={th}>{t('Code')}</th>
             <th className={th}>{t('Nom')}</th>
-            <th className={th}>{t('Type(s)')}</th>
             <th className={th}>{t('Téléphone')}</th>
           </tr>
         </thead>
         <tbody>
-          {tiers?.map((ti) => (
+          {partenaires.map((ti) => (
             <tr key={ti.id}>
               <td className={td}>{ti.code}</td>
               <td className={td}>{ti.nom}</td>
-              <td className={td}>
-                {ti.types.map((v: string) => t(TYPES.find((x) => x.value === v)?.label ?? v)).join(', ')}
-              </td>
               <td className={td}>{ti.telephone ?? '—'}</td>
             </tr>
           ))}

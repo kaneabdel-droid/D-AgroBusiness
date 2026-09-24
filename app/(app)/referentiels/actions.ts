@@ -97,6 +97,30 @@ export async function addTiers(formData: FormData): Promise<Resultat> {
   return { success: true }
 }
 
+/**
+ * Une banque ou un bailleur de fonds n'est pas un tiers commercial : cette action l'enregistre à part
+ * (Référentiels → Partenaires financiers). Techniquement, la ligne reste dans la table tiers avec le type
+ * 'bailleur' — le sous-grand livre comptable (soldes, lettrage) s'appuie sur cette table pour tout tiers, quel
+ * que soit son type — mais elle n'apparaît jamais dans la liste ni le formulaire des Tiers commerciaux.
+ */
+export async function addPartenaireFinancier(formData: FormData): Promise<Resultat> {
+  const ctx = await getContexte()
+  const supabase = await createClient()
+  const { error } = await supabase.from('tiers').insert({
+    organisation_id: ctx.organisationId,
+    code: txt(formData, 'code').toUpperCase(),
+    nom: txt(formData, 'nom'),
+    types: ['bailleur'],
+    telephone: opt(formData, 'telephone'),
+    email: opt(formData, 'email'),
+    adresse: opt(formData, 'adresse'),
+    nif: opt(formData, 'nif'),
+  })
+  if (error) return message(error)
+  revalidatePath('/referentiels/partenaires-financiers')
+  return { success: true }
+}
+
 export async function addCompte(formData: FormData): Promise<Resultat> {
   const ctx = await getContexte()
   const supabase = await createClient()

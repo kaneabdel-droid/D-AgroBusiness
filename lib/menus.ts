@@ -73,6 +73,7 @@ export const MENUS: GroupeMenu[] = [
   {
     titre: 'Financement & matériel',
     items: [
+      { href: '/referentiels/partenaires-financiers', label: 'Partenaires financiers' },
       { href: '/financements', label: 'Emprunts et crédits' },
       { href: '/subventions', label: 'Subventions' },
       { href: '/materiel', label: 'Parc matériel' },

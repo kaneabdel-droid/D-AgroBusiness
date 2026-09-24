@@ -83,6 +83,7 @@ const ICONES: Record<string, typeof LayoutDashboard> = {
   '/rh/conges': CalendarRange,
   '/rh/paie': Receipt,
   '/rh/parametres': Settings,
+  '/referentiels/partenaires-financiers': Landmark,
   '/financements': Banknote,
   '/subventions': HandCoins,
   '/materiel': Tractor,

@@ -43,7 +43,7 @@ export default async function FinancementsPage() {
                 .filter(([v]) => v !== 'credit_bail')
                 .map(([value, label]) => ({ value, label })),
             },
-            { name: 'bailleur_id', label: t('Banque / bailleur'), type: 'select', required: true, options: o.bailleurs.map((b) => ({ value: b.id, label: b.label })) },
+            { name: 'bailleur_id', label: t('Partenaire financier'), type: 'select', required: true, options: o.bailleurs.map((b) => ({ value: b.id, label: b.label })) },
             { name: 'montant_accorde', label: t('Montant accordé'), type: 'number', step: '0.01', required: true },
             { name: 'taux_annuel', label: t('Taux annuel (%)'), type: 'number', step: '0.001', defaultValue: '0' },
             { name: 'duree_mois', label: t('Durée (mois)'), type: 'number', required: true },
@@ -67,7 +67,7 @@ export default async function FinancementsPage() {
           <tr>
             <th className={th}>{t('Contrat')}</th>
             <th className={th}>{t('Type')}</th>
-            <th className={th}>{t('Bailleur')}</th>
+            <th className={th}>{t('Partenaire financier')}</th>
             <th className={`${th} text-right`}>{t('Accordé')}</th>
             <th className={`${th} text-right`}>{t('Reçu')}</th>
             <th className={`${th} text-right`}>{t('Encours')}</th>
