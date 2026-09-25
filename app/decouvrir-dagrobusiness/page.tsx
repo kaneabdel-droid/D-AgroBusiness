@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, Calculator, Users, Crown, Wheat, Factory, ShieldCheck, Wallet, LineChart, Landmark } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Calculator, Users, Crown, Wheat, Factory, ShieldCheck, Wallet, LineChart, Landmark } from 'lucide-react'
 import { creerT } from '@/lib/i18n'
 import { langueNavigateur } from '@/lib/i18n-server'
 import { EnTete, PagePublique, Pied, carteSurvol } from '@/components/vitrine/Vitrine'
@@ -40,6 +40,9 @@ export default async function DecouvrirPage({ searchParams }: { searchParams?: P
           <div className="absolute inset-0 -z-20 bg-cover bg-center rtl:-scale-x-100" style={{ backgroundImage: "url('/hero-agro-champs.jpg')" }} aria-hidden />
           <div className="absolute inset-0 -z-10 bg-[#053B5C]/70" aria-hidden />
           <div className="mx-auto max-w-4xl px-4 py-16 text-center text-white sm:px-6 md:py-24">
+            <Link href="/bienvenue" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white">
+              <ArrowLeft className="h-4 w-4 rtl:rotate-180" aria-hidden /> {t('Retour à l’accueil')}
+            </Link>
             <h1 className="font-heading text-4xl font-bold md:text-5xl">{t('Découvrez')} <span className="text-[#B7EA8F]">D-AGROBUSINESS</span> {t('en direct')}</h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-white/90">{t('Connectez-vous en un clic à une entreprise rizicole de démonstration, avec de vraies données : campagne, usine, paie, trésorerie.')}</p>
           </div>

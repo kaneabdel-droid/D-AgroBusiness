@@ -10,6 +10,7 @@ export const EN: Record<string, string> = {
   "Déconnexion": "Sign out",
   "Assistance": "Support",
   "Guide": "Guide",
+  "Retour à l’accueil": "Back to home",
   "Besoin d’aide pour démarrer ?": "Need help getting started?",
   "Notre guide de prise en main explique, étape par étape, comment configurer et utiliser D-AGROBUSINESS.": "Our getting-started guide explains, step by step, how to configure and use D-AGROBUSINESS.",
   "Consulter le guide": "Read the guide",

@@ -10,6 +10,7 @@ export const AR: Record<string, string> = {
   "Déconnexion": "تسجيل الخروج",
   "Assistance": "الدعم الفني",
   "Guide": "دليل",
+  "Retour à l’accueil": "العودة إلى الصفحة الرئيسية",
   "Besoin d’aide pour démarrer ?": "هل تحتاجون مساعدة للبدء؟",
   "Notre guide de prise en main explique, étape par étape, comment configurer et utiliser D-AGROBUSINESS.": "يشرح دليل الانطلاق خطوة بخطوة كيفية إعداد D-AGROBUSINESS واستخدامه.",
   "Consulter le guide": "الاطلاع على الدليل",

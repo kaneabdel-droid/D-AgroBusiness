@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { BookOpen, Boxes, Factory, LineChart, Users2, Landmark } from 'lucide-react'
+import { ArrowLeft, BookOpen, Boxes, Factory, LineChart, Users2, Landmark } from 'lucide-react'
 import { creerT } from '@/lib/i18n'
 import { langueNavigateur } from '@/lib/i18n-server'
 import { EnTete, PagePublique, Pied, carteSurvol } from '@/components/vitrine/Vitrine'
@@ -63,6 +63,9 @@ export default async function GuidePage() {
       <main>
         <section className="border-b border-surface-border bg-gradient-to-br from-eau-clair via-surface to-[#E6F4DC]">
           <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6 md:py-20">
+            <Link href="/bienvenue" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-foreground-muted hover:text-primary">
+              <ArrowLeft className="h-4 w-4 rtl:rotate-180" aria-hidden /> {t('Retour à l’accueil')}
+            </Link>
             <p className="text-xs font-bold uppercase tracking-widest text-vert-fonce">{t('Guide de prise en main')}</p>
             <h1 className="mt-3 font-heading text-4xl font-bold md:text-5xl">{t('Bien démarrer avec D-AGROBUSINESS')}</h1>
             <p className="mx-auto mt-4 max-w-2xl text-foreground-muted">{t('Ce guide vous accompagne pas à pas : d’abord la configuration de votre organisation, puis l’utilisation quotidienne de l’application.')}</p>
