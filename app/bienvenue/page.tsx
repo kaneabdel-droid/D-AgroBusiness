@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, BookOpen, Factory, ShieldCheck, Landmark, Wallet, Users, LineChart, Wheat, Globe2, Languages, Layers } from 'lucide-react'
+import { ArrowRight, BookOpen, Factory, ShieldCheck, Landmark, Wallet, Users, LineChart, Wheat, Globe2, Languages, Layers, Compass } from 'lucide-react'
 import { creerT } from '@/lib/i18n'
 import { langueNavigateur } from '@/lib/i18n-server'
 import { CartesTarifs, EnTete, PagePublique, Pied, TableauDurees, carteSurvol } from '@/components/vitrine/Vitrine'
@@ -110,6 +110,22 @@ export default async function BienvenuePage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* Guide de prise en main */}
+      <section className="border-y border-surface-border bg-eau-clair/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-12 text-center sm:px-6 md:flex-row md:justify-between md:text-start">
+          <div className="flex items-center gap-4">
+            <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white sm:flex">
+              <Compass className="h-6 w-6" aria-hidden />
+            </span>
+            <div>
+              <h2 className="font-heading text-xl font-bold">{t('Besoin d’aide pour démarrer ?')}</h2>
+              <p className="mt-1 text-sm text-foreground-muted">{t('Notre guide de prise en main explique, étape par étape, comment configurer et utiliser D-AGROBUSINESS.')}</p>
+            </div>
+          </div>
+          <Link href="/guide" className="shrink-0 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover">{t('Consulter le guide')}</Link>
         </div>
       </section>
 
