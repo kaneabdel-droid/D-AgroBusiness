@@ -8,7 +8,7 @@ import { fetchAvecDelai } from '@/utils/supabase/fetch'
 // Pages publiques (vitrine, tarifs, démonstration, connexion) et routes serveur-à-serveur (webhooks, cron), authentifiées par leur secret.
 const PUBLIC_PREFIXES = [
   '/login', '/signup', '/forgot-password', '/update-password', '/auth',
-  '/bienvenue', '/tarifs', '/decouvrir-dagrobusiness',
+  '/bienvenue', '/tarifs', '/decouvrir-dagrobusiness', '/guide',
   '/api/webhooks', '/api/cron',
 ]
 
