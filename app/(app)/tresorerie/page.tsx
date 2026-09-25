@@ -1,9 +1,10 @@
+import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
-import { formatDate, formatMontant } from '@/lib/utils'
+import { cn, formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { ReglementTiersForm } from '@/components/ReglementTiersForm'
@@ -11,21 +12,34 @@ import { addCompteTresorerie, addOperationTresorerie, addReglement } from '../op
 
 const aujourdhui = () => new Date().toISOString().slice(0, 10)
 
-export default async function TresoreriePage() {
+export default async function TresoreriePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ compte?: string }>
+}) {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
   const o = await chargerOptions()
   const supabase = await createClient()
+  const { compte: compteFiltre } = await searchParams
   const [{ data: soldes }, { data: reglements }, { data: operations }, { data: comptes }, { data: financements }] = await Promise.all([
     supabase.from('v_soldes_tresorerie').select('*').order('code'),
-    supabase
-      .from('reglements')
-      .select('id, numero, date_reglement, sens, montant, reference, tiers:tiers_id(nom), comptes_tresorerie(code)')
-      .order('date_reglement', { ascending: false }).limit(30),
-    supabase
-      .from('operations_tresorerie')
-      .select('id, numero, date_operation, sens, montant, libelle, comptes_tresorerie(code)')
-      .order('date_operation', { ascending: false }).limit(30),
+    (() => {
+      let q = supabase
+        .from('reglements')
+        .select('id, numero, date_reglement, sens, montant, reference, tiers:tiers_id(nom), comptes_tresorerie(code)')
+        .order('date_reglement', { ascending: false }).limit(30)
+      if (compteFiltre) q = q.eq('compte_tresorerie_id', compteFiltre)
+      return q
+    })(),
+    (() => {
+      let q = supabase
+        .from('operations_tresorerie')
+        .select('id, numero, date_operation, sens, montant, libelle, comptes_tresorerie(code)')
+        .order('date_operation', { ascending: false }).limit(30)
+      if (compteFiltre) q = q.eq('compte_tresorerie_id', compteFiltre)
+      return q
+    })(),
     supabase.from('comptes_comptables').select('id, numero, libelle').eq('actif', true).order('numero'),
     supabase.from('contrats_financement').select('id, code, libelle').in('type', ['credit_campagne', 'fonds_commercialisation']).eq('statut', 'actif').order('code'),
   ])
@@ -79,14 +93,30 @@ export default async function TresoreriePage() {
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {soldes?.map((s) => (
-          <Card key={s.compte_tresorerie_id}>
-            <p className="text-sm text-foreground-muted">{s.nom} ({s.type === 'banque' ? 'banque' : 'caisse'})</p>
-            <p className={`mt-1 text-xl font-semibold tabular-nums ${Number(s.solde) < 0 ? 'text-danger' : ''}`}>
-              {formatMontant(s.solde, ctx.devise, ctx.lang)}
-            </p>
-          </Card>
-        ))}
+        {soldes?.map((s) => {
+          const actif = compteFiltre === s.compte_tresorerie_id
+          return (
+            <Card key={s.compte_tresorerie_id}>
+              <p className="text-sm text-foreground-muted">
+                {s.nom} (
+                <Link
+                  href={actif ? '/tresorerie' : `/tresorerie?compte=${s.compte_tresorerie_id}`}
+                  className={cn(
+                    'rounded underline decoration-dotted underline-offset-2 hover:text-primary',
+                    actif && 'font-semibold text-primary no-underline'
+                  )}
+                  title={actif ? t('Cliquer pour retirer le filtre') : t('Filtrer sur ce compte')}
+                >
+                  {s.type === 'banque' ? 'banque' : 'caisse'}
+                </Link>
+                )
+              </p>
+              <p className={`mt-1 text-xl font-semibold tabular-nums ${Number(s.solde) < 0 ? 'text-danger' : ''}`}>
+                {formatMontant(s.solde, ctx.devise, ctx.lang)}
+              </p>
+            </Card>
+          )
+        })}
         <Card>
           <p className="text-sm text-foreground-muted">{t('Trésorerie totale')}</p>
           <p className="mt-1 text-xl font-semibold tabular-nums">{formatMontant(total, ctx.devise, ctx.lang)}</p>
