@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ContrepassationButton } from '@/components/ContrepassationButton'
 
-type Ligne = { debit: number; credit: number }
+type Ligne = { debit: number; credit: number; tiers_id: string | null }
 
 export default async function EcrituresPage() {
   const ctx = await getContexte()
@@ -17,7 +17,7 @@ export default async function EcrituresPage() {
   const supabase = await createClient()
   const { data: ecritures } = await supabase
     .from('ecritures')
-    .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journaux(code), lignes_ecritures(debit, credit)')
+    .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journaux(code), lignes_ecritures(debit, credit, tiers_id)')
     .order('date_ecriture', { ascending: false })
     .order('numero', { ascending: false })
     .limit(100)
@@ -55,7 +55,17 @@ export default async function EcrituresPage() {
         <tbody>
           {ecritures?.map((e) => {
             const journal = Array.isArray(e.journaux) ? e.journaux[0] : e.journaux
-            const montant = (e.lignes_ecritures as Ligne[]).reduce((s, l) => s + Number(l.debit), 0)
+            // Le montant affiché est celui de la facture/du mouvement lié au tiers (client/fournisseur),
+            // pas la somme de tous les débits : une vente de stock combine dans la même écriture la vente
+            // elle-même et la sortie de stock à son coût (cf. enregistrer_vente()), et sommer tous les
+            // débits gonflerait le montant affiché avec ce coût de sortie, sans rapport avec le montant
+            // de la facture tel qu'il apparaît dans le journal des ventes/achats.
+            const lignes = e.lignes_ecritures as Ligne[]
+            const lignesTiers = lignes.filter((l) => l.tiers_id)
+            const montant =
+              lignesTiers.length > 0
+                ? lignesTiers.reduce((s, l) => s + Number(l.debit) + Number(l.credit), 0)
+                : lignes.reduce((s, l) => s + Number(l.debit), 0)
             const estContrepassation = !!e.contrepassation_de
             const dejaContrepassee = contrepassees.has(e.id)
             return (
