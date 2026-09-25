@@ -4,23 +4,35 @@ import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
-import { formatDate, formatMontant } from '@/lib/utils'
+import { cn, formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ContrepassationButton } from '@/components/ContrepassationButton'
 
 type Ligne = { debit: number; credit: number; tiers_id: string | null }
 
-export default async function EcrituresPage() {
+export default async function EcrituresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ journal?: string }>
+}) {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
   const supabase = await createClient()
-  const { data: ecritures } = await supabase
-    .from('ecritures')
-    .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journaux(code), lignes_ecritures(debit, credit, tiers_id)')
-    .order('date_ecriture', { ascending: false })
-    .order('numero', { ascending: false })
-    .limit(100)
+  const { journal: journalFiltre } = await searchParams
+  const [{ data: journaux }, { data: ecritures }] = await Promise.all([
+    supabase.from('journaux').select('id, code, libelle').eq('actif', true).order('code'),
+    (() => {
+      let q = supabase
+        .from('ecritures')
+        .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journal_id, journaux(code), lignes_ecritures(debit, credit, tiers_id)')
+        .order('date_ecriture', { ascending: false })
+        .order('numero', { ascending: false })
+        .limit(100)
+      if (journalFiltre) q = q.eq('journal_id', journalFiltre)
+      return q
+    })(),
+  ])
 
   const contrepassees = new Set(
     (ecritures ?? []).map((e) => e.contrepassation_de).filter((v): v is string => !!v)
@@ -41,6 +53,33 @@ export default async function EcrituresPage() {
           </Button>
         )}
       </PageHeader>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-foreground-muted">{t('Journal')} :</span>
+        <Link
+          href="/comptabilite/ecritures"
+          className={cn(
+            'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+            !journalFiltre ? 'border-primary bg-primary text-white' : 'border-surface-border text-foreground-muted hover:text-foreground'
+          )}
+        >
+          {t('Tous')}
+        </Link>
+        {journaux?.map((j) => (
+          <Link
+            key={j.id}
+            href={journalFiltre === j.id ? '/comptabilite/ecritures' : `/comptabilite/ecritures?journal=${j.id}`}
+            title={j.libelle}
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              journalFiltre === j.id ? 'border-primary bg-primary text-white' : 'border-surface-border text-foreground-muted hover:text-foreground'
+            )}
+          >
+            {j.code}
+          </Link>
+        ))}
+      </div>
+
       <TableWrap>
         <thead>
           <tr>
