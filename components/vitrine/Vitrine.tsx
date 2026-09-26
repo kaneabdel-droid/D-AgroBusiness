@@ -39,7 +39,7 @@ export function EnTete({ lang, actif }: { lang: Lang; actif?: 'tarifs' | 'decouv
           <Link href="/decouvrir-dagrobusiness" aria-current={actif === 'decouvrir' ? 'page' : undefined} className="hidden text-sm font-medium text-foreground-muted hover:text-primary sm:inline">{t('Découvrir')}</Link>
           <Link href="/tarifs" aria-current={actif === 'tarifs' ? 'page' : undefined} className="hidden text-sm font-medium text-foreground-muted hover:text-primary sm:inline">{t('Tarifs')}</Link>
           <Link href="/guide" aria-current={actif === 'guide' ? 'page' : undefined} className="hidden text-sm font-medium text-foreground-muted hover:text-primary sm:inline">{t('Guide')}</Link>
-          <Link href="/login" className="text-sm font-medium text-foreground-muted hover:text-primary">{t('Se connecter')}</Link>
+          <Link href="/login" className="rounded-md border border-primary/40 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground">{t('Se connecter')}</Link>
           <LanguageSwitcher lang={lang} />
           <Link href="/tarifs" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover">{t('S’abonner')}</Link>
         </nav>
