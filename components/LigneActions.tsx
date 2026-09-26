@@ -72,16 +72,16 @@ export function LigneActions({
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex flex-wrap justify-end gap-1">
-      <Button type="button" size="sm" variant="outline" onClick={ouvrir} disabled={pending} aria-label={`${t('Modifier')} ${libelle}`}>
-        <Pencil className="h-3.5 w-3.5" aria-hidden /> {t('Modifier')}
+      <Button type="button" size="sm" variant="outline" className="px-2" onClick={ouvrir} disabled={pending} title={t('Modifier')} aria-label={`${t('Modifier')} ${libelle}`}>
+        <Pencil className="h-4 w-4" aria-hidden />
       </Button>
       {basculerActif && (
-        <Button type="button" size="sm" variant="outline" onClick={onBasculer} disabled={pending}>
-          <Power className="h-3.5 w-3.5" aria-hidden /> {actif === false ? t('Réactiver') : t('Désactiver')}
+        <Button type="button" size="sm" variant="outline" className="px-2" onClick={onBasculer} disabled={pending} title={actif === false ? t('Réactiver') : t('Désactiver')} aria-label={`${actif === false ? t('Réactiver') : t('Désactiver')} ${libelle}`}>
+          <Power className="h-4 w-4" aria-hidden />
         </Button>
       )}
-      <Button type="button" size="sm" variant="outline" onClick={onSupprimer} disabled={pending} aria-label={`${t('Supprimer')} ${libelle}`}>
-        <Trash2 className="h-3.5 w-3.5" aria-hidden /> {t('Supprimer')}
+      <Button type="button" size="sm" variant="outline" className="px-2" onClick={onSupprimer} disabled={pending} title={t('Supprimer')} aria-label={`${t('Supprimer')} ${libelle}`}>
+        <Trash2 className="h-4 w-4" aria-hidden />
       </Button>
       </div>
       {erreurSuppression && <p role="alert" className="max-w-xs text-end text-xs text-danger">{t(erreurSuppression)}</p>}
