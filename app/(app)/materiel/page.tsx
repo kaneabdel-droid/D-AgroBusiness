@@ -8,6 +8,7 @@ import { CATEGORIES_MATERIEL, MODES_REMBOURSEMENT } from '@/lib/catalogue'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { acquerirMateriel } from '../financement/actions'
 
@@ -64,6 +65,16 @@ export default async function MaterielPage() {
               options: [{ value: '1', label: t('Mensuelle') }, { value: '3', label: t('Trimestrielle') }, { value: '6', label: t('Semestrielle') }, { value: '12', label: t('Annuelle') }],
             },
             { name: 'mode_remboursement', label: t('Crédit-bail : mode de remboursement'), type: 'select', options: MODES_REMBOURSEMENT.map((m) => ({ ...m, label: t(m.label) })) },
+          ]}
+        />
+        <ExportButtons titre={t('Parc matériel')} sousTitre={ctx.organisationNom} fichier="parc-materiel"
+          colonnes={[t('Code'), t('Désignation'), t('Département'), t('Acquisition'), t('Coût'), t('Amorti'), t('VNC')]}
+          lignes={[
+            ...(materiels ?? []).map((m) => {
+              const dep = Array.isArray(m.departements) ? m.departements[0] : m.departements
+              return [m.code, m.designation, dep?.nom ? t(dep.nom) : '', formatDate(m.date_acquisition, ctx.lang), Number(m.cout_acquisition), Number(m.cumul_amortissement), Number(m.valeur_nette_comptable)]
+            }),
+            [t('Totaux'), '', '', '', valeurBrute, (materiels ?? []).reduce((s, m) => s + Number(m.cumul_amortissement), 0), vnc],
           ]}
         />
       </PageHeader>

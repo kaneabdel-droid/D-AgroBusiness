@@ -8,6 +8,7 @@ import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm, type Champ } from '@/components/SimpleCreateForm'
 import { addNomenclature } from '../production/actions'
 
@@ -64,7 +65,18 @@ export default async function UsinePage() {
         />
       </PageHeader>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Nomenclatures')}</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-heading text-lg font-semibold">{t('Nomenclatures')}</h2>
+        <ExportButtons titre={t('Nomenclatures')} sousTitre={ctx.organisationNom} fichier="nomenclatures"
+          colonnes={[t('Code'), t('Libellé'), t('Matière'), t('Sorties (rendement prévu)')]}
+          lignes={(nomenclatures ?? []).map((n) => {
+            const m = Array.isArray(n.produits) ? n.produits[0] : n.produits
+            const sorties = (n.nomenclature_sorties as { rendement_pct: number; produits: { nom: string } | { nom: string }[] | null }[])
+              .map((s) => `${(Array.isArray(s.produits) ? s.produits[0] : s.produits)?.nom} ${Number(s.rendement_pct)} %`).join(' ; ')
+            return [n.code, n.libelle, m?.nom, sorties]
+          })}
+        />
+      </div>
       <div className="mb-6">
         <TableWrap>
           <thead>
@@ -93,7 +105,21 @@ export default async function UsinePage() {
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Ordres de fabrication')}</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-heading text-lg font-semibold">{t('Ordres de fabrication')}</h2>
+        <ExportButtons titre={t('Ordres de fabrication')} sousTitre={ctx.organisationNom} fichier="ordres-fabrication"
+          colonnes={['N°', t('Nomenclature'), t('Date'), t('Matière'), t('Coût matière'), t('Frais'), t('Valeur produite'), t('Produits obtenus (quantité · rendement · coût unitaire)')]}
+          lignes={(ordres ?? []).map((of) => {
+            const nom = Array.isArray(of.nomenclatures) ? of.nomenclatures[0] : of.nomenclatures
+            const mat = nom && (Array.isArray(nom.produits) ? nom.produits[0] : nom.produits)
+            const sorties = (of.of_sorties as unknown as Sortie[]).map((s) => {
+              const pr = Array.isArray(s.produits) ? s.produits[0] : s.produits
+              return `${pr?.nom} : ${Number(s.quantite).toLocaleString('fr-FR')} ${pr?.unite} · ${Number(s.rendement_reel_pct)} % · ${formatMontant(Number(s.valeur) / Number(s.quantite), ctx.devise, ctx.lang)}/${pr?.unite}`
+            }).join(' ; ')
+            return [of.numero, nom?.code, formatDate(of.date_of, ctx.lang), `${Number(of.quantite_matiere).toLocaleString('fr-FR')} ${mat?.unite ?? ''}`, Number(of.cout_matiere), Number(of.frais_imputes), Number(of.valeur_totale), sorties]
+          })}
+        />
+      </div>
       <TableWrap>
         <thead>
           <tr>

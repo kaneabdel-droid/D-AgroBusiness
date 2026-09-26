@@ -6,6 +6,7 @@ import { formatDate, formatMontant } from '@/lib/utils'
 import { construirePlan, estimerPaie, estimerVentes, indiceMois, moisSuivants, type Flux } from '@/lib/prevision'
 import { CATEGORIE_PAIE_ESTIMEE, CATEGORIE_VENTES_ESTIMEES, CATEGORIE_CREANCES, CATEGORIE_DETTES, CATEGORIE_ECHEANCES, CATEGORIES_PREVISION } from '@/lib/tresorerie-previsionnelle'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { Select } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
@@ -94,6 +95,14 @@ export default async function PrevisionnelPage({ searchParams }: { searchParams:
             { name: 'date_debut', label: t('Date (ou premier mois)'), type: 'date', required: true, defaultValue: aujourdhui },
             { name: 'recurrence', label: t('Répétition'), type: 'select', defaultValue: 'unique', options: [{ value: 'unique', label: t('Une seule fois') }, { value: 'mensuelle', label: t('Chaque mois') }] },
             { name: 'date_fin', label: t('Dernier mois (si chaque mois)'), type: 'date' },
+          ]}
+        />
+        <ExportButtons titre={t('Trésorerie prévisionnelle')} sousTitre={ctx.organisationNom} fichier="tresorerie-previsionnelle"
+          colonnes={[t('Catégorie'), ...plan.mois.map(libelleMois)]}
+          lignes={[
+            [t('Solde de début'), ...plan.soldeDebut],
+            ...plan.lignes.map((l) => [t(CATEGORIES_PREVISION[l.categorie] ?? l.categorie), ...l.parMois]),
+            [t('Solde de fin'), ...plan.soldeFin],
           ]}
         />
       </PageHeader>

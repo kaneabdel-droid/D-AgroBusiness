@@ -7,6 +7,7 @@ import { creerT, LOCALES } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { consommerIntrants, enregistrerRecolte } from '../actions'
 
@@ -90,7 +91,16 @@ export default async function ProductionDetailPage({ params }: { params: Promise
         {t('Les charges regroupent tout ce qui est imputé à ce secteur et à cette campagne : intrants consommés, dotations du matériel affecté, autres dépenses saisies avec le secteur (Trésorerie → Autre opération). Une récolte sans valeur saisie est valorisée à ce coût.')}
       </p>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Intrants consommés')}</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-heading text-lg font-semibold">{t('Intrants consommés')}</h2>
+        <ExportButtons titre={`${t('Intrants consommés')} — ${p.code}`} sousTitre={`${p.secteur_nom} · ${t('campagne')} ${camp?.code}`} fichier={`consommations-${p.code}`}
+          colonnes={[t('Date'), t('Intrant'), t('Quantité'), t('Valeur (CUMP)')]}
+          lignes={(consos ?? []).map((c) => {
+            const x = Array.isArray(c.produits) ? c.produits[0] : c.produits
+            return [formatDate(c.date_consommation, ctx.lang), x?.nom, `${Number(c.quantite).toLocaleString('fr-FR')} ${x?.unite ?? ''}`, Number(c.valeur)]
+          })}
+        />
+      </div>
       <div className="mb-6">
         <TableWrap>
           <thead>
@@ -115,7 +125,16 @@ export default async function ProductionDetailPage({ params }: { params: Promise
         </TableWrap>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Récoltes')}</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-heading text-lg font-semibold">{t('Récoltes')}</h2>
+        <ExportButtons titre={`${t('Récoltes')} — ${p.code}`} sousTitre={`${p.secteur_nom} · ${t('campagne')} ${camp?.code}`} fichier={`recoltes-${p.code}`}
+          colonnes={['N°', t('Date'), t('Produit'), t('Quantité'), t('Valeur')]}
+          lignes={(recoltes ?? []).map((r) => {
+            const x = Array.isArray(r.produits) ? r.produits[0] : r.produits
+            return [r.numero, formatDate(r.date_recolte, ctx.lang), x?.nom, `${Number(r.quantite).toLocaleString('fr-FR')} ${x?.unite ?? ''}`, Number(r.valeur)]
+          })}
+        />
+      </div>
       <TableWrap>
         <thead>
           <tr>

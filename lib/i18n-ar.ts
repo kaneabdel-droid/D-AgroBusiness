@@ -1599,4 +1599,7 @@ export const AR: Record<string, string> = {
   "Bilan, compte de résultat, ratios et suivi de la trésorerie de l’exercice en cours.": "الميزانية العمومية وحساب النتائج والنسب ومتابعة الخزينة للسنة المالية الجارية.",
   "Signature de l’employé": "توقيع الموظف",
   "Signature de l’employeur": "توقيع صاحب العمل",
+  "État de pointage": "كشف الحضور",
+  "Non pointée": "غير مسجَّل",
+  "Imprimer": "طباعة",
 }

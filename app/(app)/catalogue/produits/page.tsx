@@ -7,6 +7,7 @@ import { CATEGORIES } from '@/lib/catalogue'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { LigneActions } from '@/components/LigneActions'
 import { deleteProduit, updateProduit } from '../../referentiels/edition'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addProduit } from '../../operations/actions'
 
@@ -37,6 +38,9 @@ export default async function ProduitsPage() {
             { name: 'prix_reference', label: t('Prix de référence'), type: 'number', step: '0.01' },
           ]}
         />
+        <ExportButtons titre={t('Produits')} sousTitre={ctx.organisationNom} fichier="produits"
+          colonnes={[t('Code'), t('Désignation'), t('Catégorie'), t('Unité'), t('TVA'), t('Prix réf.')]}
+          lignes={(produits ?? []).map((p) => [p.code, p.nom, t(CATEGORIES.find((c) => c.value === p.categorie)?.label ?? ''), p.unite, `${Number(p.taux_tva)} %`, p.prix_reference != null ? Number(p.prix_reference) : ''])} />
       </PageHeader>
       <TableWrap>
         <thead>

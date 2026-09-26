@@ -5,6 +5,7 @@ import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { ActionButton } from '@/components/ActionButton'
 import { comptabiliserAmortissements } from '../../financement/actions'
 
@@ -34,6 +35,13 @@ export default async function AmortissementsPage() {
         description={t('Comptabilisation par exercice : dotation de chaque bien (imputée à son département d’affectation) et reprise des subventions correspondantes. Relancer un exercice ne traite que les biens non encore amortis sur cette période.')}
       >
         <Link href="/materiel" className="text-sm text-primary underline">{t('← Parc matériel')}</Link>
+        <ExportButtons titre={t('Dotations aux amortissements')} sousTitre={ctx.organisationNom} fichier="dotations-amortissements"
+          colonnes={[t('Exercice'), t('Période'), t('Biens amortis'), t('Dotations'), t('Reprises de subventions')]}
+          lignes={(exercices ?? []).map((e) => {
+            const tot = parExercice.get(e.id)
+            return [e.libelle, `${formatDate(e.date_debut, ctx.lang)} → ${formatDate(e.date_fin, ctx.lang)}`, String(tot?.nb ?? 0), tot?.dotations ?? 0, tot?.reprises ?? 0]
+          })}
+        />
       </PageHeader>
       <Card className="mb-4 text-sm text-foreground-muted">
         {t('Convention linéaire au mois : amortissement dès le mois de mise en service. À valider avec votre expert-comptable (prorata en jours, mode dégressif fiscal éventuel).')}

@@ -3,8 +3,10 @@ import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
-import { STATUTS_EMPLOYE } from '@/lib/rh'
+import { STATUTS_EMPLOYE, STATUTS_POINTAGE } from '@/lib/rh'
+import { formatDate } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { PointageForm } from '@/components/PointageForm'
 
 export default async function PointagePage({
@@ -31,7 +33,15 @@ export default async function PointagePage({
       <PageHeader
         titre={t('Pointage')}
         description={t('Présences du jour. Les saisonniers et journaliers sont payés d’après ces jours ; l’imputation au secteur alimente le coût de production.')}
-      />
+      >
+        <ExportButtons titre={`${t('État de pointage')} — ${formatDate(date, ctx.lang)}`} sousTitre={ctx.organisationNom} fichier={`pointage-${date}`}
+          colonnes={[t('Matricule'), t('Nom'), t('Statut'), t('Pointage')]}
+          lignes={(employes ?? []).map((e) => {
+            const s = statutDuJour.get(e.id)
+            return [e.matricule, `${e.nom} ${e.prenom ?? ''}`.trim(), t(STATUTS_EMPLOYE[e.statut]), s ? t(STATUTS_POINTAGE.find((x) => x.value === s)?.label ?? s) : t('Non pointée')]
+          })}
+        />
+      </PageHeader>
       {peutEcrire ? (
         <PointageForm
           key={date}

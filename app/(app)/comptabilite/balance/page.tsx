@@ -3,6 +3,7 @@ import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { ExerciceFilter } from '@/components/ExerciceFilter'
 
 export default async function BalancePage({
@@ -32,6 +33,13 @@ export default async function BalancePage({
     <>
       <PageHeader titre={t('Balance générale')} description={t('Totaux débit/crédit et solde par compte.')}>
         <ExerciceFilter libelleAria={t('Exercice')} libelleBouton={t('Afficher')} exercices={exercices ?? []} selectionne={exerciceId} />
+        <ExportButtons titre={t('Balance générale')} sousTitre={exercices?.find((e) => e.id === exerciceId)?.libelle} fichier="balance-generale"
+          colonnes={[t('Compte'), t('Libellé'), t('Débit'), t('Crédit'), t('Solde')]}
+          lignes={[
+            ...(lignes ?? []).map((l) => [l.numero, l.libelle, Number(l.total_debit), Number(l.total_credit), Number(l.solde)]),
+            [t('Totaux'), '', totalDebit, totalCredit, totalDebit - totalCredit],
+          ]}
+        />
       </PageHeader>
       <TableWrap>
         <thead>

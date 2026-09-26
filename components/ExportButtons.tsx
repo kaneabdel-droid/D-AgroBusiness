@@ -1,6 +1,6 @@
 'use client'
 
-import { FileDown, FileSpreadsheet } from 'lucide-react'
+import { FileDown, FileSpreadsheet, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/components/I18nProvider'
 import { imprimerHtml, tableauHtml, echapper } from '@/lib/impression'
@@ -42,6 +42,15 @@ export function ExportButtons({
     setTimeout(() => URL.revokeObjectURL(url), 4000)
   }
 
+  /** Impression par le navigateur (fenêtre d'impression, ou « Enregistrer au format PDF ») : identique dans les trois langues. */
+  function imprimer() {
+    const tete = colonnes.map((c) => `<th>${echapper(c)}</th>`).join('')
+    const corps = lignes
+      .map((l) => `<tr>${l.map((v) => (typeof v === 'number' ? `<td class="n">${echapper(formatMontantExport(v))}</td>` : `<td>${echapper(v)}</td>`)).join('')}</tr>`)
+      .join('')
+    imprimerHtml(titre, `<h1>${echapper(titre)}</h1>${sousTitre ? `<p>${echapper(sousTitre)}</p>` : ''}<table><thead><tr>${tete}</tr></thead><tbody>${corps}</tbody></table>`, lang)
+  }
+
   async function pdf() {
     // Arabe : impression par le navigateur (lettres reliées et sens d’écriture gérés nativement)
     if (lang === 'ar') {
@@ -71,6 +80,9 @@ export function ExportButtons({
     <>
       <Button type="button" size="sm" variant="outline" onClick={csv}>
         <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden /> {t('Excel (CSV)')}
+      </Button>
+      <Button type="button" size="sm" variant="outline" onClick={imprimer}>
+        <Printer className="h-3.5 w-3.5" aria-hidden /> {t('Imprimer')}
       </Button>
       <Button type="button" size="sm" variant="outline" onClick={pdf}>
         <FileDown className="h-3.5 w-3.5" aria-hidden /> PDF

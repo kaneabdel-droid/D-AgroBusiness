@@ -5,6 +5,7 @@ import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addBudget } from '../actions'
 
@@ -36,6 +37,14 @@ export default async function BudgetsPage() {
             { name: 'campagne_id', label: t('Limiter le réalisé à une campagne (facultatif)'), type: 'select', options: o.campagnes.map((c) => ({ value: c.id, label: c.label })) },
           ]}
         />
+        <ExportButtons titre={t('Budgets')} sousTitre={ctx.organisationNom} fichier="budgets"
+          colonnes={[t('Code'), t('Libellé'), t('Exercice'), t('Campagne'), t('Statut')]}
+          lignes={(budgets ?? []).map((b) => {
+            const ex = Array.isArray(b.exercices_comptables) ? b.exercices_comptables[0] : b.exercices_comptables
+            const camp = Array.isArray(b.campagnes) ? b.campagnes[0] : b.campagnes
+            return [b.code, b.libelle, ex?.libelle, camp?.code ?? t('Toutes'), b.statut === 'approuve' ? t('Approuvé') : t('Brouillon')]
+          })}
+        />
       </PageHeader>
       <TableWrap>
         <thead>
@@ -56,7 +65,7 @@ export default async function BudgetsPage() {
                 <td className={td}><Link href={`/pilotage/budgets/${b.id}`} className="font-medium text-primary underline">{b.code}</Link></td>
                 <td className={td}>{b.libelle}</td>
                 <td className={td}>{ex?.libelle}</td>
-                <td className={td}>{camp?.code ?? 'Toutes'}</td>
+                <td className={td}>{camp?.code ?? t('Toutes')}</td>
                 <td className={td}>{b.statut === 'approuve' ? t('Approuvé') : t('Brouillon')}</td>
               </tr>
             )

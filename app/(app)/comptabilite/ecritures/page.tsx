@@ -7,6 +7,7 @@ import { creerT } from '@/lib/i18n'
 import { cn, formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { ContrepassationButton } from '@/components/ContrepassationButton'
 
 type Ligne = { debit: number; credit: number; tiers_id: string | null }
@@ -25,7 +26,7 @@ export default async function EcrituresPage({
     (() => {
       let q = supabase
         .from('ecritures')
-        .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journal_id, journaux(code), lignes_ecritures(debit, credit, tiers_id)')
+        .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journal_id, journaux(code), lignes_ecritures(debit, credit, tiers_id, libelle, comptes_comptables(numero))')
         .order('date_ecriture', { ascending: false })
         .order('numero', { ascending: false })
         .limit(100)
@@ -52,6 +53,18 @@ export default async function EcrituresPage({
             </Link>
           </Button>
         )}
+        <ExportButtons
+          titre={journalFiltre ? `${t('Journal')} ${journaux?.find((j) => j.id === journalFiltre)?.code ?? ''}` : t('Écritures comptables')}
+          sousTitre={ctx.organisationNom} fichier={journalFiltre ? 'journal' : 'ecritures-comptables'}
+          colonnes={[t('Date'), t('Journal'), 'N°', t('Compte'), t('Libellé'), t('Débit'), t('Crédit')]}
+          lignes={(ecritures ?? []).flatMap((e) => {
+            const journal = Array.isArray(e.journaux) ? e.journaux[0] : e.journaux
+            return (e.lignes_ecritures as unknown as { debit: number; credit: number; libelle: string | null; comptes_comptables: { numero: string } | { numero: string }[] | null }[]).map((l) => {
+              const cpt = Array.isArray(l.comptes_comptables) ? l.comptes_comptables[0] : l.comptes_comptables
+              return [formatDate(e.date_ecriture, ctx.lang), journal?.code, e.numero, cpt?.numero, l.libelle ?? e.libelle, Number(l.debit) || null, Number(l.credit) || null]
+            })
+          })}
+        />
       </PageHeader>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">

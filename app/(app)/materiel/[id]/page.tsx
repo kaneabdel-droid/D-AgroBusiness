@@ -6,6 +6,7 @@ import { creerT } from '@/lib/i18n'
 import { CATEGORIES_MATERIEL } from '@/lib/catalogue'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 
 export default async function MaterielDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -48,9 +49,17 @@ export default async function MaterielDetailPage({ params }: { params: Promise<{
         <Card><p className="text-sm text-foreground-muted">{t('Subvention accordée')}</p><p className="mt-1 text-xl font-semibold tabular-nums">{formatMontant(subventionTotale, ctx.devise, ctx.lang)}</p></Card>
       </div>
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">
-        {t('Plan d’amortissement linéaire · mise en service le {d} · {n} mois', { d: formatDate(m.date_mise_service ?? m.date_acquisition, ctx.lang), n: m.duree_amortissement_mois })}
-      </h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-heading text-lg font-semibold">
+          {t('Plan d’amortissement linéaire · mise en service le {d} · {n} mois', { d: formatDate(m.date_mise_service ?? m.date_acquisition, ctx.lang), n: m.duree_amortissement_mois })}
+        </h2>
+        <ExportButtons titre={`${m.code} — ${m.designation}`}
+          sousTitre={t('Plan d’amortissement linéaire · mise en service le {d} · {n} mois', { d: formatDate(m.date_mise_service ?? m.date_acquisition, ctx.lang), n: m.duree_amortissement_mois })}
+          fichier={`amortissement-${m.code}`}
+          colonnes={[t('Année civile'), t('Mois'), t('Dotation'), t('Cumul'), t('VNC')]}
+          lignes={(plan ?? []).map((l: { annee: number; mois: number; dotation: number; cumul: number; vnc: number }) => [String(l.annee), String(l.mois), Number(l.dotation), Number(l.cumul), Number(l.vnc)])}
+        />
+      </div>
       <div className="mb-6">
         <TableWrap>
           <thead>

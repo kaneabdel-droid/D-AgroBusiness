@@ -3,6 +3,7 @@ import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { ExerciceFilter } from '@/components/ExerciceFilter'
 
 export default async function AnalytiquePage({
@@ -43,6 +44,13 @@ export default async function AnalytiquePage({
         description={t('Produits, charges et résultat par département × secteur/projet × campagne.')}
       >
         <ExerciceFilter libelleAria={t('Exercice')} libelleBouton={t('Afficher')} exercices={exercices ?? []} selectionne={exerciceId} />
+        <ExportButtons titre={t('Résultat analytique')} sousTitre={exercices?.find((e) => e.id === exerciceId)?.libelle} fichier="resultat-analytique"
+          colonnes={[t('Département'), t('Secteur / projet'), t('Campagne'), t('Produits'), t('Charges'), t('Résultat')]}
+          lignes={[
+            ...tri.map((l) => [nom(departements, l.departement_id), nom(secteurs, l.secteur_id), nom(campagnes, l.campagne_id), Number(l.produits), Number(l.charges), Number(l.resultat)]),
+            [t('Résultat total'), '', '', '', '', total],
+          ]}
+        />
       </PageHeader>
       <TableWrap>
         <thead>

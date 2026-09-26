@@ -5,6 +5,7 @@ import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { LigneActions } from '@/components/LigneActions'
 import { changerActifSecteur, deleteSecteur, updateSecteur } from '../edition'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addSecteur } from '../actions'
 
@@ -52,6 +53,12 @@ export default async function SecteursPage() {
             { name: 'superficie_ha', label: t('Superficie (ha)'), type: 'number', step: '0.01' },
           ]}
         />
+        <ExportButtons titre={t('Secteurs & projets')} sousTitre={ctx.organisationNom} fichier="secteurs-projets"
+          colonnes={[t('Code'), t('Nom'), t('Département'), t('Nature'), t('Superficie (ha)'), t('Statut')]}
+          lignes={(secteurs ?? []).map((s) => {
+            const dep = Array.isArray(s.departements) ? s.departements[0] : s.departements
+            return [s.code, s.nom, dep?.nom ? t(dep.nom) : '', s.nature === 'projet' ? t('Projet') : t('Secteur'), s.superficie_ha != null ? String(s.superficie_ha) : '', s.actif === false ? t('Inactif') : t('Actif')]
+          })} />
       </PageHeader>
       <TableWrap>
         <thead>

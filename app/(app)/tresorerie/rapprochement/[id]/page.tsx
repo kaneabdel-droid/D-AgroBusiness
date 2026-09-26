@@ -7,6 +7,7 @@ import { creerT } from '@/lib/i18n'
 import { chargerOptions } from '@/lib/options'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { ActionButton } from '@/components/ActionButton'
 import { comptabiliser, depointer, pointer, pointerAuto } from '../actions'
@@ -59,6 +60,18 @@ export default async function ReleveDetailPage({ params }: { params: Promise<{ i
         {peutEcrire && nonPointeesBanque.length > 0 && (
           <ActionButton label={t('Pointer automatiquement')} action={pointerAuto.bind(null, id)} variant="default" />
         )}
+        <ExportButtons titre={`${t('Rapprochement bancaire')} — ${releve.libelle}`} sousTitre={`${formatDate(releve.date_debut, ctx.lang)} → ${formatDate(releve.date_fin, ctx.lang)}`} fichier="rapprochement-bancaire"
+          colonnes={[t('Date'), t('Libellé'), t('Référence'), t('Montant'), t('Pointage')]}
+          lignes={[
+            ...(lignes ?? []).map((l) => [formatDate(l.date_operation, ctx.lang), l.libelle, l.reference ?? '', Number(l.montant), l.ligne_ecriture_id ? t('Pointée') : t('Non pointée')]),
+            ['', '', '', '', ''],
+            [t('Solde selon la banque'), '', '', soldeBanque, ''],
+            [t('Solde selon la comptabilité'), '', '', soldeLivres, ''],
+            [t('Écart de rapprochement'), '', '', ecart, ''],
+            ...(nonPointeesLivres.length > 0 ? [['', '', '', '', ''], [t('Écritures de la comptabilité non encore vues en banque'), '', '', '', '']] : []),
+            ...nonPointeesLivres.map((e) => [formatDate(e.date_ecriture, ctx.lang), e.libelle, '', Number(e.montant), '']),
+          ]}
+        />
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

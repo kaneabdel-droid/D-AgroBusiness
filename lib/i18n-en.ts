@@ -1621,4 +1621,7 @@ export const EN: Record<string, string> = {
   "Bilan, compte de résultat, ratios et suivi de la trésorerie de l’exercice en cours.": "Balance sheet, income statement, ratios and cash monitoring for the current financial year.",
   "Signature de l’employé": "Employee signature",
   "Signature de l’employeur": "Employer signature",
+  "État de pointage": "Attendance sheet",
+  "Non pointée": "Not recorded",
+  "Imprimer": "Print",
 }

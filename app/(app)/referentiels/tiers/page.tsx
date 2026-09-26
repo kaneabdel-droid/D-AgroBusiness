@@ -5,6 +5,7 @@ import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { LigneActions } from '@/components/LigneActions'
 import { deleteTiers, updateTiers } from '../edition'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addTiers } from '../actions'
 
@@ -46,6 +47,9 @@ export default async function TiersPage() {
             { name: 'nif', label: t('NIF / identifiant fiscal') },
           ]}
         />
+        <ExportButtons titre={t('Tiers')} sousTitre={ctx.organisationNom} fichier="tiers"
+          colonnes={[t('Code'), t('Nom'), t('Type(s)'), t('Téléphone'), t('Email'), t('Adresse'), t('NIF / identifiant fiscal')]}
+          lignes={tiers.map((ti) => [ti.code, ti.nom, (ti.types as string[]).map((v) => t(TYPES.find((x) => x.value === v)?.label ?? v)).join(', '), ti.telephone ?? '', ti.email ?? '', ti.adresse ?? '', ti.nif ?? ''])} />
       </PageHeader>
       <TableWrap>
         <thead>

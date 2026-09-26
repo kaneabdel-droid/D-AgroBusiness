@@ -8,6 +8,7 @@ import { chargerOptions } from '@/lib/options'
 import { MODES_REMBOURSEMENT, TYPES_FINANCEMENT } from '@/lib/catalogue'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { ActionButton, PayerEcheance } from '@/components/ActionButton'
 import { enregistrerTirage, genererEcheancier, rembourserEcheance } from '../../financement/actions'
@@ -92,7 +93,16 @@ export default async function FinancementPage({ params }: { params: Promise<{ id
         </p>
       )}
 
-      <h2 className="mb-2 font-heading text-lg font-semibold">{t('Échéancier')}</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-heading text-lg font-semibold">{t('Échéancier')}</h2>
+        <ExportButtons titre={`${t('Échéancier')} — ${c.code}`} sousTitre={c.libelle} fichier={`echeancier-${c.code}`}
+          colonnes={['N°', t('Échéance'), t('Capital'), t('Intérêts'), t('Total'), t('Statut')]}
+          lignes={[
+            ...(echeances ?? []).map((e) => [String(e.numero), formatDate(e.date_echeance, ctx.lang), Number(e.capital), Number(e.interets), Number(e.capital) + Number(e.interets), e.statut === 'payee' ? t('Payée le {d}', { d: formatDate(e.date_paiement, ctx.lang) }) : t('À payer')]),
+            [t('Totaux'), '', totalCapital, totalInterets, totalCapital + totalInterets, ''],
+          ]}
+        />
+      </div>
       <div className="mb-6">
         <TableWrap>
           <thead>

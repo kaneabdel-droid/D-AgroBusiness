@@ -5,6 +5,7 @@ import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { LigneActions } from '@/components/LigneActions'
 import { changerActifDepartement, deleteDepartement, updateDepartement } from '../edition'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addDepartement } from '../actions'
 
@@ -42,6 +43,9 @@ export default async function DepartementsPage() {
             { name: 'type', label: t('Type'), type: 'select', options: TYPES.map((x) => ({ ...x, label: t(x.label) })), required: true },
           ]}
         />
+        <ExportButtons titre={t('Départements')} sousTitre={ctx.organisationNom} fichier="departements"
+          colonnes={[t('Code'), t('Nom'), t('Type'), t('Statut')]}
+          lignes={(departements ?? []).map((d) => [d.code, t(d.nom), t(TYPES.find((x) => x.value === d.type)?.label ?? d.type), d.actif === false ? t('Inactif') : t('Actif')])} />
       </PageHeader>
       <TableWrap>
         <thead>

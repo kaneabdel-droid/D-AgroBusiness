@@ -3,6 +3,7 @@ import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 
 export default async function StocksPage() {
   const ctx = await getContexte()
@@ -31,7 +32,21 @@ export default async function StocksPage() {
       <PageHeader
         titre={t('État des stocks')}
         description={t('Valorisation au coût moyen unitaire pondéré (CUMP). Le stock consigné n’est pas valorisé : il appartient au fournisseur.')}
-      />
+      >
+        <ExportButtons titre={t('État des stocks')} sousTitre={ctx.organisationNom} fichier="etat-stocks"
+          colonnes={[t('Produit'), t('Magasin'), t('Propriété'), t('Quantité'), t('CUMP'), t('Valeur')]}
+          lignes={[
+            ...lignes.map((l) => [
+              `${l.produit?.code} — ${l.produit?.nom}`, l.magasin,
+              l.propriete === 'propre' ? t('Propre') : t('Consigné ({c})', { c: l.contrat }),
+              `${Number(l.quantite).toLocaleString('fr-FR')} ${l.produit?.unite ?? ''}`,
+              l.cump != null ? Number(l.cump) : '—',
+              l.propriete === 'propre' ? Number(l.valeur) : '—',
+            ]),
+            [t('Valeur du stock propre'), '', '', '', '', valeurTotale],
+          ]}
+        />
+      </PageHeader>
       <TableWrap>
         <thead>
           <tr>

@@ -7,6 +7,7 @@ import { chargerOptions } from '@/lib/options'
 import { SITUATIONS, STATUTS_EMPLOYE } from '@/lib/rh'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { ExportButtons } from '@/components/ExportButtons'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addEmploye } from '../actions'
 
@@ -54,6 +55,13 @@ export default async function EmployesPage() {
             { name: 'deduction_fixe_mensuelle', label: t('Déduction forfaitaire mensuelle de la base d’impôt (Mali : indemnité de solidarité ; Nigeria : allègement de loyer)'), type: 'number', step: '0.01', defaultValue: '0' },
             { name: 'telephone', label: t('Téléphone'), type: 'tel' },
           ]}
+        />
+        <ExportButtons titre={t('Personnel')} sousTitre={ctx.organisationNom} fichier="personnel"
+          colonnes={[t('Matricule'), t('Nom'), t('Statut'), t('Poste'), t('Département'), t('Embauche'), t('Parts')]}
+          lignes={(employes ?? []).map((e) => {
+            const dep = Array.isArray(e.departements) ? e.departements[0] : e.departements
+            return [e.matricule, `${e.nom} ${e.prenom ?? ''}`.trim(), t(STATUTS_EMPLOYE[e.statut]), e.poste ?? '', dep?.nom ? t(dep.nom) : '', formatDate(e.date_embauche, ctx.lang), String(Number(e.parts_ir))]
+          })}
         />
       </PageHeader>
       <TableWrap>
