@@ -15,12 +15,16 @@ type Ligne = { debit: number; credit: number; tiers_id: string | null }
 export default async function EcrituresPage({
   searchParams,
 }: {
-  searchParams: Promise<{ journal?: string }>
+  searchParams: Promise<{ journal?: string; du?: string; au?: string }>
 }) {
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
   const supabase = await createClient()
-  const { journal: journalFiltre } = await searchParams
+  const { journal: journalFiltre, du: duParam, au: auParam } = await searchParams
+  const dateValide = (v?: string) => (v && /^d{4}-d{2}-d{2}$/.test(v) ? v : undefined)
+  const du = dateValide(duParam)
+  const au = dateValide(auParam)
+  const periode = du || au ? `${du ? `&du=${du}` : ''}${au ? `&au=${au}` : ''}` : ''
   const [{ data: journaux }, { data: ecritures }] = await Promise.all([
     supabase.from('journaux').select('id, code, libelle').eq('actif', true).order('code'),
     (() => {
@@ -29,8 +33,11 @@ export default async function EcrituresPage({
         .select('id, numero, date_ecriture, libelle, reference_piece, contrepassation_de, journal_id, journaux(code), lignes_ecritures(debit, credit, tiers_id, libelle, comptes_comptables(numero))')
         .order('date_ecriture', { ascending: false })
         .order('numero', { ascending: false })
-        .limit(100)
       if (journalFiltre) q = q.eq('journal_id', journalFiltre)
+      if (du) q = q.gte('date_ecriture', du)
+      if (au) q = q.lte('date_ecriture', au)
+      // Sans période choisie, on se limite aux 100 dernières écritures ; avec une période, on prend tout.
+      if (!du && !au) q = q.limit(100)
       return q
     })(),
   ])
@@ -55,7 +62,7 @@ export default async function EcrituresPage({
         )}
         <ExportButtons
           titre={journalFiltre ? `${t('Journal')} ${journaux?.find((j) => j.id === journalFiltre)?.code ?? ''}` : t('Écritures comptables')}
-          sousTitre={ctx.organisationNom} fichier={journalFiltre ? 'journal' : 'ecritures-comptables'}
+          sousTitre={du || au ? `${du ? formatDate(du, ctx.lang) : '…'} → ${au ? formatDate(au, ctx.lang) : '…'}` : ctx.organisationNom} fichier={journalFiltre ? 'journal' : 'ecritures-comptables'}
           colonnes={[t('Date'), t('Journal'), 'N°', t('Compte'), t('Libellé'), t('Débit'), t('Crédit')]}
           lignes={(ecritures ?? []).flatMap((e) => {
             const journal = Array.isArray(e.journaux) ? e.journaux[0] : e.journaux
@@ -70,7 +77,7 @@ export default async function EcrituresPage({
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-sm text-foreground-muted">{t('Journal')} :</span>
         <Link
-          href="/comptabilite/ecritures"
+          href={`/comptabilite/ecritures${periode ? `?${periode.slice(1)}` : ''}`}
           className={cn(
             'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
             !journalFiltre ? 'border-primary bg-primary text-white' : 'border-surface-border text-foreground-muted hover:text-foreground'
@@ -81,7 +88,7 @@ export default async function EcrituresPage({
         {journaux?.map((j) => (
           <Link
             key={j.id}
-            href={journalFiltre === j.id ? '/comptabilite/ecritures' : `/comptabilite/ecritures?journal=${j.id}`}
+            href={journalFiltre === j.id ? `/comptabilite/ecritures${periode ? `?${periode.slice(1)}` : ''}` : `/comptabilite/ecritures?journal=${j.id}${periode}`}
             title={j.libelle}
             className={cn(
               'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
@@ -92,6 +99,15 @@ export default async function EcrituresPage({
           </Link>
         ))}
       </div>
+
+      <form method="get" className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        {journalFiltre && <input type="hidden" name="journal" value={journalFiltre} />}
+        <label htmlFor="du">{t('Du')}</label>
+        <input id="du" type="date" name="du" defaultValue={du} className="h-9 rounded-md border border-surface-border bg-transparent px-2" />
+        <label htmlFor="au">{t('Au')}</label>
+        <input id="au" type="date" name="au" defaultValue={au} className="h-9 rounded-md border border-surface-border bg-transparent px-2" />
+        <Button type="submit" size="sm" variant="outline">{t('Afficher')}</Button>
+      </form>
 
       <TableWrap>
         <thead>
