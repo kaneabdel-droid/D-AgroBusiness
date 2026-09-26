@@ -4,7 +4,7 @@ import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { LigneActions } from '@/components/LigneActions'
-import { deleteSecteur, updateSecteur } from '../edition'
+import { changerActifSecteur, deleteSecteur, updateSecteur } from '../edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addSecteur } from '../actions'
 
@@ -68,9 +68,9 @@ export default async function SecteursPage() {
           {secteurs?.map((s) => {
             const dep = Array.isArray(s.departements) ? s.departements[0] : s.departements
             return (
-              <tr key={s.id}>
+              <tr key={s.id} className={s.actif === false ? 'opacity-60' : undefined}>
                 <td className={td}>{s.code}</td>
-                <td className={td}>{s.nom}</td>
+                <td className={td}>{s.nom}{s.actif === false && <span className="ms-2 rounded bg-sidebar px-1.5 py-0.5 text-xs">{t('Inactif')}</span>}</td>
                 <td className={td}>{dep?.nom ? t(dep.nom) : ''}</td>
                 <td className={td}>{s.nature === 'projet' ? t('Projet') : t('Secteur')}</td>
                 <td className={td}>{s.superficie_ha ?? '—'}</td>
@@ -78,6 +78,9 @@ export default async function SecteursPage() {
                   <td className={td}>
                     <LigneActions
                       libelle={s.nom}
+                      actif={s.actif}
+                      basculerActif={changerActifSecteur.bind(null, s.id, s.actif === false)}
+                      confirmationActif={t('Désactiver « {nom} » ? Il n’apparaîtra plus dans les listes de choix ; les écritures existantes sont conservées.', { nom: s.nom })}
                       confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: s.nom })}
                       modifier={updateSecteur.bind(null, s.id)}
                       supprimer={deleteSecteur.bind(null, s.id)}

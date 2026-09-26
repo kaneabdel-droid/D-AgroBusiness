@@ -58,6 +58,23 @@ export async function updateDepartement(id: string, formData: FormData): Promise
     type: txt(formData, 'type') || 'autre',
   }, ['/referentiels/departements'])
 }
+// Désactiver masque l'élément des listes de choix sans toucher aux écritures existantes (les états analytiques le
+// montrent toujours). Désactiver un département désactive aussi ses secteurs et projets.
+export async function changerActifDepartement(id: string, actif: boolean): Promise<Resultat> {
+  if (!(await admin())) return REFUS
+  const supabase = await createClient()
+  const { data, error } = await supabase.from('departements').update({ actif }).eq('id', id).select('id')
+  if (error) return message(error)
+  if (!data || data.length === 0) return INTROUVABLE
+  if (!actif) {
+    const { error: errSecteurs } = await supabase.from('secteurs_projets').update({ actif: false }).eq('departement_id', id)
+    if (errSecteurs) return message(errSecteurs)
+    revalidatePath('/referentiels/secteurs')
+  }
+  revalidatePath('/referentiels/departements')
+  return { success: true }
+}
+
 export async function deleteDepartement(id: string): Promise<Resultat> {
   return supprimer('departements', id, ['/referentiels/departements'])
 }
@@ -72,6 +89,17 @@ export async function updateSecteur(id: string, formData: FormData): Promise<Res
     superficie_ha: superficie ? Number(superficie) : null,
   }, ['/referentiels/secteurs'])
 }
+export async function changerActifSecteur(id: string, actif: boolean): Promise<Resultat> {
+  if (!(await admin())) return REFUS
+  const supabase = await createClient()
+  if (actif) {
+    const { data: secteur } = await supabase.from('secteurs_projets').select('departements(actif)').eq('id', id).maybeSingle()
+    const dep = Array.isArray(secteur?.departements) ? secteur?.departements[0] : secteur?.departements
+    if (dep && dep.actif === false) return { error: 'Réactivez d’abord le département de ce secteur.' }
+  }
+  return mettreAJour('secteurs_projets', id, { actif }, ['/referentiels/secteurs'])
+}
+
 export async function deleteSecteur(id: string): Promise<Resultat> {
   return supprimer('secteurs_projets', id, ['/referentiels/secteurs'])
 }

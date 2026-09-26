@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Pencil, Trash2, X } from 'lucide-react'
+import { Pencil, Power, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ChampFormulaire, type Champ } from '@/components/SimpleCreateForm'
@@ -16,12 +16,19 @@ export function LigneActions({
   modifier,
   supprimer,
   confirmation,
+  actif,
+  basculerActif,
+  confirmationActif,
 }: {
   libelle: string
   champs: Champ[]
   modifier: (formData: FormData) => Promise<Resultat>
   supprimer: () => Promise<Resultat>
   confirmation: string
+  /** Départements et secteurs : état actuel et action pour masquer / réafficher l'élément dans les listes de choix. */
+  actif?: boolean
+  basculerActif?: () => Promise<Resultat>
+  confirmationActif?: string
 }) {
   const { t } = useT()
   const [ouvert, setOuvert] = useState(false)
@@ -44,6 +51,15 @@ export function LigneActions({
     })
   }
 
+  function onBasculer() {
+    if (actif !== false && confirmationActif && !window.confirm(confirmationActif)) return
+    setErreurSuppression(null)
+    startTransition(async () => {
+      const res = await basculerActif!()
+      if ('error' in res) setErreurSuppression(res.error)
+    })
+  }
+
   function onSupprimer() {
     if (!window.confirm(confirmation)) return
     setErreurSuppression(null)
@@ -55,10 +71,15 @@ export function LigneActions({
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <div className="flex gap-1">
+      <div className="flex flex-wrap justify-end gap-1">
       <Button type="button" size="sm" variant="outline" onClick={ouvrir} disabled={pending} aria-label={`${t('Modifier')} ${libelle}`}>
         <Pencil className="h-3.5 w-3.5" aria-hidden /> {t('Modifier')}
       </Button>
+      {basculerActif && (
+        <Button type="button" size="sm" variant="outline" onClick={onBasculer} disabled={pending}>
+          <Power className="h-3.5 w-3.5" aria-hidden /> {actif === false ? t('Réactiver') : t('Désactiver')}
+        </Button>
+      )}
       <Button type="button" size="sm" variant="outline" onClick={onSupprimer} disabled={pending} aria-label={`${t('Supprimer')} ${libelle}`}>
         <Trash2 className="h-3.5 w-3.5" aria-hidden /> {t('Supprimer')}
       </Button>

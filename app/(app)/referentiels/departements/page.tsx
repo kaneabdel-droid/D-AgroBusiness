@@ -4,7 +4,7 @@ import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { LigneActions } from '@/components/LigneActions'
-import { deleteDepartement, updateDepartement } from '../edition'
+import { changerActifDepartement, deleteDepartement, updateDepartement } from '../edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addDepartement } from '../actions'
 
@@ -54,14 +54,17 @@ export default async function DepartementsPage() {
         </thead>
         <tbody>
           {departements?.map((d) => (
-            <tr key={d.id}>
+            <tr key={d.id} className={d.actif === false ? 'opacity-60' : undefined}>
               <td className={td}>{d.code}</td>
-              <td className={td}>{t(d.nom)}</td>
+              <td className={td}>{t(d.nom)}{d.actif === false && <span className="ms-2 rounded bg-sidebar px-1.5 py-0.5 text-xs">{t('Inactif')}</span>}</td>
               <td className={td}>{t(TYPES.find((x) => x.value === d.type)?.label ?? d.type)}</td>
                 {peutModifier && (
                   <td className={td}>
                     <LigneActions
                       libelle={d.nom}
+                      actif={d.actif}
+                      basculerActif={changerActifDepartement.bind(null, d.id, d.actif === false)}
+                      confirmationActif={t('Désactiver « {nom} » ? Il n’apparaîtra plus dans les listes de choix (ses secteurs et projets seront aussi désactivés) ; les écritures existantes sont conservées.', { nom: d.nom })}
                       confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: d.nom })}
                       modifier={updateDepartement.bind(null, d.id)}
                       supprimer={deleteDepartement.bind(null, d.id)}
