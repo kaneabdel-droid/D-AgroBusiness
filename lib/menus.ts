@@ -92,6 +92,7 @@ export const MENUS: GroupeMenu[] = [
   {
     titre: 'Administration',
     items: [
+      { href: '/administration/entreprise', label: 'Entreprise' },
       { href: '/administration/equipe', label: 'Équipe' },
       { href: '/administration/permissions', label: 'Permissions' },
       { href: '/administration/audit', label: 'Journal d’audit' },

@@ -93,6 +93,7 @@ const ICONES: Record<string, typeof LayoutDashboard> = {
   '/pilotage/campagnes': Flag,
   '/pilotage/rapport-mensuel': CalendarDays,
   '/pilotage/tva': Percent,
+  '/administration/entreprise': Building2,
   '/administration/equipe': UserCog,
   '/administration/permissions': ShieldCheck,
   '/administration/audit': ScrollText,
