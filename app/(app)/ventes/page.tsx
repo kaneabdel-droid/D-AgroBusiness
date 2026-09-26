@@ -7,6 +7,7 @@ import { creerT } from '@/lib/i18n'
 import { formatDate, formatMontant } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { FactureButton } from '@/components/DocumentsImprimables'
 
 export default async function VentesPage({
   searchParams,
@@ -60,6 +61,7 @@ export default async function VentesPage({
             <th className={th}>{t('Campagne')}</th>
             <th className={`${th} text-right`}>{t('HT')}</th>
             <th className={`${th} text-right`}>{t('TTC')}</th>
+            <th className={th}></th>
           </tr>
         </thead>
         <tbody>
@@ -74,6 +76,7 @@ export default async function VentesPage({
                 <td className={td}>{camp?.code ?? '—'}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(v.total_ht, ctx.devise, ctx.lang)}</td>
                 <td className={`${td} text-right tabular-nums`}>{formatMontant(v.total_ttc, ctx.devise, ctx.lang)}</td>
+                <td className={`${td} text-right`}><FactureButton venteId={v.id} numero={v.numero} /></td>
               </tr>
             )
           })}

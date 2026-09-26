@@ -33,6 +33,11 @@ export function imprimerHtml(titre: string, corps: string, lang: Lang) {
   .totaux th { text-align: center; }
   .totaux td { text-align: center; border-bottom: none; }
   .totaux td.net { font-size: 16px; font-weight: bold; }
+  .entete { border-bottom: 2px solid #1e5631; padding-bottom: 8px; margin-bottom: 14px; }
+  .entete h1 { font-size: 20px; color: #1e5631; }
+  .recap { width: auto; min-width: 260px; margin-inline-start: auto; }
+  .recap td { border-bottom: 1px solid #ccc; }
+  .recap td.net { font-weight: bold; font-size: 14px; }
   .signatures { display: flex; justify-content: space-between; gap: 24px; margin-top: 48px; }
   .signatures div { flex: 1; text-align: center; font-size: 12px; }
   .signatures .ligne { border-top: 1px solid #111; margin-bottom: 6px; height: 32px; }

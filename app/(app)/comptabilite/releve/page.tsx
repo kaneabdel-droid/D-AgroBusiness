@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { chargerEntete } from '@/lib/entreprise'
+import { ReleveImprimerButton } from '@/components/DocumentsImprimables'
 
 type LigneReleve = {
   debit: number
@@ -28,7 +30,7 @@ export default async function RelevePage({
   const supabase = await createClient()
 
   const [{ data: tiersListe }, { data: exercice }] = await Promise.all([
-    supabase.from('tiers').select('id, code, nom, types').order('nom'),
+    supabase.from('tiers').select('id, code, nom, types, adresse, nif').order('nom'),
     supabase.from('exercices_comptables').select('date_debut, date_fin').eq('statut', 'ouvert').order('date_debut', { ascending: false }).limit(1).maybeSingle(),
   ])
   const debut = du ?? exercice?.date_debut ?? `${new Date().getFullYear()}-01-01`
@@ -65,6 +67,8 @@ export default async function RelevePage({
   const totalDebit = lignes.reduce((s, l) => s + Number(l.debit), 0)
   const totalCredit = lignes.reduce((s, l) => s + Number(l.credit), 0)
 
+  const entete = await chargerEntete(ctx.organisationId)
+
   return (
     <>
       <PageHeader
@@ -94,9 +98,28 @@ export default async function RelevePage({
 
       {tiers && (
         <>
-          <h2 className="mb-2 font-heading text-lg font-semibold">
-            {tiers.code} — {tiers.nom} · {t('du')} {formatDate(debut, ctx.lang)} {t('au')} {formatDate(fin, ctx.lang)}
-          </h2>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-heading text-lg font-semibold">
+              {tiers.code} — {tiers.nom} · {t('du')} {formatDate(debut, ctx.lang)} {t('au')} {formatDate(fin, ctx.lang)}
+            </h2>
+            <ReleveImprimerButton
+              donnees={{
+                entete,
+                devise: ctx.devise,
+                tiers: { code: tiers.code, nom: tiers.nom, adresse: tiers.adresse ?? null, nif: tiers.nif ?? null },
+                debut,
+                fin,
+                report: reportAnterieur,
+                lignes: avecSolde.map(({ l, solde }) => {
+                  const e = un(l.ecritures)!
+                  return { date: e.date_ecriture, piece: `${un(e.journaux)?.code ?? ''}-${e.numero}`, libelle: l.libelle ?? e.libelle, debit: Number(l.debit), credit: Number(l.credit), solde }
+                }),
+                totalDebit,
+                totalCredit,
+                soldeFinal,
+              }}
+            />
+          </div>
           <TableWrap>
             <thead>
               <tr>
