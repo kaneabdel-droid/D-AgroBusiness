@@ -57,12 +57,9 @@ export async function updateSession(request: NextRequest) {
 
     if (isAdminEmail(sharedAdminUser?.email) || isAdminEmail(user?.email)) return supabaseResponse
 
-    if (user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      url.search = ''
-      return NextResponse.redirect(url)
-    }
+    // Pas de détour par l'accueil quand une session client existe : le même email peut
+    // avoir un compte client (éventuellement verrouillé) et doit pouvoir atteindre la
+    // connexion admin.
     const url = request.nextUrl.clone()
     url.pathname = '/admin/login'
     url.search = ''
