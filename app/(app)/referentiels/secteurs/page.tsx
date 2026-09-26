@@ -3,6 +3,8 @@ import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { LigneActions } from '@/components/LigneActions'
+import { deleteSecteur, updateSecteur } from '../edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addSecteur } from '../actions'
 
@@ -14,6 +16,7 @@ export default async function SecteursPage() {
     supabase.from('secteurs_projets').select('*, departements(nom)').order('code'),
     supabase.from('departements').select('id, nom').eq('actif', true).order('nom'),
   ])
+  const peutModifier = ctx.role === 'admin'
   const peutEcrire = peutMenu(ctx, '/referentiels/secteurs', ['admin', 'direction', 'comptable', 'chef_departement'])
 
   return (
@@ -58,6 +61,7 @@ export default async function SecteursPage() {
             <th className={th}>{t('Département')}</th>
             <th className={th}>{t('Nature')}</th>
             <th className={th}>{t('Superficie (ha)')}</th>
+            {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
         <tbody>
@@ -70,6 +74,22 @@ export default async function SecteursPage() {
                 <td className={td}>{dep?.nom ? t(dep.nom) : ''}</td>
                 <td className={td}>{s.nature === 'projet' ? t('Projet') : t('Secteur')}</td>
                 <td className={td}>{s.superficie_ha ?? '—'}</td>
+                {peutModifier && (
+                  <td className={td}>
+                    <LigneActions
+                      libelle={s.nom}
+                      confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: s.nom })}
+                      modifier={updateSecteur.bind(null, s.id)}
+                      supprimer={deleteSecteur.bind(null, s.id)}
+                      champs={[
+                        { name: 'code', label: t('Code'), required: true, defaultValue: s.code },
+                        { name: 'nom', label: t('Nom'), required: true, defaultValue: s.nom },
+                        { name: 'nature', label: t('Nature'), type: 'select', required: true, defaultValue: s.nature, options: [{ value: 'secteur', label: t('Secteur') }, { value: 'projet', label: t('Projet') }] },
+                        { name: 'superficie_ha', label: t('Superficie (ha)'), type: 'number', step: '0.01', defaultValue: s.superficie_ha != null ? String(s.superficie_ha) : '' },
+                      ]}
+                    />
+                  </td>
+                )}
               </tr>
             )
           })}

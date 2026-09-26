@@ -4,6 +4,8 @@ import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { LigneActions } from '@/components/LigneActions'
+import { deleteCampagne, updateCampagne } from '../edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addCampagne } from '../actions'
 
@@ -15,6 +17,7 @@ export default async function CampagnesPage() {
     .from('campagnes')
     .select('*')
     .order('date_debut', { ascending: false })
+  const peutModifier = ctx.role === 'admin'
   const peutEcrire = peutMenu(ctx, '/referentiels/campagnes', ['admin', 'direction', 'comptable', 'chef_departement'])
 
   return (
@@ -43,6 +46,7 @@ export default async function CampagnesPage() {
             <th className={th}>{t('Début')}</th>
             <th className={th}>{t('Fin')}</th>
             <th className={th}>{t('Statut')}</th>
+            {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
         <tbody>
@@ -53,6 +57,22 @@ export default async function CampagnesPage() {
               <td className={td}>{formatDate(c.date_debut, ctx.lang)}</td>
               <td className={td}>{formatDate(c.date_fin, ctx.lang)}</td>
               <td className={td}>{c.statut === 'ouverte' ? t('Ouverte') : t('Clôturée')}</td>
+                {peutModifier && (
+                  <td className={td}>
+                    <LigneActions
+                      libelle={c.libelle}
+                      confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: c.libelle })}
+                      modifier={updateCampagne.bind(null, c.id)}
+                      supprimer={deleteCampagne.bind(null, c.id)}
+                      champs={[
+                        { name: 'code', label: t('Code'), required: true, defaultValue: c.code },
+                        { name: 'libelle', label: t('Libellé'), required: true, defaultValue: c.libelle },
+                        { name: 'date_debut', label: t('Début'), type: 'date', required: true, defaultValue: c.date_debut },
+                        { name: 'date_fin', label: t('Fin'), type: 'date', required: true, defaultValue: c.date_fin },
+                      ]}
+                    />
+                  </td>
+                )}
             </tr>
           ))}
         </tbody>

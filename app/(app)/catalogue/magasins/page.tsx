@@ -3,6 +3,8 @@ import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { LigneActions } from '@/components/LigneActions'
+import { deleteMagasin, updateMagasin } from '../../referentiels/edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addMagasin } from '../../operations/actions'
 
@@ -14,6 +16,7 @@ export default async function MagasinsPage() {
     supabase.from('magasins').select('*, departements(nom)').order('code'),
     supabase.from('departements').select('id, nom').eq('actif', true).order('nom'),
   ])
+  const peutModifier = ctx.role === 'admin'
   const peutEcrire = peutMenu(ctx, '/catalogue/magasins', ['admin', 'comptable', 'chef_departement'])
 
   return (
@@ -41,6 +44,7 @@ export default async function MagasinsPage() {
             <th className={th}>{t('Code')}</th>
             <th className={th}>{t('Nom')}</th>
             <th className={th}>{t('Département')}</th>
+            {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
         <tbody>
@@ -51,6 +55,21 @@ export default async function MagasinsPage() {
                 <td className={td}>{m.code}</td>
                 <td className={td}>{m.nom}</td>
                 <td className={td}>{dep?.nom ? t(dep.nom) : '—'}</td>
+                {peutModifier && (
+                  <td className={td}>
+                    <LigneActions
+                      libelle={m.nom}
+                      confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: m.nom })}
+                      modifier={updateMagasin.bind(null, m.id)}
+                      supprimer={deleteMagasin.bind(null, m.id)}
+                      champs={[
+                        { name: 'code', label: t('Code'), required: true, defaultValue: m.code },
+                        { name: 'nom', label: t('Nom'), required: true, defaultValue: m.nom },
+                        { name: 'departement_id', label: t('Département'), type: 'select', defaultValue: m.departement_id ?? '', options: departements?.map((d) => ({ value: d.id, label: d.nom })) },
+                      ]}
+                    />
+                  </td>
+                )}
               </tr>
             )
           })}

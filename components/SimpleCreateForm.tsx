@@ -17,10 +17,54 @@ export type Champ = {
   placeholder?: string
   step?: string
   defaultValue?: string
+  /** Cases cochées d'avance pour un champ multiselect (édition). */
+  defaultValues?: string[]
   accept?: string
 }
 
 type Resultat = { success?: boolean; error?: string } | void
+
+/** Un champ de formulaire (libellé + saisie), partagé entre la création et la modification. */
+export function ChampFormulaire({ champ: c }: { champ: Champ }) {
+  const { t } = useT()
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={c.name}>{c.label}</Label>
+      {c.type === 'select' ? (
+        <Select id={c.name} name={c.name} required={c.required} defaultValue={c.defaultValue ?? ''}>
+          <option value="" disabled={c.required}>
+            {c.required ? t('Choisir…') : t('— Aucun —')}
+          </option>
+          {c.options?.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+      ) : c.type === 'multiselect' ? (
+        <div className="flex flex-wrap gap-3 pt-1">
+          {c.options?.map((o) => (
+            <label key={o.value} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name={c.name} value={o.value} defaultChecked={c.defaultValues?.includes(o.value)} className="h-4 w-4" />
+              {o.label}
+            </label>
+          ))}
+        </div>
+      ) : (
+        <Input
+          id={c.name}
+          name={c.name}
+          type={c.type ?? 'text'}
+          required={c.required}
+          placeholder={c.placeholder}
+          step={c.step}
+          defaultValue={c.defaultValue}
+          accept={c.accept}
+        />
+      )}
+    </div>
+  )
+}
 
 /** Bouton + formulaire déroulant pour créer une ligne de référentiel via une server action. */
 export function SimpleCreateForm({
@@ -72,43 +116,7 @@ export function SimpleCreateForm({
         </button>
       </div>
       <form ref={formRef} action={onSubmit} className="grid gap-4 sm:grid-cols-2">
-        {champs.map((c) => (
-          <div key={c.name} className="space-y-1.5">
-            <Label htmlFor={c.name}>{c.label}</Label>
-            {c.type === 'select' ? (
-              <Select id={c.name} name={c.name} required={c.required} defaultValue={c.defaultValue ?? ''}>
-                <option value="" disabled={c.required}>
-                  {c.required ? t('Choisir…') : t('— Aucun —')}
-                </option>
-                {c.options?.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            ) : c.type === 'multiselect' ? (
-              <div className="flex flex-wrap gap-3 pt-1">
-                {c.options?.map((o) => (
-                  <label key={o.value} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name={c.name} value={o.value} className="h-4 w-4" />
-                    {o.label}
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <Input
-                id={c.name}
-                name={c.name}
-                type={c.type ?? 'text'}
-                required={c.required}
-                placeholder={c.placeholder}
-                step={c.step}
-                defaultValue={c.defaultValue}
-                accept={c.accept}
-              />
-            )}
-          </div>
-        ))}
+        {champs.map((c) => <ChampFormulaire key={c.name} champ={c} />)}
         {erreur && (
           <p role="alert" className="text-sm text-danger sm:col-span-2">
             {t(erreur)}

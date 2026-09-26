@@ -3,6 +3,8 @@ import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { LigneActions } from '@/components/LigneActions'
+import { deleteTiers, updateTiers } from '../edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addTiers } from '../actions'
 
@@ -21,6 +23,7 @@ export default async function TiersPage() {
   // sous-grand livre comptable — soldes, lettrage — s'appuie sur cette table pour tous les tiers sans distinction).
   const { data: tiersData } = await supabase.from('tiers').select('*').order('nom')
   const tiers = (tiersData ?? []).filter((ti) => !(ti.types as string[]).includes('bailleur'))
+  const peutModifier = ctx.role === 'admin'
   const peutEcrire = peutMenu(ctx, '/referentiels/tiers', ['admin', 'comptable', 'chef_departement'])
 
   return (
@@ -51,6 +54,7 @@ export default async function TiersPage() {
             <th className={th}>{t('Nom')}</th>
             <th className={th}>{t('Type(s)')}</th>
             <th className={th}>{t('Téléphone')}</th>
+            {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
         <tbody>
@@ -62,6 +66,25 @@ export default async function TiersPage() {
                 {ti.types.map((v: string) => t(TYPES.find((x) => x.value === v)?.label ?? v)).join(', ')}
               </td>
               <td className={td}>{ti.telephone ?? '—'}</td>
+                {peutModifier && (
+                  <td className={td}>
+                    <LigneActions
+                      libelle={ti.nom}
+                      confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: ti.nom })}
+                      modifier={updateTiers.bind(null, ti.id)}
+                      supprimer={deleteTiers.bind(null, ti.id)}
+                      champs={[
+                        { name: 'code', label: t('Code'), required: true, defaultValue: ti.code },
+                        { name: 'nom', label: t('Nom / raison sociale'), required: true, defaultValue: ti.nom },
+                        { name: 'types', label: t('Type(s)'), type: 'multiselect', options: TYPES.map((x) => ({ ...x, label: t(x.label) })), defaultValues: ti.types as string[] },
+                        { name: 'telephone', label: t('Téléphone'), type: 'tel', defaultValue: ti.telephone ?? '' },
+                        { name: 'email', label: t('Email'), type: 'email', defaultValue: ti.email ?? '' },
+                        { name: 'adresse', label: t('Adresse'), defaultValue: ti.adresse ?? '' },
+                        { name: 'nif', label: t('NIF / identifiant fiscal'), defaultValue: ti.nif ?? '' },
+                      ]}
+                    />
+                  </td>
+                )}
             </tr>
           ))}
         </tbody>

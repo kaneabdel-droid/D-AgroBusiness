@@ -5,6 +5,8 @@ import { creerT } from '@/lib/i18n'
 import { formatMontant } from '@/lib/utils'
 import { CATEGORIES } from '@/lib/catalogue'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { LigneActions } from '@/components/LigneActions'
+import { deleteProduit, updateProduit } from '../../referentiels/edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addProduit } from '../../operations/actions'
 
@@ -13,6 +15,7 @@ export default async function ProduitsPage() {
   const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: produits } = await supabase.from('produits').select('*').order('code')
+  const peutModifier = ctx.role === 'admin'
   const peutEcrire = peutMenu(ctx, '/catalogue/produits', ['admin', 'comptable', 'chef_departement'])
 
   return (
@@ -44,6 +47,7 @@ export default async function ProduitsPage() {
             <th className={th}>{t('Unité')}</th>
             <th className={`${th} text-right`}>{t('TVA')}</th>
             <th className={`${th} text-right`}>{t('Prix réf.')}</th>
+            {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
         <tbody>
@@ -57,6 +61,24 @@ export default async function ProduitsPage() {
               <td className={`${td} text-right tabular-nums`}>
                 {p.prix_reference != null ? formatMontant(p.prix_reference, ctx.devise, ctx.lang) : '—'}
               </td>
+              {peutModifier && (
+                <td className={td}>
+                  <LigneActions
+                    libelle={p.nom}
+                    confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: p.nom })}
+                    modifier={updateProduit.bind(null, p.id)}
+                    supprimer={deleteProduit.bind(null, p.id)}
+                    champs={[
+                      { name: 'code', label: t('Code'), required: true, defaultValue: p.code },
+                      { name: 'nom', label: t('Désignation'), required: true, defaultValue: p.nom },
+                      { name: 'categorie', label: t('Catégorie'), type: 'select', required: true, options: CATEGORIES.map((c) => ({ ...c, label: t(c.label) })), defaultValue: p.categorie },
+                      { name: 'unite', label: t('Unité'), defaultValue: p.unite },
+                      { name: 'taux_tva', label: t('TVA %'), type: 'number', step: '0.01', defaultValue: String(p.taux_tva ?? 0) },
+                      { name: 'prix_reference', label: t('Prix de référence'), type: 'number', step: '0.01', defaultValue: p.prix_reference != null ? String(p.prix_reference) : '' },
+                    ]}
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

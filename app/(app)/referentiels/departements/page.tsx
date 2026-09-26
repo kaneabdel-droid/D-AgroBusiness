@@ -3,6 +3,8 @@ import { getContexte } from '@/lib/session'
 import { peutMenu } from '@/lib/permissions'
 import { creerT } from '@/lib/i18n'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
+import { LigneActions } from '@/components/LigneActions'
+import { deleteDepartement, updateDepartement } from '../edition'
 import { SimpleCreateForm } from '@/components/SimpleCreateForm'
 import { addDepartement } from '../actions'
 
@@ -21,6 +23,7 @@ export default async function DepartementsPage() {
   const t = creerT(ctx.lang)
   const supabase = await createClient()
   const { data: departements } = await supabase.from('departements').select('*').order('code')
+  const peutModifier = ctx.role === 'admin'
   const peutEcrire = peutMenu(ctx, '/referentiels/departements', ['admin', 'direction', 'comptable'])
 
   return (
@@ -46,6 +49,7 @@ export default async function DepartementsPage() {
             <th className={th}>{t('Code')}</th>
             <th className={th}>{t('Nom')}</th>
             <th className={th}>{t('Type')}</th>
+            {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
         <tbody>
@@ -54,6 +58,21 @@ export default async function DepartementsPage() {
               <td className={td}>{d.code}</td>
               <td className={td}>{t(d.nom)}</td>
               <td className={td}>{t(TYPES.find((x) => x.value === d.type)?.label ?? d.type)}</td>
+                {peutModifier && (
+                  <td className={td}>
+                    <LigneActions
+                      libelle={d.nom}
+                      confirmation={t('Supprimer « {nom} » ? Cette action est définitive.', { nom: d.nom })}
+                      modifier={updateDepartement.bind(null, d.id)}
+                      supprimer={deleteDepartement.bind(null, d.id)}
+                      champs={[
+                        { name: 'code', label: t('Code'), required: true, defaultValue: d.code },
+                        { name: 'nom', label: t('Nom'), required: true, defaultValue: d.nom },
+                        { name: 'type', label: t('Type'), type: 'select', options: TYPES.map((x) => ({ ...x, label: t(x.label) })), required: true, defaultValue: d.type },
+                      ]}
+                    />
+                  </td>
+                )}
             </tr>
           ))}
         </tbody>
