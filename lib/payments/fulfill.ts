@@ -42,7 +42,13 @@ export async function applyPaymentResult(provider: PaymentProvider, event: Norma
     console.error('[paiement] finalisation impossible', error.message)
     return { failed: true }
   }
-  return data === 'deja_traite' ? { alreadyProcessed: true } : { processed: true, statut: event.status }
+  if (data === 'deja_traite') return { alreadyProcessed: true }
+  if (data === 'doublon') {
+    // encaissé alors que la même offre venait d'être réglée : pas de seconde prolongation, à rembourser (cf. migration 42)
+    console.error('[paiement] doublon encaissé — à rembourser', { provider, paymentId: payment.id })
+    return { processed: true, statut: event.status, doublon: true }
+  }
+  return { processed: true, statut: event.status }
 }
 
 /** Traite un événement de webhook déjà vérifié (signature/secret OK) : dédoublonne puis délègue à applyPaymentResult(). */

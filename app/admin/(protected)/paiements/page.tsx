@@ -18,13 +18,13 @@ export default async function AdminPaiementsPage({ searchParams }: { searchParam
 
   let requete = admin
     .from('abonnement_paiements')
-    .select('id, organisation_id, niveau, mois, montant, provider, moyen_paiement, statut, created_at, organisations(nom)')
+    .select('id, organisation_id, niveau, mois, montant, provider, moyen_paiement, statut, doublon, created_at, organisations(nom)')
     .order('created_at', { ascending: false })
     .limit(300)
   if (statut && statut in STATUTS) requete = requete.eq('statut', statut)
   const { data: paiements } = await requete
 
-  const total = (paiements ?? []).filter((p) => p.statut === 'completed' && p.provider !== 'manuel').reduce((s, p) => s + Number(p.montant), 0)
+  const total = (paiements ?? []).filter((p) => p.statut === 'completed' && p.provider !== 'manuel' && !p.doublon).reduce((s, p) => s + Number(p.montant), 0)
   const nbLatents = (paiements ?? []).filter((p) => p.statut === 'pending' || p.statut === 'failed').length
   const fcfa = (v: number) => `${v.toLocaleString('fr-FR').replace(/[  ]/g, ' ')} F CFA`
   const filtres: { label: string; value?: string }[] = [
@@ -72,7 +72,12 @@ export default async function AdminPaiementsPage({ searchParams }: { searchParam
                 <td className={td}>{t('{n} mois', { n: p.mois })}</td>
                 <td className={`${td} text-end tabular-nums`}>{fcfa(Number(p.montant))}</td>
                 <td className={`${td} capitalize`}>{p.provider === 'manuel' ? t('Manuel') : `${p.provider} · ${p.moyen_paiement}`}</td>
-                <td className={`${td} ${p.statut === 'completed' ? 'text-success' : p.statut === 'failed' ? 'text-danger' : ''}`}>{t(STATUTS[p.statut])}</td>
+                <td className={`${td} ${p.statut === 'completed' ? 'text-success' : p.statut === 'failed' ? 'text-danger' : ''}`}>
+                  {t(STATUTS[p.statut])}
+                  {p.doublon && (
+                    <span className="ms-2 rounded bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">{t('Doublon — à rembourser')}</span>
+                  )}
+                </td>
                 <td className={td}>
                   {latent && (
                     <ActionButton

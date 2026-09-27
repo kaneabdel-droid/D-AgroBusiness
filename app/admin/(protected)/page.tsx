@@ -15,7 +15,7 @@ export default async function AdminDashboardPage() {
   const [{ data: orgs }, { count: nbUtilisateurs }, { data: paiements }] = await Promise.all([
     admin.from('organisations').select('id, niveau, essai_expire_le, abonnement_expire_le, compte_verrouille').eq('demo', false),
     admin.from('utilisateurs').select('id', { count: 'exact', head: true }),
-    admin.from('abonnement_paiements').select('montant, statut, provider, created_at'),
+    admin.from('abonnement_paiements').select('montant, statut, provider, doublon, created_at'),
   ])
 
   const fin = (o: { essai_expire_le: string; abonnement_expire_le: string | null }) =>
@@ -23,7 +23,8 @@ export default async function AdminDashboardPage() {
   const actives = (orgs ?? []).filter((o) => !o.compte_verrouille && fin(o) > maintenant)
   const expirees = (orgs ?? []).filter((o) => o.compte_verrouille || fin(o) <= maintenant)
   const bientot = actives.filter((o) => fin(o) <= dans7j)
-  const payes = (paiements ?? []).filter((p) => p.statut === 'completed' && p.provider !== 'manuel')
+  // un doublon encaissé est à rembourser : ce n'est pas une vente
+  const payes = (paiements ?? []).filter((p) => p.statut === 'completed' && p.provider !== 'manuel' && !p.doublon)
   const chiffre = payes.reduce((s, p) => s + Number(p.montant), 0)
   const chiffre30 = payes.filter((p) => new Date(p.created_at) >= ilYA30j).reduce((s, p) => s + Number(p.montant), 0)
   const enAttente = (paiements ?? []).filter((p) => p.statut === 'pending').length
