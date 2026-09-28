@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>D-AGROBUSINESS — Hors ligne</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #FFFFFF; color: #1A1A1A; padding: 24px; box-sizing: border-box;
+    }
+    @media (prefers-color-scheme: dark) { body { background: #111827; color: #F3F4F6; } }
+    .carte { max-width: 420px; text-align: center; }
+    .icone {
+      width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 16px; background: #0B6E99;
+      display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 22px;
+    }
+    h1 { font-size: 19px; margin: 0 0 8px; }
+    p { font-size: 14px; line-height: 1.5; color: #6B7280; margin: 0 0 20px; }
+    button {
+      border: none; border-radius: 8px; background: #0B6E99; color: #fff; font-size: 14px; font-weight: 600;
+      padding: 10px 20px; cursor: pointer;
+    }
+    button:hover { background: #085A7E; }
+    [dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="carte" id="carte">
+    <div class="icone">DA</div>
+    <div id="bloc-fr">
+      <h1>Pas de connexion internet</h1>
+      <p>D-AGROBUSINESS a besoin d'une connexion pour afficher vos données (elles restent en sécurité sur le serveur, jamais stockées sur cet appareil). Reconnectez-vous puis réessayez.</p>
+    </div>
+    <div id="bloc-en" hidden>
+      <h1>No internet connection</h1>
+      <p>D-AGROBUSINESS needs a connection to show your data (it stays safely on the server, never stored on this device). Reconnect, then try again.</p>
+    </div>
+    <div id="bloc-ar" hidden dir="rtl">
+      <h1>لا يوجد اتصال بالإنترنت</h1>
+      <p>يحتاج D-AGROBUSINESS إلى اتصال لعرض بياناتكم (تبقى محفوظة بأمان على الخادم، ولا تُخزَّن أبدًا على هذا الجهاز). أعيدوا الاتصال ثم حاولوا مجددًا.</p>
+    </div>
+    <button id="bouton-reessayer">↻</button>
+  </div>
+  <script>
+    (function () {
+      var m = document.cookie.match(/(?:^|; )lang=([^;]+)/)
+      var lang = m ? decodeURIComponent(m[1]) : 'fr'
+      var libelles = { fr: 'Réessayer', en: 'Try again', ar: 'إعادة المحاولة' }
+      if (lang === 'en' || lang === 'ar') {
+        document.getElementById('bloc-fr').hidden = true
+        document.getElementById('bloc-' + lang).hidden = false
+        document.documentElement.setAttribute('lang', lang)
+        if (lang === 'ar') document.getElementById('carte').setAttribute('dir', 'rtl')
+      }
+      document.getElementById('bouton-reessayer').textContent = libelles[lang] || libelles.fr
+      document.getElementById('bouton-reessayer').addEventListener('click', function () {
+        window.location.reload()
+      })
+    })()
+  </script>
+</body>
+</html>

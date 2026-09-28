@@ -10,6 +10,12 @@ const PUBLIC_PREFIXES = [
   '/login', '/signup', '/forgot-password', '/update-password', '/auth',
   '/bienvenue', '/tarifs', '/decouvrir-dagrobusiness', '/guide',
   '/api/webhooks', '/api/cron',
+  // Fichiers PWA (installabilité) : le matcher de proxy.ts n'exclut que les
+  // extensions d'image, pas .json/.js/.html — sans ça, le navigateur reçoit
+  // une redirection vers /login à la place du manifeste/service worker, ce
+  // qui casse l'enregistrement (un service worker ne peut pas être servi par
+  // une réponse redirigée) et la mise en cache de la page hors-ligne.
+  '/manifest.json', '/sw.js', '/offline.html',
 ]
 
 export async function updateSession(request: NextRequest) {

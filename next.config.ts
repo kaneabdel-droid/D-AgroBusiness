@@ -11,6 +11,7 @@ const contentSecurityPolicy = [
   `img-src 'self' data: blob: ${supabase}`,
   "font-src 'self' data:",
   `connect-src 'self' ${supabase} wss://*.supabase.co`,
+  "worker-src 'self'",   // enregistrement du service worker (public/sw.js, installabilité PWA)
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

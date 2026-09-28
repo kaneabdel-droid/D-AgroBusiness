@@ -3,6 +3,7 @@ import { Inter, Outfit, Cairo } from 'next/font/google'
 import './globals.css'
 import { creerT, estRtl } from '@/lib/i18n'
 import { langueChoisie, langueNavigateur } from '@/lib/i18n-server'
+import { RegisterServiceWorker } from '@/components/RegisterServiceWorker'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 const outfit = Outfit({ variable: '--font-outfit', subsets: ['latin'] })
@@ -14,12 +15,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t('D-AGROBUSINESS — Gestion intégrée de la chaîne de valeur agricole'),
     description: t('Financement, intrants, parc matériel, production, usine de transformation, RH et comptabilité analytique pour les entreprises agro-industrielles.'),
+    manifest: '/manifest.json',
+    icons: { icon: '/icon.svg', apple: '/icon.svg' },
   }
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#0B6E99',
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -32,7 +36,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       dir={estRtl(lang) ? 'rtl' : 'ltr'}
       className={`${inter.variable} ${outfit.variable} ${cairo.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <RegisterServiceWorker />
+        {children}
+      </body>
     </html>
   )
 }
