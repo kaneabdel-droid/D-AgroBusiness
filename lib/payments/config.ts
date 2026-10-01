@@ -4,7 +4,9 @@
 export const bictorysApiKey = process.env.BICTORYS_API_KEY
 export const bictorysWebhookSecret = process.env.BICTORYS_WEBHOOK_SECRET
 
-export const monerooSecretKey = process.env.MONEROO_SECRET_KEY
+// MONEROO_API_KEY : nom utilisé par D-QUINCA / D-INTRANTS / D-SCHOLAR, accepté aussi ici
+// pour qu'une même configuration Vercel fonctionne d'un produit à l'autre.
+export const monerooSecretKey = process.env.MONEROO_SECRET_KEY || process.env.MONEROO_API_KEY
 export const monerooWebhookSecret = process.env.MONEROO_WEBHOOK_SECRET
 
 export const chariowApiKey = process.env.CHARIOW_API_KEY

@@ -1,5 +1,5 @@
 // Transfert des demandes "Assistance / Support" vers la boîte support commune à tous
-// les produits DembaSolution (SIGGIE, D-QUINCA, D-INTRANTS, D-AGROBUSINESS), via l'API
+// les produits DembaSolution (SIGGIE, D-QUINCA, D-INTRANTS, D-AGROBUSINESS, D-SCHOLAR), via l'API
 // Resend. Même fichier dans chaque dépôt : le garder identique d'un produit à l'autre.
 //
 // Reply-To = email du client : un simple "Répondre" depuis la messagerie lui répond
