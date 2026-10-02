@@ -36,6 +36,7 @@ export default async function ProduitsPage() {
             { name: 'unite', label: t('Unité'), defaultValue: 'kg' },
             { name: 'taux_tva', label: t('TVA %'), type: 'number', step: '0.01', defaultValue: '0' },
             { name: 'prix_reference', label: t('Prix de référence'), type: 'number', step: '0.01' },
+            { name: 'variete_obligatoire', label: t('Variété obligatoire au pointage'), type: 'select', required: true, defaultValue: 'non', options: [{ value: 'non', label: t('Non') }, { value: 'oui', label: t('Oui') }] },
           ]}
         />
         <ExportButtons titre={t('Produits')} sousTitre={ctx.organisationNom} fichier="produits"
@@ -51,6 +52,7 @@ export default async function ProduitsPage() {
             <th className={th}>{t('Unité')}</th>
             <th className={`${th} text-right`}>{t('TVA')}</th>
             <th className={`${th} text-right`}>{t('Prix réf.')}</th>
+            <th className={th}>{t('Variété')}</th>
             {peutModifier && <th className={th}></th>}
           </tr>
         </thead>
@@ -65,6 +67,7 @@ export default async function ProduitsPage() {
               <td className={`${td} text-right tabular-nums`}>
                 {p.prix_reference != null ? formatMontant(p.prix_reference, ctx.devise, ctx.lang) : '—'}
               </td>
+              <td className={td}>{p.variete_obligatoire ? t('Obligatoire') : '—'}</td>
               {peutModifier && (
                 <td className={td}>
                   <LigneActions
@@ -79,6 +82,7 @@ export default async function ProduitsPage() {
                       { name: 'unite', label: t('Unité'), defaultValue: p.unite },
                       { name: 'taux_tva', label: t('TVA %'), type: 'number', step: '0.01', defaultValue: String(p.taux_tva ?? 0) },
                       { name: 'prix_reference', label: t('Prix de référence'), type: 'number', step: '0.01', defaultValue: p.prix_reference != null ? String(p.prix_reference) : '' },
+                      { name: 'variete_obligatoire', label: t('Variété obligatoire au pointage'), type: 'select', required: true, defaultValue: p.variete_obligatoire ? 'oui' : 'non', options: [{ value: 'non', label: t('Non') }, { value: 'oui', label: t('Oui') }] },
                     ]}
                   />
                 </td>

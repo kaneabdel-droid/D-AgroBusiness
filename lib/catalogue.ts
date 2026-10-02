@@ -27,3 +27,14 @@ export const CATEGORIES_MATERIEL = [
   { value: 'usine', label: 'Usine / installations techniques' },
   { value: 'autre', label: 'Autre' },
 ]
+
+/** Rôles autorisés à pointer les prestations du matériel. */
+export const ROLES_PRESTATIONS = ['admin', 'direction', 'comptable', 'chef_departement']
+
+/** Unités de pointage des prestations du matériel (libellés : traduits à l'affichage). */
+export const UNITES_PRESTATION = [
+  { value: 'ha', label: 'Hectares (ha)', court: 'ha', quantite: 'Superficie traitée (ha)' },
+  { value: 'h', label: 'Heures (h)', court: 'h', quantite: 'Durée de travail (heures)' },
+  { value: 'sac', label: 'Sacs', court: 'sacs', quantite: 'Nombre de sacs traités' },
+  { value: 'autre', label: 'Autre unité', court: 'autre', quantite: 'Quantité traitée' },
+]

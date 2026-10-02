@@ -32,6 +32,9 @@ export default async function MaterielPage() {
         description={`${t('Valeur brute')} ${formatMontant(valeurBrute, ctx.devise, ctx.lang)} — ${t('valeur nette comptable')} ${formatMontant(vnc, ctx.devise, ctx.lang)}.`}
       >
         <Button asChild variant="outline">
+          <Link href="/materiel/prestations">{t('Prestations du matériel')}</Link>
+        </Button>
+        <Button asChild variant="outline">
           <Link href="/materiel/amortissements">{t('Amortissements')}</Link>
         </Button>
         <SimpleCreateForm

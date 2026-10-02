@@ -88,6 +88,7 @@ const ICONES: Record<string, typeof LayoutDashboard> = {
   '/financements': Banknote,
   '/subventions': HandCoins,
   '/materiel': Tractor,
+  '/materiel/prestations': ClipboardCheck,
   '/pilotage/budgets': PiggyBank,
   '/pilotage/etats': LineChart,
   '/pilotage/campagnes': Flag,
@@ -105,6 +106,8 @@ const ICONES: Record<string, typeof LayoutDashboard> = {
   '/comptabilite/releve': FileText,
   '/comptabilite/analytique': BarChart3,
 }
+// Chemins de menu, pour qu'un sous-menu (/materiel/prestations) ne surligne pas aussi son parent (/materiel).
+const CHEMINS = MENUS.flatMap((g) => g.items.map((i) => i.href.split('?')[0]))
 const NAV = MENUS.map((g) => ({ titre: g.titre, items: g.items.map((i) => ({ ...i, icon: ICONES[i.href] ?? LayoutDashboard })) }))
 
 export function AppShell({
@@ -150,6 +153,7 @@ export function AppShell({
                 chemin === '/'
                   ? pathname === '/'
                   : pathname.startsWith(chemin) &&
+                    !CHEMINS.some((c) => c.length > chemin.length && c.startsWith(`${chemin}/`) && pathname.startsWith(c)) &&
                     (!requete || (chemin === '/ventes' && requete === `type=${typeVente}`))
               return (
                 <li key={href}>

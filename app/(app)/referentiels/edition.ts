@@ -196,6 +196,7 @@ export async function updateProduit(id: string, formData: FormData): Promise<Res
     unite,
     taux_tva: Number(txt(formData, 'taux_tva') || 0),
     prix_reference: prix ? Number(prix) : null,
+    variete_obligatoire: txt(formData, 'variete_obligatoire') === 'oui',
   }, ['/catalogue/produits'])
 }
 export async function deleteProduit(id: string): Promise<Resultat> {

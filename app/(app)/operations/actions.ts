@@ -32,6 +32,7 @@ export async function addProduit(formData: FormData): Promise<Resultat> {
     unite: txt(formData, 'unite') || 'kg',
     taux_tva: Number(txt(formData, 'taux_tva') || 0),
     prix_reference: prix ? Number(prix) : null,
+    variete_obligatoire: txt(formData, 'variete_obligatoire') === 'oui',
   })
   if (error) return message(error)
   rafraichir()
