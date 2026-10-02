@@ -23,7 +23,7 @@ export function SupprimerOrganisation({ organisationId, nom }: { organisationId:
     setErreur(null)
     startTransition(async () => {
       const res = await supprimerOrganisation(organisationId)
-      if ('error' in res) setErreur(res.error)
+      if ('error' in res) setErreur(t(res.error))
       else {
         router.push('/admin/entreprises')
         router.refresh()
