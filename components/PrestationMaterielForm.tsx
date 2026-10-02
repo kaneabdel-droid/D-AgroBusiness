@@ -123,8 +123,8 @@ export function PrestationMaterielForm({
   }
 
   const titre = v ? t('Modifier la prestation') : t('Pointer une prestation')
-  const champ = 'space-y-1.5'
-  const bloc = 'grid gap-4 rounded-lg border border-surface-border p-4 sm:grid-cols-2'
+  const champ = 'min-w-0 space-y-1.5'
+  const bloc = 'grid min-w-0 gap-4 rounded-lg border border-surface-border p-4 sm:grid-cols-2 [&>*]:min-w-0'
   const legende = 'px-1 text-xs font-semibold uppercase tracking-wider text-foreground-muted'
 
   const formulaire = (
@@ -136,7 +136,7 @@ export function PrestationMaterielForm({
         </button>
       </div>
       <form action={onSubmit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3 [&>*]:min-w-0">
           <div className={champ}>
             <Label htmlFor="materiel_id">{t('Matériel')}</Label>
             <Select id="materiel_id" name="materiel_id" required defaultValue={v?.materiel_id ?? ''}>
@@ -397,7 +397,7 @@ export function PrestationMaterielForm({
 
   // En modification, le formulaire s'ouvre par-dessus le tableau.
   return v ? (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4" onClick={(e) => e.target === e.currentTarget && setOuvert(false)}>
+    <div className="fixed inset-0 z-50 overflow-y-auto whitespace-normal bg-black/60 p-2 text-start sm:p-4" onClick={(e) => e.target === e.currentTarget && setOuvert(false)}>
       <div className="mx-auto max-w-3xl">{formulaire}</div>
     </div>
   ) : (
