@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/utils'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ActionButton } from '@/components/ActionButton'
 import { accorderAbonnement, prolongerEssai, verrouiller } from './actions'
+import { SupprimerOrganisation } from './SupprimerOrganisation'
 
 const STATUTS: Record<string, string> = { pending: 'En attente', completed: 'Payé', failed: 'Échoué' }
 
@@ -100,6 +101,8 @@ export default async function AdminEntreprisePage({ params }: { params: Promise<
           ))}
         </tbody>
       </TableWrap>
+
+      {!org.demo && <SupprimerOrganisation organisationId={id} nom={org.nom} />}
     </>
   )
 }

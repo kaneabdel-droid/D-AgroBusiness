@@ -59,3 +59,27 @@ export async function verrouiller(organisationId: string, verrouille: boolean): 
   revalidatePath('/admin', 'layout')
   return { success: true }
 }
+
+/**
+ * Suppression définitive d'une entreprise et de toutes ses données (migration 43 : supprimer_organisation), puis des comptes
+ * auth de ses utilisateurs, qui resteraient sinon connectables sans organisation. Pas de revalidatePath : le bouton
+ * renvoie lui-même vers la liste des entreprises après succès.
+ */
+export async function supprimerOrganisation(organisationId: string): Promise<Resultat> {
+  const refus = await refuserSiNonAdmin()
+  if (refus) return { error: refus }
+
+  const admin = createAdminClient()
+  const { data: utilisateurs, error } = await admin.rpc('supprimer_organisation', { p_organisation: organisationId })
+  if (error) return { error: error.message }
+
+  const echecs: string[] = []
+  for (const id of (utilisateurs as string[] | null) ?? []) {
+    const { error: erreurAuth } = await admin.auth.admin.deleteUser(id)
+    if (erreurAuth) echecs.push(`${id} (${erreurAuth.message})`)
+  }
+  if (echecs.length > 0) {
+    return { error: `Entreprise supprimée, mais ${echecs.length} compte(s) de connexion n’ont pas pu être supprimés : ${echecs.join(', ')}. À retirer dans Supabase › Authentication › Users.` }
+  }
+  return { success: true }
+}
