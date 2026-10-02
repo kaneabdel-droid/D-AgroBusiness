@@ -86,7 +86,7 @@ export function CartesTarifs({ lang }: { lang: Lang }) {
                 <li key={x} className="flex gap-2 text-foreground-muted"><X className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /><span>{t('Sans')} : {t(x)}</span></li>
               ))}
             </ul>
-            <Link href="/signup" className={`mt-6 inline-flex items-center justify-center gap-1 rounded-md px-4 py-2.5 text-sm font-semibold transition ${vedette ? 'bg-primary text-primary-foreground hover:bg-primary-hover' : 'border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground'}`}>
+            <Link href={`/signup?niveau=${n}`} className={`mt-6 inline-flex items-center justify-center gap-1 rounded-md px-4 py-2.5 text-sm font-semibold transition ${vedette ? 'bg-primary text-primary-foreground hover:bg-primary-hover' : 'border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground'}`}>
               {t('S’abonner')} <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden />
             </Link>
           </div>

@@ -4,6 +4,7 @@ import { isAdminEmail } from '@/lib/admin/auth'
 import { createAdminIdentityMiddlewareClient } from '@/utils/supabase/admin-identity'
 import { withRetry } from '@/utils/supabase/retry'
 import { fetchAvecDelai } from '@/utils/supabase/fetch'
+import { pageSuivante, suitePaiement } from '@/lib/suite'
 
 // Pages publiques (vitrine, tarifs, démonstration, connexion) et routes serveur-à-serveur (webhooks, cron), authentifiées par leur secret.
 const PUBLIC_PREFIXES = [
@@ -86,10 +87,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Déjà connecté : on va directement à la suite prévue (paiement du niveau choisi sur les tarifs), sinon à l'accueil.
   if (user && (pathname === '/login' || pathname === '/signup')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+    const suite =
+      pageSuivante(request.nextUrl.searchParams.get('suite')) ?? suitePaiement(request.nextUrl.searchParams.get('niveau') ?? undefined) ?? '/'
+    return NextResponse.redirect(new URL(suite, request.url))
   }
 
   return supabaseResponse

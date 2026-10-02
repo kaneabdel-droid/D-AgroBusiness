@@ -10,8 +10,8 @@ import { initierPaiement } from './actions'
 
 const STATUTS: Record<string, string> = { pending: 'En attente', completed: 'Payé', failed: 'Échoué' }
 
-export default async function AbonnementPage({ searchParams }: { searchParams: Promise<{ expire?: string; requis?: string }> }) {
-  const { expire, requis } = await searchParams
+export default async function AbonnementPage({ searchParams }: { searchParams: Promise<{ expire?: string; requis?: string; niveau?: string }> }) {
+  const { expire, requis, niveau: niveauChoisi } = await searchParams
   const ctx = await getContexte()
   const t = creerT(ctx.lang)
   const e = ctx.abonnement
@@ -64,7 +64,7 @@ export default async function AbonnementPage({ searchParams }: { searchParams: P
 
       {peutPayer ? (
         <AbonnementForm
-          niveauActuel={e.niveau}
+          niveauActuel={niveauChoisi && niveauChoisi in NIVEAUX ? (niveauChoisi as Niveau) : e.niveau}
           niveauBloque={paye ? e.niveau : null}
           moyens={[...moyens]}
           action={initierPaiement}

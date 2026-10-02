@@ -4,13 +4,15 @@ import { Card } from '@/components/ui/card'
 import { creerT, estRtl } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { langueNavigateur } from '@/lib/i18n-server'
+import { pageSuivante } from '@/lib/suite'
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erreur?: string }>
+  searchParams: Promise<{ erreur?: string; suite?: string }>
 }) {
-  const { erreur } = await searchParams
+  const { erreur, suite: suiteBrute } = await searchParams
+  const suite = pageSuivante(suiteBrute)
   const lang = await langueNavigateur()
   const t = creerT(lang)
   return (
@@ -19,12 +21,17 @@ export default async function LoginPage({
         <LanguageSwitcher lang={lang} className="mb-4 flex-wrap" />
         <h1 className="font-heading text-2xl font-semibold">D-AGROBUSINESS</h1>
         <p className="mb-6 mt-1 text-sm text-foreground-muted">{t('Connexion à votre espace')}</p>
+        {erreur === 'lien' && (
+          <p className="mb-4 rounded-lg bg-warning/10 p-3 text-sm">
+            {t('Adresse email confirmée. Connectez-vous pour continuer.')}
+          </p>
+        )}
         {erreur === 'organisation' && (
           <p className="mb-4 rounded-lg bg-warning/10 p-3 text-sm">
             {t('Ce compte n’est rattaché à aucune organisation active. Contactez votre administrateur.')}
           </p>
         )}
-        <AuthForm mode="login" lang={lang} />
+        <AuthForm mode="login" lang={lang} suite={suite} />
         <p className="mt-6 text-center text-sm text-foreground-muted">
           {t('Pas encore de compte ?')}{' '}
           <Link href="/signup" className="font-medium text-primary underline">

@@ -8,7 +8,7 @@ import { PAYS } from '@/lib/pays'
 import { creerT, type Lang } from '@/lib/i18n'
 import { signIn, signUp } from '@/app/auth/actions'
 
-export function AuthForm({ mode, lang = 'fr' }: { mode: 'login' | 'signup'; lang?: Lang }) {
+export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup'; lang?: Lang; suite?: string | null }) {
   const t = creerT(lang)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
@@ -24,6 +24,7 @@ export function AuthForm({ mode, lang = 'fr' }: { mode: 'login' | 'signup'; lang
 
   return (
     <form action={onSubmit} className="space-y-4">
+      {suite && <input type="hidden" name="suite" value={suite} />}
       {mode === 'signup' && (
         <>
           <div className="space-y-1.5">
