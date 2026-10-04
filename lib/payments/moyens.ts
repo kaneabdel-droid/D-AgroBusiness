@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/utils/supabase/admin'
-import { chariowProduitPour, hasBictorysKeys, hasChariowKeys, hasMonerooKeys } from './config'
+import { chariowProduitPour, hasBictorysKeys, hasChariowKeys, hasMonerooKeys, hasMaketouKeys } from './config'
 
-export type Moyen = 'wave' | 'orange' | 'carte' | 'chariow'
+export type Moyen = 'wave' | 'orange' | 'carte' | 'chariow' | 'maketou'
 
 /** Clés présentes sur le serveur pour chaque moyen de paiement. */
 export const clesPresentes: Record<Moyen, boolean> = {
@@ -9,6 +9,7 @@ export const clesPresentes: Record<Moyen, boolean> = {
   orange: hasBictorysKeys,
   carte: hasMonerooKeys,
   chariow: hasChariowKeys,
+  maketou: hasMaketouKeys,
 }
 
 /** Moyens activés par le super-administrateur (table paiement_moyens). En cas d'erreur de lecture, seul Chariow est proposé. */

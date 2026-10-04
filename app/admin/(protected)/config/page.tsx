@@ -7,7 +7,8 @@ import { clesPresentes, type Moyen } from '@/lib/payments/moyens'
 import { Card, PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ActionButton } from '@/components/ActionButton'
 import { ChariowProduitsEditor } from '@/components/ChariowProduitsEditor'
-import { basculerMoyen, enregistrerProduitChariow } from './actions'
+import { MaketouProduitsEditor } from '@/components/MaketouProduitsEditor'
+import { basculerMoyen, enregistrerProduitChariow, enregistrerProduitMaketou } from './actions'
 
 const MOYENS: { moyen: Moyen; nom: string; prestataire: string }[] = [
   { moyen: 'chariow', nom: 'Mobile Money / carte (Chariow)', prestataire: 'Chariow' },
@@ -19,9 +20,10 @@ const MOYENS: { moyen: Moyen; nom: string; prestataire: string }[] = [
 export default async function AdminConfigPage() {
   const t = creerT(await langueNavigateur())
   const admin = createAdminClient()
-  const [{ data: moyens }, { data: produits }] = await Promise.all([
+  const [{ data: moyens }, { data: produits }, { data: mProduits }] = await Promise.all([
     admin.from('paiement_moyens').select('moyen, actif, note'),
     admin.from('chariow_produits').select('niveau, mois, product_id'),
+    admin.from('maketou_produits').select('niveau, mois, product_id'),
   ])
   const etat = new Map((moyens ?? []).map((m) => [m.moyen, m]))
 
@@ -70,6 +72,12 @@ export default async function AdminConfigPage() {
         <h2 className="mb-3 font-semibold">{t('Produits Chariow')}</h2>
         <p className="mb-3 text-sm text-foreground-muted">{t('Chariow débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au prix indiqué, puis collez son identifiant. Un champ vide retombe sur les variables d’environnement.')}</p>
         <ChariowProduitsEditor produits={produits ?? []} action={enregistrerProduitChariow} />
+      </Card>
+
+      <Card className="mb-6">
+        <h2 className="mb-3 font-semibold">{t('Produits Maketou')}</h2>
+        <p className="mb-3 text-sm text-foreground-muted">{t('Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au prix indiqué, puis collez son identifiant.')}</p>
+        <MaketouProduitsEditor produits={mProduits ?? []} action={enregistrerProduitMaketou} />
       </Card>
 
       <Card>

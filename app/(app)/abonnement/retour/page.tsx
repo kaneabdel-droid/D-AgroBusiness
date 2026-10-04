@@ -4,6 +4,7 @@ import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
 import { NIVEAUX, type Niveau } from '@/lib/abonnement'
 import { fetchChariowSale, mapChariowStatus } from '@/lib/payments/chariow'
+import { fetchMaketouCart, mapMaketouStatus } from '@/lib/payments/maketou'
 import { verifyMonerooPayment } from '@/lib/payments/moneroo'
 import { applyPaymentResult } from '@/lib/payments/fulfill'
 import { Card, PageHeader } from '@/components/ui/card'
@@ -25,6 +26,10 @@ export default async function RetourPage({ searchParams }: { searchParams: Promi
       const live = await fetchChariowSale(reference)
       const statut = live ? mapChariowStatus(live.status) : 'pending'
       if (live && statut !== 'pending') await applyPaymentResult('chariow', { providerTransactionId: reference, status: statut, reportedAmount: live.amount, reportedCurrency: live.currency })
+    } else if (paiement.provider === 'maketou') {
+      const live = await fetchMaketouCart(reference)
+      const statut = live ? mapMaketouStatus(live.status) : 'pending'
+      if (live && statut !== 'pending') await applyPaymentResult('maketou', { providerTransactionId: reference, status: statut })
     } else if (paiement.provider === 'moneroo') {
       const live = await verifyMonerooPayment(reference)
       if (live && (live.status === 'success' || live.status === 'succeeded')) await applyPaymentResult('moneroo', { providerTransactionId: reference, status: 'completed' })

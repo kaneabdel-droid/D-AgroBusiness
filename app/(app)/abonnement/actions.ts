@@ -7,13 +7,14 @@ import { estDuree, estNiveau, montantAbonnement, NIVEAUX } from '@/lib/abonnemen
 import { initiateBictorysPayment } from '@/lib/payments/bictorys'
 import { initiateMonerooPayment } from '@/lib/payments/moneroo'
 import { initiateChariowPayment } from '@/lib/payments/chariow'
+import { initiateMaketouPayment } from '@/lib/payments/maketou'
 import { siteUrl } from '@/lib/payments/config'
 import { moyensDisponibles, produitChariow } from '@/lib/payments/moyens'
 
-export type MoyenPaiement = 'wave' | 'orange' | 'carte' | 'chariow'
+export type MoyenPaiement = 'wave' | 'orange' | 'carte' | 'chariow' | 'maketou'
 type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
 
-const PROVIDER = { wave: 'bictorys', orange: 'bictorys', carte: 'moneroo', chariow: 'chariow' } as const
+const PROVIDER = { wave: 'bictorys', orange: 'bictorys', carte: 'moneroo', chariow: 'chariow', maketou: 'maketou' } as const
 
 /** Crée un paiement en attente puis renvoie l'adresse de la page de paiement du prestataire. Le montant est toujours recalculé côté serveur. */
 export async function initierPaiement(niveau: string, mois: number, moyen: MoyenPaiement, telephone?: string): Promise<Resultat> {
@@ -42,7 +43,13 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
   if (moyen === 'chariow') {
     produit = await produitChariow(niveau, mois, montant)
     if (!produit) return { ok: false, error: 'Chariow n’est pas configuré pour ce montant.' }
-    if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
+    if (!telephone?.replace(/\\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
+  } else if (moyen === 'maketou') {
+    const admin = createAdminClient()
+    const { data: mProd } = await admin.from('maketou_produits').select('product_id').eq('niveau', niveau).eq('mois', mois).maybeSingle()
+    produit = mProd?.product_id || process.env[\`MAKETOU_PRODUCT_\${niveau.toUpperCase()}_\${mois}\`] || null
+    if (!produit) return { ok: false, error: 'Maketou n’est pas configuré pour cette offre.' }
+    if (!telephone?.replace(/\\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
   }
 
   const supabase = await createClient()
@@ -78,6 +85,8 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
     moyen === 'carte' ? await initiateMonerooPayment(base)
     : moyen === 'chariow'
       ? await initiateChariowPayment({ productId: produit!, montantAttendu: montant, reference: paiement.id, phoneLocal: telephone!, phoneCountry: ctx.pays, customerEmail: user.email ?? '', customerName: ctx.nomComplet ?? undefined, returnUrl: retour })
+    : moyen === 'maketou'
+      ? await initiateMaketouPayment({ productId: produit!, montantAttendu: montant, reference: paiement.id, phoneLocal: telephone!, countryCode: ctx.pays, customerEmail: user.email ?? '', customerName: ctx.nomComplet ?? undefined, returnUrl: retour })
       : await initiateBictorysPayment({ ...base, customerPhone: telephone })
 
   if (!res.ok) {

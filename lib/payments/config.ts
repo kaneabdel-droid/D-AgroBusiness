@@ -35,3 +35,7 @@ export const hasMonerooKeys = Boolean(monerooSecretKey && monerooWebhookSecret)
 export const hasChariowKeys = Boolean(chariowApiKey && chariowWebhookSecret)
 
 export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+export const maketouApiKey = process.env.MAKETOU_API_KEY
+export const maketouApiUrl = process.env.MAKETOU_API_URL || 'https://api.maketou.net'
+export const hasMaketouKeys = Boolean(maketouApiKey)
