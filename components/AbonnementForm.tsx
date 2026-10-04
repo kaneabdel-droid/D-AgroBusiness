@@ -7,14 +7,14 @@ import { Card } from '@/components/ui/card'
 import { useT } from '@/components/I18nProvider'
 import { DUREES, NIVEAUX, montantAbonnement, remisePourcent, type Niveau } from '@/lib/abonnement'
 
-type Moyen = 'wave' | 'orange' | 'carte' | 'chariow'
+type Moyen = 'wave' | 'carte' | 'chariow' | 'maketou'
 type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
 
 const MOYENS: Record<Moyen, string> = {
-  wave: 'Wave',
-  orange: 'Orange Money',
+  wave: 'Mobile Money',
   carte: 'Carte bancaire',
   chariow: 'Mobile Money / carte (Chariow)',
+  maketou: 'Mobile Money (Maketou)',
 }
 
 const AVANTAGES: Record<Niveau, string[]> = {
@@ -130,7 +130,7 @@ export function AbonnementForm({
               </label>
             ))}
           </div>
-          {(moyen === 'chariow' || moyen === 'wave' || moyen === 'orange') && (
+          {(moyen === 'chariow' || moyen === 'wave') && (
             <div className="mt-4 max-w-xs space-y-1.5">
               <label htmlFor="telephone" className="text-sm">{moyen === 'chariow' ? t('Numéro de téléphone (sans l’indicatif du pays)') : t('Numéro de téléphone (facultatif)')}</label>
               <Input id="telephone" type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} inputMode="tel" />

@@ -1,12 +1,11 @@
 import { createAdminClient } from '@/utils/supabase/admin'
 import { chariowProduitPour, hasBictorysKeys, hasChariowKeys, hasMonerooKeys, hasMaketouKeys } from './config'
 
-export type Moyen = 'wave' | 'orange' | 'carte' | 'chariow' | 'maketou'
+export type Moyen = 'wave' | 'carte' | 'chariow' | 'maketou'
 
 /** Clés présentes sur le serveur pour chaque moyen de paiement. */
 export const clesPresentes: Record<Moyen, boolean> = {
   wave: hasBictorysKeys,
-  orange: hasBictorysKeys,
   carte: hasMonerooKeys,
   chariow: hasChariowKeys,
   maketou: hasMaketouKeys,

@@ -11,10 +11,10 @@ import { initiateMaketouPayment } from '@/lib/payments/maketou'
 import { siteUrl } from '@/lib/payments/config'
 import { moyensDisponibles, produitChariow } from '@/lib/payments/moyens'
 
-export type MoyenPaiement = 'wave' | 'orange' | 'carte' | 'chariow' | 'maketou'
+export type MoyenPaiement = 'wave' | 'carte' | 'chariow' | 'maketou'
 type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
 
-const PROVIDER = { wave: 'bictorys', orange: 'bictorys', carte: 'moneroo', chariow: 'chariow', maketou: 'maketou' } as const
+const PROVIDER = { wave: 'bictorys', carte: 'moneroo', chariow: 'chariow', maketou: 'maketou' } as const
 
 /** Crée un paiement en attente puis renvoie l'adresse de la page de paiement du prestataire. Le montant est toujours recalculé côté serveur. */
 export async function initierPaiement(niveau: string, mois: number, moyen: MoyenPaiement, telephone?: string): Promise<Resultat> {
