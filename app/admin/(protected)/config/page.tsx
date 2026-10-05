@@ -12,6 +12,7 @@ import { basculerMoyen, enregistrerProduitChariow, enregistrerProduitMaketou } f
 
 const MOYENS: { moyen: Moyen; nom: string; prestataire: string }[] = [
   { moyen: 'chariow', nom: 'Mobile Money / carte (Chariow)', prestataire: 'Chariow' },
+  { moyen: 'maketou', nom: 'Mobile Money / carte (Maketou)', prestataire: 'Maketou' },
   { moyen: 'wave', nom: 'Wave', prestataire: 'Bictorys' },
   { moyen: 'orange', nom: 'Orange Money', prestataire: 'Bictorys' },
   { moyen: 'carte', nom: 'Carte bancaire', prestataire: 'Moneroo' },
