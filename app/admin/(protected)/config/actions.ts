@@ -35,16 +35,16 @@ export async function enregistrerProduitChariow(niveau: string, mois: number, pr
   return { success: true }
 }
 
-export async function upsertMaketouProduit(niveau: string, mois: number, product_id: string) {
-  const res = await createAdminClient().from('maketou_produits').upsert({ niveau, mois, product_id })
-  if (res.error) return { error: res.error.message }
-  revalidatePath('/admin/config')
-  return { success: true }
-}
-
-export async function supprimerMaketouProduit(niveau: string, mois: number) {
-  const res = await createAdminClient().from('maketou_produits').delete().eq('niveau', niveau).eq('mois', mois)
-  if (res.error) return { error: res.error.message }
+export async function enregistrerProduitMaketou(niveau: string, mois: number, productId: string): Promise<Resultat> {
+  const refus = await refuserSiNonAdmin()
+  if (refus) return { error: refus }
+  if (!estNiveau(niveau) || !estDuree(mois)) return { error: 'Offre inconnue' }
+  const admin = createAdminClient()
+  const id = productId.trim()
+  const { error } = id
+    ? await admin.from('maketou_produits').upsert({ niveau, mois, product_id: id })
+    : await admin.from('maketou_produits').delete().eq('niveau', niveau).eq('mois', mois)
+  if (error) return { error: error.message }
   revalidatePath('/admin/config')
   return { success: true }
 }

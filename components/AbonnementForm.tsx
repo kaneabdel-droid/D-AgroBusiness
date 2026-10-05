@@ -13,8 +13,8 @@ type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
 const MOYENS: Record<Moyen, string> = {
   wave: 'Mobile Money',
   carte: 'Carte bancaire',
-  chariow: 'Mobile Money / carte (Chariow)',
-  maketou: 'Mobile Money (Maketou)',
+  chariow: 'Chariow',
+  maketou: 'Maketou',
 }
 
 const AVANTAGES: Record<Niveau, string[]> = {
