@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dictionnaire anglais de l'interface : clé = texte source en français, valeur = traduction.
  * Une clé absente s'affiche en français (voir lib/i18n.ts). Les marqueurs {nom} sont conservés à l'identique.
  */
@@ -1708,4 +1708,15 @@ export const EN: Record<string, string> = {
   "Hors campagne": "Outside any campaign",
   "Chaque prestation est comptabilisée en facture de service (journal des ventes), imputée au département et au secteur du matériel : elle compte dans l’exécution budgétaire. Une part de récolte se solde par un remboursement en nature.": "Each service is posted as a service invoice (sales journal), charged to the equipment’s department and sector: it counts in budget execution. A harvest share is settled by an in-kind repayment.",
   "N°": "No.",
+  "Maketou n'est pas configuré pour cette offre.": "Maketou is not configured for this plan.",
+  "Produits Maketou": "Maketou Products",
+  "Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au…": "Maketou charges the price of the product configured in its shop: create one product per plan level and duration, with…",
+  "Mobile Money": "Mobile Money",
+  "Chariow": "Chariow",
+  "Maketou": "Maketou",
+  "Identifiant du produit Maketou": "Maketou product identifier",
+  "Maketou non configuré (MAKETOU_API_KEY manquant)": "Maketou not configured (MAKETOU_API_KEY missing)",
+  "Erreur réseau Maketou : §": "Maketou network error: §",
+  "Maketou a répondu § (réponse non-JSON)": "Maketou returned § (non-JSON response)",
+  "Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au prix indiqué, puis collez son identifiant.": "Maketou charges the price of the product configured in its shop: create one product per plan and duration at the listed price, then paste its identifier.",
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dictionnaire arabe de l'interface : clé = texte source en français, valeur = traduction.
  * Une clé absente retombe sur l'anglais puis sur le français (voir lib/i18n.ts).
  */
@@ -1686,4 +1686,15 @@ export const AR: Record<string, string> = {
   "Hors campagne": "خارج الموسم",
   "Chaque prestation est comptabilisée en facture de service (journal des ventes), imputée au département et au secteur du matériel : elle compte dans l’exécution budgétaire. Une part de récolte se solde par un remboursement en nature.": "تقيد كل خدمة كفاتورة خدمة (دفتر المبيعات)، محملة على قسم المعدات وقطاعها: تحتسب في تنفيذ الميزانية. تسوى حصة المحصول بسداد عيني.",
   "N°": "رقم",
+  "Maketou n'est pas configuré pour cette offre.": "ماكيتو غير مُهيَّأ لهذه الباقة.",
+  "Produits Maketou": "منتجات ماكيتو",
+  "Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au…": "يخصم ماكيتو سعر المنتج المُهيَّأ في متجره: أنشئ منتجاً لكل مستوى ومدة…",
+  "Mobile Money": "موبايل موني",
+  "Chariow": "تشاريو",
+  "Maketou": "ماكيتو",
+  "Identifiant du produit Maketou": "معرّف منتج ماكيتو",
+  "Maketou non configuré (MAKETOU_API_KEY manquant)": "ماكيتو غير مُهيَّأ (MAKETOU_API_KEY مفقود)",
+  "Erreur réseau Maketou : §": "خطأ في شبكة ماكيتو: §",
+  "Maketou a répondu § (réponse non-JSON)": "ردّ ماكيتو § (استجابة غير JSON)",
+  "Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au prix indiqué, puis collez son identifiant.": "يخصم ماكيتو سعر المنتج المُهيَّأ في متجره: أنشئ منتجاً لكل باقة ومدة بالسعر المحدد، ثم الصق معرّفه.",
 }
