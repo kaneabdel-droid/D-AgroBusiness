@@ -48,3 +48,17 @@ export async function enregistrerProduitMaketou(niveau: string, mois: number, pr
   revalidatePath('/admin/config')
   return { success: true }
 }
+
+export async function upsertMaketouProduit(niveau: string, mois: number, product_id: string) {
+  const res = await createAdminClient().from('maketou_produits').upsert({ niveau, mois, product_id })
+  if (res.error) return { error: res.error.message }
+  revalidatePath('/admin/config')
+  return { success: true }
+}
+
+export async function supprimerMaketouProduit(niveau: string, mois: number) {
+  const res = await createAdminClient().from('maketou_produits').delete().eq('niveau', niveau).eq('mois', mois)
+  if (res.error) return { error: res.error.message }
+  revalidatePath('/admin/config')
+  return { success: true }
+}

@@ -36,7 +36,7 @@ export default async function AdminConfigPage() {
 
   return (
     <>
-      <PageHeader titre={t('Configuration')} description={t('Moyens de paiement proposés aux clients et produits Chariow. Les clés API restent dans les variables d’environnement du serveur et ne sont jamais affichées.')} />
+      <PageHeader titre={t('Configuration')} description={t('Moyens de paiement proposés aux clients, et produits Chariow / Maketou. Les clés API restent dans les variables d’environnement du serveur et ne sont jamais affichées.')} />
 
       <Card className="mb-6">
         <h2 className="mb-3 font-semibold">{t('Moyens de paiement')}</h2>

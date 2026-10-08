@@ -1526,7 +1526,7 @@ export const EN: Record<string, string> = {
   "Manuel": "Manual",
   "Moyen de paiement inconnu": "Unknown payment method",
   "Moyen": "Method",
-  "Moyens de paiement proposés aux clients et produits Chariow. Les clés API restent dans les variables d’environnement du serveur et ne sont jamais affichées.": "Payment methods offered to customers and Chariow products. API keys stay in the server environment variables and are never displayed.",
+  "Moyens de paiement proposés aux clients, et produits Chariow / Maketou. Les clés API restent dans les variables d’environnement du serveur et ne sont jamais affichées.": "Payment methods offered to customers and Chariow products. API keys stay in the server environment variables and are never displayed.",
   "Moyens de paiement": "Payment methods",
   "Paiements en attente": "Pending payments",
   "Paiements": "Payments",

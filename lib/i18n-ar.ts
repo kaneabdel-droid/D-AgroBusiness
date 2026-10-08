@@ -1504,7 +1504,7 @@ export const AR: Record<string, string> = {
   "Manuel": "يدوي",
   "Moyen de paiement inconnu": "وسيلة دفع غير معروفة",
   "Moyen": "الوسيلة",
-  "Moyens de paiement proposés aux clients et produits Chariow. Les clés API restent dans les variables d’environnement du serveur et ne sont jamais affichées.": "وسائل الدفع المعروضة على العملاء ومنتجات Chariow. تبقى مفاتيح API في متغيرات بيئة الخادم ولا تُعرض أبدًا.",
+  "Moyens de paiement proposés aux clients, et produits Chariow / Maketou. Les clés API restent dans les variables d’environnement du serveur et ne sont jamais affichées.": "وسائل الدفع المعروضة على العملاء ومنتجات Chariow. تبقى مفاتيح API في متغيرات بيئة الخادم ولا تُعرض أبدًا.",
   "Moyens de paiement": "وسائل الدفع",
   "Paiements en attente": "المدفوعات المعلقة",
   "Paiements": "المدفوعات",
