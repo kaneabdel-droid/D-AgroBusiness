@@ -43,13 +43,13 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
   if (moyen === 'chariow') {
     produit = await produitChariow(niveau, mois, montant)
     if (!produit) return { ok: false, error: 'Chariow n’est pas configuré pour ce montant.' }
-    if (!telephone?.replace(/\\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
+    if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
   } else if (moyen === 'maketou') {
     const admin = createAdminClient()
     const { data: mProd } = await admin.from('maketou_produits').select('product_id').eq('niveau', niveau).eq('mois', mois).maybeSingle()
-    produit = mProd?.product_id || process.env[\`MAKETOU_PRODUCT_\${niveau.toUpperCase()}_\${mois}\`] || null
+    produit = mProd?.product_id || process.env[`MAKETOU_PRODUCT_${niveau.toUpperCase()}_${mois}`] || null
     if (!produit) return { ok: false, error: 'Maketou n’est pas configuré pour cette offre.' }
-    if (!telephone?.replace(/\\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
+    if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
   }
 
   const supabase = await createClient()
