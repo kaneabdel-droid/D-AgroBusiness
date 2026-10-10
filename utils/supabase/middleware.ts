@@ -58,8 +58,8 @@ export async function updateSession(request: NextRequest) {
   // (cookie à domaine .dembasolution.com) d'abord, session locale en secours, sinon connexion centralisée.
   // (« /admin » exactement ou « /admin/… » : /administration/… est l'équipe de l'entreprise, pas la super-administration)
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    const sharedAdminUser = await withRetry(() =>
-      createAdminIdentityMiddlewareClient(request, supabaseResponse).auth.getUser().then(({ data }) => data.user)
+    const sharedAdminUser: any = await withRetry(() =>
+      createAdminIdentityMiddlewareClient(request, supabaseResponse).auth.getUser().then(({ data }: any) => data.user)
     ).catch(() => null)
 
     if (isAdminEmail(sharedAdminUser?.email) || isAdminEmail(user?.email)) return supabaseResponse
