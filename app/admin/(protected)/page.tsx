@@ -1,4 +1,4 @@
-import { Building2, Users, CreditCard, Clock, AlertTriangle, Wallet } from 'lucide-react'
+import { Package, Building2, Users, CreditCard, Clock, AlertTriangle, Wallet } from 'lucide-react'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { creerT } from '@/lib/i18n'
 import { langueNavigateur } from '@/lib/i18n-server'
