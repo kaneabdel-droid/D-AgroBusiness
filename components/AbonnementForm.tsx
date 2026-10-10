@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { useT } from '@/components/I18nProvider'
 import { DUREES, NIVEAUX, montantAbonnement, remisePourcent, type Niveau } from '@/lib/abonnement'
 
-type Moyen = 'wave' | 'carte' | 'chariow' | 'maketou'
+type Moyen = 'wave' | 'carte' | 'chariow' | 'maketou' | 'orange'
 type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
 
 const MOYENS: Record<Moyen, string> = {
@@ -15,6 +15,7 @@ const MOYENS: Record<Moyen, string> = {
   carte: 'Carte bancaire',
   chariow: 'Chariow',
   maketou: 'Maketou',
+  orange: 'Orange Money',
 }
 
 const AVANTAGES: Record<Niveau, string[]> = {

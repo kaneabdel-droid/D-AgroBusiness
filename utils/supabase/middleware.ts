@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAdminEmail } from '@/lib/admin/auth'
-import { createAdminIdentityMiddlewareClient } from '@/utils/supabase/admin-identity'
 import { withRetry } from '@/utils/supabase/retry'
 import { fetchAvecDelai } from '@/utils/supabase/fetch'
 import { pageSuivante, suitePaiement } from '@/lib/suite'
@@ -18,6 +17,41 @@ const PUBLIC_PREFIXES = [
   // une réponse redirigée) et la mise en cache de la page hors-ligne.
   '/manifest.json', '/sw.js', '/offline.html',
 ]
+
+
+const ADMIN_COOKIE_OPTIONS = {
+  name: 'sb-demba-admin',
+  domain: '.dembasolution.com',
+  sameSite: 'lax' as const,
+  secure: true,
+}
+
+function createAdminIdentityMiddlewareClient(
+  request: NextRequest,
+  response: NextResponse
+) {
+  if (!process.env.ADMIN_IDENTITY_SUPABASE_URL || !process.env.ADMIN_IDENTITY_SUPABASE_ANON_KEY) {
+    return { auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any;
+  }
+  return createServerClient(
+    process.env.ADMIN_IDENTITY_SUPABASE_URL!,
+    process.env.ADMIN_IDENTITY_SUPABASE_ANON_KEY!,
+    {
+      cookieOptions: ADMIN_COOKIE_OPTIONS,
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+}
 
 export async function updateSession(request: NextRequest) {
   // Chemin demandé, lu par le layout (contrôle d'expiration de l'abonnement) sans requête supplémentaire à la base
