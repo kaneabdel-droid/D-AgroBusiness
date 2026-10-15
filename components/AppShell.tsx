@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import {
@@ -133,8 +133,34 @@ export function AppShell({
 }) {
   const { t, lang } = useT()
   const [ouvert, setOuvert] = useState(false)
+  const [menuOuvert, setMenuOuvert] = useState<string | null>(null)
+  const navHorizontalRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const typeVente = useSearchParams().get('type') === 'marche' ? 'marche' : 'distribution'
+
+  // Fermer le menu déroulant lors d'une navigation ou au clic extérieur
+  useEffect(() => {
+    setMenuOuvert(null)
+  }, [pathname])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (navHorizontalRef.current && !navHorizontalRef.current.contains(event.target as Node)) {
+        setMenuOuvert(null)
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setMenuOuvert(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
   // Visibilité du menu : plafond de l'abonnement (RH/usine), puis restriction éventuelle de la matrice de permissions.
   const visible = (item: { href: string; requiertRh?: boolean; requiertUsine?: boolean }) =>
     (!item.requiertRh || accesRh) && (!item.requiertUsine || accesUsine) && permissionMenu(permissions, item.href, roleCle, 'lire')
@@ -245,7 +271,7 @@ export function AppShell({
           </div>
 
           {/* Navigation par catégories déroulantes */}
-          <div className="flex items-center gap-1.5 px-6 py-2 overflow-x-auto text-xs">
+          <div ref={navHorizontalRef} className="flex items-center gap-1.5 px-6 py-2 text-xs flex-wrap relative">
             {NAV.map((groupe) => ({ ...groupe, items: groupe.items.filter(visible) }))
               .filter((groupe) => groupe.items.length > 0)
               .map((groupe) => {
@@ -255,23 +281,36 @@ export function AppShell({
                     ? pathname === '/'
                     : pathname.startsWith(chemin) && (!requete || (chemin === '/ventes' && requete === `type=${typeVente}`))
                 })
+                const estOuvert = menuOuvert === groupe.titre
 
                 return (
-                  <div key={groupe.titre} className="relative group">
+                  <div
+                    key={groupe.titre}
+                    className="relative group"
+                    onMouseEnter={() => setMenuOuvert(groupe.titre)}
+                    onMouseLeave={() => setMenuOuvert((actuel) => (actuel === groupe.titre ? null : actuel))}
+                  >
                     <button
                       type="button"
+                      onClick={() => setMenuOuvert((actuel) => (actuel === groupe.titre ? null : groupe.titre))}
+                      aria-expanded={estOuvert}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap',
-                        aUnItemActif
+                        'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap cursor-pointer',
+                        aUnItemActif || estOuvert
                           ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                           : 'text-foreground hover:bg-surface'
                       )}
                     >
                       {t(groupe.titre)}
-                      <span className="text-[9px] opacity-70">▼</span>
+                      <span className={cn('text-[9px] opacity-70 transition-transform duration-150', estOuvert ? 'rotate-180' : '')}>▼</span>
                     </button>
 
-                    <div className="absolute left-0 top-full hidden group-hover:block pt-1 z-50">
+                    <div
+                      className={cn(
+                        'absolute left-0 top-full pt-1 z-50 transition-all duration-150',
+                        estOuvert ? 'block opacity-100 scale-100 pointer-events-auto' : 'hidden group-hover:block'
+                      )}
+                    >
                       <div className="min-w-56 rounded-xl border border-surface-border bg-sidebar p-1.5 shadow-xl">
                         {groupe.items.map(({ href, label, icon: Icon }) => {
                           const [chemin, requete] = href.split('?')
@@ -284,6 +323,7 @@ export function AppShell({
                             <Link
                               key={href}
                               href={href}
+                              onClick={() => setMenuOuvert(null)}
                               className={cn(
                                 'flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors',
                                 actif
