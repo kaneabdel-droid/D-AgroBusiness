@@ -1,4 +1,4 @@
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/AppShell'
 import { I18nProvider } from '@/components/I18nProvider'
@@ -14,6 +14,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const chemin = (await headers()).get('x-pathname') ?? ''
   if (!abonnementActif(ctx.abonnement) && !chemin.startsWith('/abonnement')) redirect('/abonnement?expire=1')
   const t = creerT(ctx.lang)
+
+  const cookieStore = await cookies()
+  const menuLayout = (cookieStore.get('menu_layout')?.value === 'horizontal' ? 'horizontal' : 'sidebar') as 'sidebar' | 'horizontal'
+
   return (
     <I18nProvider lang={ctx.lang}>
       <AppShell
@@ -24,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         permissions={ctx.permissions}
         accesRh={ctx.accesRh}
         accesUsine={ctx.accesUsine}
+        menuLayout={menuLayout}
       >
         <BandeauAbonnement etat={ctx.abonnement} lang={ctx.lang} />
         {children}

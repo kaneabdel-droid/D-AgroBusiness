@@ -40,16 +40,17 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
 
   const montant = montantAbonnement(niveau, mois)
   let produit: string | null = null
-  if (moyen === 'chariow') {
-    produit = await produitChariow(niveau, mois, montant)
-    if (!produit) return { ok: false, error: 'Chariow n’est pas configuré pour ce montant.' }
+  let chariowProduitId: string | null = null
+
+  if (moyen === 'maketou' || moyen === 'chariow') {
     if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
-  } else if (moyen === 'maketou') {
     const admin = createAdminClient()
     const { data: mProd } = await admin.from('maketou_produits').select('product_id').eq('niveau', niveau).eq('mois', mois).maybeSingle()
     produit = mProd?.product_id || process.env[`MAKETOU_PRODUCT_${niveau.toUpperCase()}_${mois}`] || null
-    if (!produit) return { ok: false, error: 'Maketou n’est pas configuré pour cette offre.' }
-    if (!telephone?.replace(/\D/g, '')) return { ok: false, error: 'Indiquez votre numéro de téléphone.' }
+    chariowProduitId = await produitChariow(niveau, mois, montant)
+    if (!produit && !chariowProduitId) {
+      return { ok: false, error: 'Le paiement mobile n’est pas configuré pour cette offre.' }
+    }
   }
 
   const supabase = await createClient()
@@ -62,11 +63,41 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
   if (reutilisable) return reutilisable
 
   const admin = createAdminClient()
-  const { data: paiement, error } = await admin
+  let insertData: any = {
+    organisation_id: ctx.organisationId,
+    niveau,
+    mois,
+    montant,
+    provider: PROVIDER[moyen],
+    moyen_paiement: moyen,
+    created_by: user.id,
+  }
+  let { data: paiement, error } = await admin
     .from('abonnement_paiements')
-    .insert({ organisation_id: ctx.organisationId, niveau, mois, montant, provider: PROVIDER[moyen], moyen_paiement: moyen, created_by: user.id })
+    .insert(insertData)
     .select('id')
     .single()
+
+  // Tolérance si la base distante n'a pas encore appliqué la migration 26_maketou_enum
+  if (error && error.code === '23514') {
+    insertData = {
+      organisation_id: ctx.organisationId,
+      niveau,
+      mois,
+      montant,
+      provider: 'chariow',
+      moyen_paiement: moyen === 'carte' ? 'carte' : 'wave',
+      created_by: user.id,
+    }
+    const fallbackRes = await admin
+      .from('abonnement_paiements')
+      .insert(insertData)
+      .select('id')
+      .single()
+    paiement = fallbackRes.data
+    error = fallbackRes.error
+  }
+
   if (error || !paiement) {
     // 23505 = index unique « un paiement en cours par organisation » : une requête concurrente vient d'en créer un.
     if (error?.code === '23505') {
@@ -74,6 +105,7 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
       if (concurrent) return concurrent
       return { ok: false, error: 'Un paiement est déjà en cours. Patientez quelques secondes puis réessayez.' }
     }
+    console.error('Erreur insert abonnement_paiements:', error)
     return { ok: false, error: 'Impossible d’initier le paiement' }
   }
 
@@ -81,12 +113,82 @@ export async function initierPaiement(niveau: string, mois: number, moyen: Moyen
   const description = `Abonnement D-AGROBUSINESS ${NIVEAUX[niveau].nom} — ${mois} mois`
   const base = { amount: montant, currency: 'XOF' as const, description, reference: paiement.id, returnUrl: retour, cancelUrl: retour, customerEmail: user.email ?? '', customerName: ctx.nomComplet ?? undefined, country: ctx.pays }
 
+  // 1. CARTE BANCAIRE
+  if (moyen === 'carte') {
+    const res = await initiateMonerooPayment(base)
+    if (!res.ok) {
+      await admin.from('abonnement_paiements').update({ statut: 'failed', updated_at: new Date().toISOString() }).eq('id', paiement.id)
+      return { ok: false, error: res.error }
+    }
+    await admin.from('abonnement_paiements').update({ provider: 'moneroo', provider_reference: res.providerTransactionId, checkout_url: res.checkoutUrl }).eq('id', paiement.id)
+    return { ok: true, checkoutUrl: res.checkoutUrl }
+  }
+
+  // 2. PAIEMENT MOBILE : Maketou en priorité, Chariow en réserve automatique
+  if (moyen === 'maketou') {
+    let maketouError = ''
+    if (produit) {
+      try {
+        const maketouRes = await initiateMaketouPayment({
+          productId: produit,
+          montantAttendu: montant,
+          reference: paiement.id,
+          phoneLocal: telephone || '',
+          countryCode: ctx.pays || 'SN',
+          customerEmail: user.email ?? '',
+          customerName: ctx.nomComplet ?? undefined,
+          returnUrl: retour,
+        })
+        if (maketouRes.ok) {
+          await admin.from('abonnement_paiements').update({
+            provider_reference: maketouRes.providerTransactionId,
+            checkout_url: maketouRes.checkoutUrl,
+          }).eq('id', paiement.id)
+          return { ok: true, checkoutUrl: maketouRes.checkoutUrl }
+        }
+        maketouError = maketouRes.error
+        console.warn('[Paiement Mobile] Maketou a échoué:', maketouRes.error, '-> Relais automatique Chariow...')
+      } catch (e: any) {
+        maketouError = e?.message || 'Erreur Maketou'
+        console.warn('[Paiement Mobile] Exception Maketou:', maketouError, '-> Relais automatique Chariow...')
+      }
+    } else {
+      maketouError = 'Produit Maketou indisponible'
+    }
+
+    // Relais Chariow en réserve
+    if (chariowProduitId) {
+      try {
+        const chariowRes = await initiateChariowPayment({
+          productId: chariowProduitId,
+          montantAttendu: montant,
+          reference: paiement.id,
+          phoneLocal: telephone || '',
+          phoneCountry: ctx.pays || 'SN',
+          customerEmail: user.email ?? '',
+          customerName: ctx.nomComplet ?? undefined,
+          returnUrl: retour,
+        })
+        if (chariowRes.ok) {
+          await admin.from('abonnement_paiements').update({
+            provider: 'chariow',
+            provider_reference: chariowRes.providerTransactionId,
+            checkout_url: chariowRes.checkoutUrl,
+          }).eq('id', paiement.id)
+          return { ok: true, checkoutUrl: chariowRes.checkoutUrl }
+        }
+        console.error('[Paiement Mobile] Chariow en réserve a échoué:', chariowRes.error)
+      } catch (e: any) {
+        console.error('[Paiement Mobile] Exception Chariow:', e)
+      }
+    }
+    return { ok: false, error: maketouError ? `Le paiement mobile a rencontré un problème (${maketouError}).` : 'Impossible d’initier le paiement mobile' }
+  }
+
+  // 3. CHARIOW DIRECT OU BICTORYS
   const res =
-    moyen === 'carte' ? await initiateMonerooPayment(base)
-    : moyen === 'chariow'
-      ? await initiateChariowPayment({ productId: produit!, montantAttendu: montant, reference: paiement.id, phoneLocal: telephone!, phoneCountry: ctx.pays, customerEmail: user.email ?? '', customerName: ctx.nomComplet ?? undefined, returnUrl: retour })
-    : moyen === 'maketou'
-      ? await initiateMaketouPayment({ productId: produit!, montantAttendu: montant, reference: paiement.id, phoneLocal: telephone!, countryCode: ctx.pays, customerEmail: user.email ?? '', customerName: ctx.nomComplet ?? undefined, returnUrl: retour })
+    moyen === 'chariow'
+      ? await initiateChariowPayment({ productId: (chariowProduitId || produit)!, montantAttendu: montant, reference: paiement.id, phoneLocal: telephone!, phoneCountry: ctx.pays, customerEmail: user.email ?? '', customerName: ctx.nomComplet ?? undefined, returnUrl: retour })
       : await initiateBictorysPayment({ ...base, customerPhone: telephone })
 
   if (!res.ok) {

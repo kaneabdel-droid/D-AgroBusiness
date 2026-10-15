@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Dictionnaire arabe de l'interface : clé = texte source en français, valeur = traduction.
  * Une clé absente retombe sur l'anglais puis sur le français (voir lib/i18n.ts).
  */
@@ -1697,4 +1697,12 @@ export const AR: Record<string, string> = {
   "Erreur réseau Maketou : §": "خطأ في شبكة ماكيتو: §",
   "Maketou a répondu § (réponse non-JSON)": "ردّ ماكيتو § (استجابة غير JSON)",
   "Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au prix indiqué, puis collez son identifiant.": "يخصم ماكيتو سعر المنتج المُهيَّأ في متجره: أنشئ منتجاً لكل باقة ومدة بالسعر المحدد، ثم الصق معرّفه.",
+  "Le paiement mobile n’est pas configuré pour cette offre.": "الدفع عبر الهاتف المحمول غير مهيأ لهذه الباقة.",
+  "Numéro de téléphone (Wave ou Orange Money)": "رقم الهاتف (ويف أو أورنج موني)",
+  "Paiement Mobile (Wave, Orange Money)": "الدفع عبر الهاتف (ويف، أورنج موني)",
+  "Wave Mobile Money": "ويف موبايل موني",
+  "Disposition du menu": "تخطيط القائمة",
+  "Barre latérale classique (à gauche)": "شريط جانبي كلاسيكي (يسار)",
+  "Affichage horizontal en haut de page": "شريط أفقي أعلى الصفحة",
+  "Choisissez comment vos collaborateurs et vous visualisez la navigation de l’application.": "اختر كيفية عرض التنقل في التطبيق لك ولزملائك.",
 }

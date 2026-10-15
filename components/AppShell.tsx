@@ -118,6 +118,7 @@ export function AppShell({
   permissions,
   accesRh,
   accesUsine,
+  menuLayout = 'sidebar',
   children,
 }: {
   organisation: string
@@ -127,6 +128,7 @@ export function AppShell({
   permissions: Matrice
   accesRh: boolean
   accesUsine: boolean
+  menuLayout?: 'sidebar' | 'horizontal'
   children: React.ReactNode
 }) {
   const { t, lang } = useT()
@@ -204,16 +206,114 @@ export function AppShell({
   )
 
   return (
-    <div className="flex min-h-screen flex-1" dir={estRtl(lang) ? 'rtl' : 'ltr'}>
-      {/* Bureau : barre latérale fixe */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-surface-border bg-sidebar lg:flex">
-        <div className="border-b border-surface-border p-4">
-          <p className="font-heading text-lg font-semibold text-primary">D-AGROBUSINESS</p>
-          <p className="truncate text-xs text-foreground-muted">{organisation}</p>
-        </div>
-        {nav}
-        {pied}
-      </aside>
+    <div className={cn("flex min-h-screen flex-1", menuLayout === 'horizontal' ? "flex-col" : "flex-row")} dir={estRtl(lang) ? 'rtl' : 'ltr'}>
+      {/* Bureau : mode horizontal en haut de page */}
+      {menuLayout === 'horizontal' ? (
+        <header className="sticky top-0 z-30 hidden w-full border-b border-surface-border bg-sidebar lg:block">
+          <div className="flex h-16 items-center justify-between px-6 border-b border-surface-border">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="font-heading text-lg font-bold text-primary tracking-tight">
+                D-AGROBUSINESS
+              </Link>
+              <span className="text-surface-border">|</span>
+              <span className="text-sm font-semibold text-foreground truncate max-w-xs">{organisation}</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="text-end">
+                <p className="text-xs font-semibold text-foreground">{utilisateur}</p>
+                <p className="text-[10px] text-foreground-muted">{role}</p>
+              </div>
+              <LanguageSwitcher lang={lang} className="flex-wrap" />
+              <Link
+                href="/support"
+                className="rounded-lg p-2 text-foreground-muted hover:bg-surface hover:text-foreground transition-colors"
+                title={t('Assistance')}
+              >
+                <LifeBuoy className="h-4 w-4" />
+              </Link>
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="rounded-lg p-2 text-foreground-muted hover:bg-surface hover:text-danger transition-colors"
+                  title={t('Déconnexion')}
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Navigation par catégories déroulantes */}
+          <div className="flex items-center gap-1.5 px-6 py-2 overflow-x-auto text-xs">
+            {NAV.map((groupe) => ({ ...groupe, items: groupe.items.filter(visible) }))
+              .filter((groupe) => groupe.items.length > 0)
+              .map((groupe) => {
+                const aUnItemActif = groupe.items.some(({ href }) => {
+                  const [chemin, requete] = href.split('?')
+                  return chemin === '/'
+                    ? pathname === '/'
+                    : pathname.startsWith(chemin) && (!requete || (chemin === '/ventes' && requete === `type=${typeVente}`))
+                })
+
+                return (
+                  <div key={groupe.titre} className="relative group">
+                    <button
+                      type="button"
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap',
+                        aUnItemActif
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                          : 'text-foreground hover:bg-surface'
+                      )}
+                    >
+                      {t(groupe.titre)}
+                      <span className="text-[9px] opacity-70">▼</span>
+                    </button>
+
+                    <div className="absolute left-0 top-full hidden group-hover:block pt-1 z-50">
+                      <div className="min-w-56 rounded-xl border border-surface-border bg-sidebar p-1.5 shadow-xl">
+                        {groupe.items.map(({ href, label, icon: Icon }) => {
+                          const [chemin, requete] = href.split('?')
+                          const actif =
+                            chemin === '/'
+                              ? pathname === '/'
+                              : pathname.startsWith(chemin) &&
+                                (!requete || (chemin === '/ventes' && requete === `type=${typeVente}`))
+                          return (
+                            <Link
+                              key={href}
+                              href={href}
+                              className={cn(
+                                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors',
+                                actif
+                                  ? 'bg-primary text-primary-foreground font-medium'
+                                  : 'text-foreground hover:bg-surface'
+                              )}
+                            >
+                              <Icon className="h-4 w-4 shrink-0" />
+                              {t(label)}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </header>
+      ) : (
+        /* Bureau : barre latérale fixe */
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-surface-border bg-sidebar lg:flex">
+          <div className="border-b border-surface-border p-4">
+            <p className="font-heading text-lg font-semibold text-primary">D-AGROBUSINESS</p>
+            <p className="truncate text-xs text-foreground-muted">{organisation}</p>
+          </div>
+          {nav}
+          {pied}
+        </aside>
+      )}
 
       {/* Mobile : barre supérieure + tiroir */}
       <div className="flex min-w-0 flex-1 flex-col">
@@ -258,7 +358,9 @@ export function AppShell({
           </div>
         )}
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className={cn("mx-auto w-full flex-1 px-4 py-6 sm:px-6 lg:px-8", menuLayout === 'horizontal' ? "max-w-7xl" : "max-w-7xl")}>
+          {children}
+        </main>
       </div>
     </div>
   )

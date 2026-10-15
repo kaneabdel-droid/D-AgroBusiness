@@ -15,6 +15,9 @@ export default async function EntreprisePage() {
     .single()
 
   const modifiable = ctx.role === 'admin'
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  const menuLayout = (cookieStore.get('menu_layout')?.value === 'horizontal' ? 'horizontal' : 'sidebar') as 'sidebar' | 'horizontal'
 
   return (
     <>
@@ -27,6 +30,7 @@ export default async function EntreprisePage() {
       <div className="space-y-6">
         <EntrepriseForm
           modifiable={modifiable}
+          menuLayout={menuLayout}
           infos={{
             nom: org?.nom ?? '',
             nif: org?.nif ?? '',

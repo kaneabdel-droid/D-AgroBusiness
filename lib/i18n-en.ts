@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Dictionnaire anglais de l'interface : clé = texte source en français, valeur = traduction.
  * Une clé absente s'affiche en français (voir lib/i18n.ts). Les marqueurs {nom} sont conservés à l'identique.
  */
@@ -1719,4 +1719,12 @@ export const EN: Record<string, string> = {
   "Erreur réseau Maketou : §": "Maketou network error: §",
   "Maketou a répondu § (réponse non-JSON)": "Maketou returned § (non-JSON response)",
   "Maketou débite le prix du produit configuré dans sa boutique : créez un produit par niveau et par durée, au prix indiqué, puis collez son identifiant.": "Maketou charges the price of the product configured in its shop: create one product per plan and duration at the listed price, then paste its identifier.",
+  "Le paiement mobile n’est pas configuré pour cette offre.": "Mobile payment is not configured for this plan.",
+  "Numéro de téléphone (Wave ou Orange Money)": "Phone number (Wave or Orange Money)",
+  "Paiement Mobile (Wave, Orange Money)": "Mobile Payment (Wave, Orange Money)",
+  "Wave Mobile Money": "Wave Mobile Money",
+  "Disposition du menu": "Menu layout",
+  "Barre latérale classique (à gauche)": "Classic sidebar (left)",
+  "Affichage horizontal en haut de page": "Horizontal top bar",
+  "Choisissez comment vos collaborateurs et vous visualisez la navigation de l’application.": "Choose how you and your collaborators view application navigation.",
 }

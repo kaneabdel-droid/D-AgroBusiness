@@ -26,7 +26,12 @@ export async function moyensActivesEnBase(): Promise<Moyen[]> {
 /** Moyens réellement proposés aux clients : activés dans l'espace admin ET clés présentes. */
 export async function moyensDisponibles(): Promise<Moyen[]> {
   const actifs = await moyensActivesEnBase()
-  return actifs.filter((m) => clesPresentes[m])
+  const disponibles = actifs.filter((m) => clesPresentes[m])
+  return disponibles.sort((a, b) => {
+    if (a === 'maketou') return -1
+    if (b === 'maketou') return 1
+    return 0
+  })
 }
 
 /** Produit Chariow d'un niveau et d'une durée : table gérée depuis /admin/config, sinon variables d'environnement. */

@@ -11,11 +11,11 @@ type Moyen = 'wave' | 'carte' | 'chariow' | 'maketou' | 'orange'
 type Resultat = { ok: true; checkoutUrl: string } | { ok: false; error: string }
 
 const MOYENS: Record<Moyen, string> = {
-  wave: 'Mobile Money',
-  carte: 'Carte bancaire',
+  maketou: 'Paiement Mobile (Wave, Orange Money)',
   chariow: 'Chariow',
-  maketou: 'Maketou',
+  wave: 'Wave Mobile Money',
   orange: 'Orange Money',
+  carte: 'Carte bancaire',
 }
 
 const AVANTAGES: Record<Niveau, string[]> = {
@@ -54,7 +54,7 @@ export function AbonnementForm({
   const { t } = useT()
   const [niveau, setNiveau] = useState<Niveau>(niveauBloque ?? niveauActuel)
   const [mois, setMois] = useState<number>(1)
-  const [moyen, setMoyen] = useState<Moyen | undefined>(moyens[0])
+  const [moyen, setMoyen] = useState<Moyen | undefined>(moyens.includes('maketou') ? 'maketou' : moyens[0])
   const [telephone, setTelephone] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
@@ -131,10 +131,20 @@ export function AbonnementForm({
               </label>
             ))}
           </div>
-          {(moyen === 'chariow' || moyen === 'wave') && (
+          {(moyen === 'maketou' || moyen === 'chariow' || moyen === 'wave' || moyen === 'orange') && (
             <div className="mt-4 max-w-xs space-y-1.5">
-              <label htmlFor="telephone" className="text-sm">{moyen === 'chariow' ? t('Numéro de téléphone (sans l’indicatif du pays)') : t('Numéro de téléphone (facultatif)')}</label>
-              <Input id="telephone" type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} inputMode="tel" />
+              <label htmlFor="telephone" className="text-sm font-medium">
+                {t('Numéro de téléphone (Wave ou Orange Money)')}
+              </label>
+              <Input
+                id="telephone"
+                type="tel"
+                placeholder="77 123 45 67"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                inputMode="tel"
+                required
+              />
             </div>
           )}
           {erreur && <p role="alert" className="mt-3 text-sm text-danger">{t(erreur)}</p>}

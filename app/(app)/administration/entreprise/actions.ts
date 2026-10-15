@@ -35,6 +35,14 @@ export async function modifierEntreprise(formData: FormData): Promise<Resultat> 
   if (error) return { error: error.code === '42501' ? 'Droits insuffisants pour cette opération.' : error.message }
   if (!data || data.length === 0) return { error: 'Droits insuffisants pour cette opération.' }
 
+  // Enregistrement de la disposition du menu choisie par l'administrateur
+  const menuLayout = txt(formData, 'menu_layout')
+  if (menuLayout === 'horizontal' || menuLayout === 'sidebar') {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    cookieStore.set('menu_layout', menuLayout, { path: '/', maxAge: 31536000 })
+  }
+
   // Le nom s'affiche dans la barre latérale, l'en-tête et les exports de toutes les pages.
   revalidatePath('/', 'layout')
   return { success: true }

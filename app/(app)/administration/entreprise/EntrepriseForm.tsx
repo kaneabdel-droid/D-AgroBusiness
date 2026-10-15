@@ -17,7 +17,7 @@ export type InfosEntreprise = {
   email: string
 }
 
-export function EntrepriseForm({ infos, modifiable }: { infos: InfosEntreprise; modifiable: boolean }) {
+export function EntrepriseForm({ infos, modifiable, menuLayout = 'sidebar' }: { infos: InfosEntreprise; modifiable: boolean; menuLayout?: 'sidebar' | 'horizontal' }) {
   const { t } = useT()
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState<{ type: 'ok' | 'erreur'; texte: string } | null>(null)
@@ -46,6 +46,24 @@ export function EntrepriseForm({ infos, modifiable }: { infos: InfosEntreprise; 
         {champ('adresse', t('Adresse'), { pleineLargeur: true })}
         {champ('telephone', t('Téléphone'), { type: 'tel' })}
         {champ('email', t('Email'), { type: 'email' })}
+
+        <div className="space-y-1.5 sm:col-span-2 pt-3 border-t border-surface-border">
+          <Label htmlFor="menu_layout">{t('Disposition du menu')}</Label>
+          <select
+            id="menu_layout"
+            name="menu_layout"
+            defaultValue={menuLayout}
+            disabled={!modifiable}
+            className="w-full rounded-md border border-surface-border bg-surface px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="sidebar">{t('Barre latérale classique (à gauche)')}</option>
+            <option value="horizontal">{t('Affichage horizontal en haut de page')}</option>
+          </select>
+          <p className="text-xs text-foreground-muted">
+            {t('Choisissez comment vos collaborateurs et vous visualisez la navigation de l’application.')}
+          </p>
+        </div>
+
         {message && (
           <p role={message.type === 'erreur' ? 'alert' : 'status'} className={'text-sm sm:col-span-2 ' + (message.type === 'erreur' ? 'text-danger' : 'text-success')}>
             {t(message.texte)}
