@@ -112,6 +112,7 @@ export const AR: Record<string, string> = {
   "Campagnes": "المواسم الفلاحية",
   "Tiers": "الأطراف الثالثة",
   "Catalogue & stocks": "الكتالوج والمخزون",
+  "Importation des données": "استيراد البيانات",
   "Produits": "المنتجات",
   "Magasins": "المخازن",
   "État des stocks": "حالة المخزون",

@@ -4,6 +4,7 @@ import { langueNavigateur } from '@/lib/i18n-server'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import PasswordInput from '@/components/PasswordInput'
 import { Label } from '@/components/ui/label'
 import { connecterAdmin } from './actions'
 
@@ -31,7 +32,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
         )}
         <form action={connecterAdmin} className="space-y-4 rounded-2xl border border-surface-border bg-background p-6 shadow-sm">
           <div className="space-y-1.5"><Label htmlFor="email">{t('Email')}</Label><Input id="email" name="email" type="email" autoComplete="email" required /></div>
-          <div className="space-y-1.5"><Label htmlFor="password">{t('Mot de passe')}</Label><Input id="password" name="password" type="password" autoComplete="current-password" required /></div>
+          <div className="space-y-1.5"><Label htmlFor="password">{t('Mot de passe')}</Label><PasswordInput id="password" name="password" autoComplete="current-password" required /></div>
           <Button type="submit" className="w-full">{t('Se connecter')}</Button>
         </form>
         <p className="mt-6 text-center text-xs text-foreground-muted">

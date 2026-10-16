@@ -112,6 +112,7 @@ export const EN: Record<string, string> = {
   "Campagnes": "Campaigns",
   "Tiers": "Third parties",
   "Catalogue & stocks": "Catalogue & inventory",
+  "Importation des données": "Data import",
   "Produits": "Products",
   "Magasins": "Warehouses",
   "État des stocks": "Stock status",

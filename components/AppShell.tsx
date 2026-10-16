@@ -44,6 +44,7 @@ import {
   Menu,
   Scale,
   Sprout,
+  UploadCloud,
   Users,
   X,
 } from 'lucide-react'
@@ -95,6 +96,7 @@ const ICONES: Record<string, typeof LayoutDashboard> = {
   '/pilotage/rapport-mensuel': CalendarDays,
   '/pilotage/tva': Percent,
   '/administration/entreprise': Building2,
+  '/administration/import': UploadCloud,
   '/administration/equipe': UserCog,
   '/administration/permissions': ShieldCheck,
   '/administration/audit': ScrollText,

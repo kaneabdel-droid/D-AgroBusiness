@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
+import PasswordInput from '@/components/PasswordInput'
 import { Label } from '@/components/ui/label'
 import { PAYS } from '@/lib/pays'
 import { creerT, type Lang } from '@/lib/i18n'
@@ -53,10 +54,9 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">{t('Mot de passe')}</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           required
           minLength={mode === 'signup' ? 8 : undefined}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
