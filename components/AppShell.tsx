@@ -52,6 +52,7 @@ import { cn } from '@/lib/utils'
 import { signOut } from '@/app/auth/actions'
 import { useT } from '@/components/I18nProvider'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { OfflineSyncBar } from '@/components/offline/OfflineSyncBar'
 import { estRtl } from '@/lib/i18n'
 import { MENUS } from '@/lib/menus'
 import { permissionMenu, type Matrice } from '@/lib/permissions'
@@ -212,8 +213,13 @@ export function AppShell({
 
   const pied = (
     <div className="border-t border-surface-border p-4">
-      <p className="truncate text-sm font-medium">{utilisateur}</p>
-      <p className="mb-3 text-xs text-foreground-muted">{role}</p>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{utilisateur}</p>
+          <p className="text-xs text-foreground-muted">{role}</p>
+        </div>
+        <OfflineSyncBar />
+      </div>
       <LanguageSwitcher lang={lang} className="mb-3 flex-wrap" />
       <Link
         href="/support"
@@ -248,6 +254,7 @@ export function AppShell({
             </div>
 
             <div className="flex items-center gap-4">
+              <OfflineSyncBar />
               <div className="text-end">
                 <p className="text-xs font-semibold text-foreground">{utilisateur}</p>
                 <p className="text-[10px] text-foreground-muted">{role}</p>
@@ -371,6 +378,9 @@ export function AppShell({
           <div className="min-w-0">
             <p className="font-heading font-semibold text-primary">D-AGROBUSINESS</p>
             <p className="truncate text-xs text-foreground-muted">{organisation}</p>
+          </div>
+          <div className="ms-auto">
+            <OfflineSyncBar />
           </div>
         </header>
 

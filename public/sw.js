@@ -1,56 +1,75 @@
-// Service worker minimal : installabilité + accueil plus rapide au retour +
-// message clair en cas de coupure réseau, SANS jamais mettre en cache une
-// page applicative. Chaque page de D-AGROBUSINESS est un Server Component qui
-// interroge Supabase à chaque requête (auth, rôle, données financières/stock) :
-// la mettre en cache servirait à un utilisateur — potentiellement un autre,
-// sur un poste partagé — des données obsolètes ou qui ne sont pas les
-// siennes. Seuls les fichiers statiques (immuables, sans donnée utilisateur)
-// sont mis en cache.
-
-const CACHE = 'd-agrobusiness-statique-v1'
-const FICHIERS_STATIQUES = ['/manifest.json', '/icon.svg', '/offline.html']
+const CACHE_NAME = 'demba-offline-dagro-v1'
+const STATIC_ASSETS = [
+  '/',
+  '/manifest.json',
+  '/offline.html'
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(FICHIERS_STATIQUES)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS).catch(() => {})
+    }).then(() => self.skipWaiting())
   )
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((noms) => Promise.all(noms.filter((n) => n !== CACHE).map((n) => caches.delete(n))))
-      .then(() => self.clients.claim())
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      )
+    }).then(() => self.clients.claim())
   )
 })
 
 self.addEventListener('fetch', (event) => {
   const { request } = event
-  if (request.method !== 'GET') return
-
   const url = new URL(request.url)
 
-  // Navigation (chargement d'une page) : toujours réseau d'abord — jamais de
-  // page applicative servie depuis le cache — avec la page hors-ligne comme
-  // seul filet de secours si le réseau est indisponible.
+  if (request.method !== 'GET' || !url.protocol.startsWith('http')) return
+
+  // 1. Navigation requests (HTML pages) : Network-First with Cache Fallback
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/offline.html'))
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return response
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(request)
+          if (cachedResponse) return cachedResponse
+          const fallback = await caches.match('/')
+          if (fallback) return fallback
+          return caches.match('/offline.html')
+        })
     )
     return
   }
 
-  // Fichiers de build Next.js (hashés, donc immuables) et fichiers statiques
-  // connus : cache d'abord, réseau en repli et en réserve pour la prochaine fois.
-  if (url.pathname.startsWith('/_next/static/') || FICHIERS_STATIQUES.includes(url.pathname)) {
+  // 2. Static build assets (_next/static, fonts, icons) : Cache-First with Network Fallback
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.endsWith('.svg') || url.pathname.endsWith('.png') || url.pathname.endsWith('.woff2')) {
     event.respondWith(
-      caches.match(request).then((reponse) => {
-        if (reponse) return reponse
-        return fetch(request).then((res) => {
-          if (res.ok) caches.open(CACHE).then((cache) => cache.put(request, res.clone()))
-          return res
-        })
+      caches.match(request).then((cached) => {
+        if (cached) return cached
+        return fetch(request).then((networkRes) => {
+          if (networkRes && networkRes.status === 200) {
+            const clone = networkRes.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return networkRes
+        }).catch(() => new Response('', { status: 408 }))
       })
     )
+    return
   }
+
+  // 3. Other requests : Network with Cache Fallback
+  event.respondWith(
+    fetch(request).catch(() => caches.match(request))
+  )
 })
