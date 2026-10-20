@@ -2,20 +2,93 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { creerT } from '@/lib/i18n'
 import { langueNavigateur } from '@/lib/i18n-server'
 import { siteUrl } from '@/lib/payments/config'
 import { pageSuivante } from '@/lib/suite'
+import { resoudreAuthEmail } from '@/lib/auth-identifier'
 
-export async function signIn(formData: FormData) {
+export type LoginActionResult = {
+  success?: string
+  error?: string
+  redirectUrl?: string
+  userContext?: {
+    userId: string
+    nomComplet?: string | null
+    identifiant: string
+    telephone?: string | null
+    email?: string | null
+    role: string
+    organisationId: string
+    organisationNom: string
+    gieId?: string
+    gieNom?: string
+    devise?: string
+    permissions?: any
+  }
+}
+
+export async function signIn(formData: FormData): Promise<LoginActionResult> {
   const t = creerT(await langueNavigateur())
+  const rawInput = String(formData.get('email') ?? formData.get('identifier') ?? '').trim()
+  const password = String(formData.get('password') ?? '')
+
+  if (!rawInput) return { error: t('Veuillez renseigner votre identifiant, téléphone ou e-mail.') }
+  if (!password) return { error: t('Veuillez saisir votre mot de passe.') }
+
+  let resolvedEmail = rawInput
+  try {
+    const adminSupabase = createAdminClient()
+    const resolved = await resoudreAuthEmail(rawInput, adminSupabase)
+    resolvedEmail = resolved.email
+  } catch {
+    resolvedEmail = rawInput
+  }
+
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({
-    email: String(formData.get('email') ?? '').trim(),
-    password: String(formData.get('password') ?? ''),
+  const { data: signInData, error } = await supabase.auth.signInWithPassword({
+    email: resolvedEmail,
+    password,
   })
-  if (error) return { error: t('Email ou mot de passe incorrect.') }
-  redirect(pageSuivante(formData.get('suite')) ?? '/')
+
+  if (error || !signInData?.user) {
+    return { error: t('Email, identifiant ou mot de passe incorrect.') }
+  }
+
+  let userContext: LoginActionResult['userContext']
+  try {
+    const { data: userProfile } = await supabase
+      .from('utilisateurs')
+      .select('id, identifiant, telephone, nom_complet, role, organisation_id, organisations(nom, devise)')
+      .eq('id', signInData.user.id)
+      .maybeSingle()
+
+    if (userProfile) {
+      const org = Array.isArray(userProfile.organisations) ? userProfile.organisations[0] : userProfile.organisations
+      userContext = {
+        userId: userProfile.id,
+        nomComplet: userProfile.nom_complet || null,
+        identifiant: userProfile.identifiant || rawInput,
+        telephone: userProfile.telephone || null,
+        email: signInData.user.email || null,
+        role: userProfile.role || 'collaborateur',
+        organisationId: userProfile.organisation_id,
+        organisationNom: org?.nom || 'Mon Entreprise',
+        gieId: userProfile.organisation_id,
+        gieNom: org?.nom || 'Mon Entreprise',
+        devise: org?.devise || 'FCFA',
+      }
+    }
+  } catch (err) {
+    console.warn('Erreur récupération profil utilisateur pour cache hors-ligne D-AGROBUSINESS:', err)
+  }
+
+  return {
+    success: t('Connexion réussie !'),
+    redirectUrl: pageSuivante(formData.get('suite')) ?? '/',
+    userContext,
+  }
 }
 
 export async function signUp(formData: FormData) {
