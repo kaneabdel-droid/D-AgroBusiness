@@ -1,16 +1,9 @@
-const CACHE_NAME = 'demba-offline-dagro-v2'
+const CACHE_NAME = 'demba-offline-dagro-v3'
 const STATIC_ASSETS = [
   '/',
   '/login',
   '/manifest.json',
-  '/production',
-  '/operations',
-  '/stocks',
-  '/ventes',
-  '/achats',
-  '/tresorerie',
-  '/usine',
-  '/materiel'
+  '/decouvrir-dagrobusiness'
 ]
 
 self.addEventListener('install', (event) => {
@@ -41,34 +34,76 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/api/')) return
 
-  // 1. Navigation requests (HTML pages) : Network-First with Cache Fallback
+  // 1. Navigation requests (Pages HTML) : Network-First avec repli Cache Shell
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response && response.status === 200) {
             const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, clone)
+              // Mémoriser automatiquement la racine applicative
+              if (url.pathname === '/' || (!url.pathname.startsWith('/decouvrir') && url.pathname !== '/login')) {
+                cache.put('/', response.clone())
+              }
+            })
           }
           return response
         })
         .catch(async () => {
-          const cachedResponse = await caches.match(request)
-          if (cachedResponse) return cachedResponse
+          const cookieHeader = request.headers.get('cookie') || ''
+          const isOfflineActive = cookieHeader.includes('demba_offline_active=1')
+          const isAppTarget = url.pathname !== '/login' && !url.pathname.startsWith('/decouvrir')
 
-          const fallbackRoot = await caches.match('/')
-          if (fallbackRoot) return fallbackRoot
+          const cached = await caches.match(request)
+          if (cached && (!cached.redirected || isAppTarget)) {
+            return cached
+          }
+
+          if (isAppTarget || isOfflineActive) {
+            const fallbackApp = await caches.match('/')
+            if (fallbackApp && !fallbackApp.redirected) {
+              return fallbackApp
+            }
+
+            const fallbackLogin = await caches.match('/login')
+            if (fallbackLogin) return fallbackLogin
+          }
+
+          if (url.pathname.startsWith('/decouvrir') || url.pathname === '/bienvenue') {
+            const cachedVitrine = await caches.match('/decouvrir-dagrobusiness')
+            if (cachedVitrine) return cachedVitrine
+          }
 
           const fallbackLogin = await caches.match('/login')
           if (fallbackLogin) return fallbackLogin
 
-          return new Response('Application D-AGROBUSINESS hors-ligne', { status: 503 })
+          const fallbackRoot = await caches.match('/')
+          if (fallbackRoot) return fallbackRoot
+
+          return new Response('Application D-AGROBUSINESS hors-ligne', {
+            status: 503,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          })
         })
     )
     return
   }
 
-  // 2. Static build assets (_next/static, fonts, images) : Cache-First
+  // 2. Next.js RSC Prefetch & Data requests (_rsc query param)
+  if (url.searchParams.has('_rsc')) {
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const cached = await caches.match(request)
+        if (cached) return cached
+        return new Response('', { status: 503, statusText: 'Offline RSC' })
+      })
+    )
+    return
+  }
+
+  // 3. Static build assets (_next/static, fonts, images) : Cache-First
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.endsWith('.svg') ||
@@ -93,7 +128,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // 3. Autres requêtes : Network-first
+  // 4. Autres requêtes : Network avec Cache Fallback
   event.respondWith(
     fetch(request).catch(() => caches.match(request))
   )

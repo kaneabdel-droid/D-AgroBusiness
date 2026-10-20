@@ -75,6 +75,7 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
       startTransition(async () => {
         const offRes = await verifyOfflineCredentials(cleanIdentifier, pwd)
         if (offRes.success && offRes.session) {
+          document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
           setSuccessNotice(t('Connexion locale validée ! Accès à votre espace D-AGROBUSINESS hors-ligne...'))
           setTimeout(() => {
             window.location.href = suite || '/'
@@ -108,6 +109,7 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
           ) {
             const offRes = await verifyOfflineCredentials(cleanIdentifier, pwd)
             if (offRes.success) {
+              document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
               setSuccessNotice(t('Réseau instable : connexion locale hors-ligne activée !'))
               setTimeout(() => {
                 window.location.href = suite || '/'
@@ -128,12 +130,27 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
             }
           }
 
+          document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
+
+          if ('caches' in window) {
+            try {
+              const cache = await caches.open('demba-offline-dagro-v3')
+              const appRes = await fetch('/')
+              if (appRes && appRes.ok) {
+                await cache.put('/', appRes)
+              }
+            } catch (cacheErr) {
+              console.warn('Erreur pré-mise en cache app shell:', cacheErr)
+            }
+          }
+
           setSuccessNotice(res.success)
           window.location.href = res.redirectUrl || suite || '/'
         }
       } catch (err: any) {
         const offRes = await verifyOfflineCredentials(cleanIdentifier, pwd)
         if (offRes.success) {
+          document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
           setSuccessNotice(t('Connexion hors-ligne de secours validée !'))
           setTimeout(() => {
             window.location.href = suite || '/'

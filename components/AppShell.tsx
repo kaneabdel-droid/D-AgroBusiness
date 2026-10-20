@@ -147,6 +147,20 @@ export function AppShell({
   }, [pathname])
 
   useEffect(() => {
+    // S'assurer que le cookie hors-ligne est actif pour le Service Worker
+    document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
+
+    // Si en ligne, rafraîchir en tâche de fond le shell applicatif
+    if (typeof navigator !== 'undefined' && navigator.onLine && 'caches' in window) {
+      caches.open('demba-offline-dagro-v3').then((cache) => {
+        fetch('/').then((res) => {
+          if (res && res.ok) cache.put('/', res)
+        }).catch(() => {})
+      }).catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (navHorizontalRef.current && !navHorizontalRef.current.contains(event.target as Node)) {
         setMenuOuvert(null)

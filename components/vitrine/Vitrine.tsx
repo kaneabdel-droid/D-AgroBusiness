@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Check, X } from 'lucide-react'
 import { creerT, estRtl, type Lang } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import OfflineLandingBanner from '@/components/offline/OfflineLandingBanner'
 import { DUREES, NIVEAUX, montantAbonnement, remisePourcent, type Niveau } from '@/lib/abonnement'
 
 export const carteSurvol = 'transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md'
@@ -28,6 +29,7 @@ export function EnTete({ lang, actif }: { lang: Lang; actif?: 'tarifs' | 'decouv
   const t = creerT(lang)
   return (
     <header className="sticky top-0 z-20 border-b border-surface-border bg-surface/95 backdrop-blur">
+      <OfflineLandingBanner appName="D-AGROBUSINESS" dashboardUrl="/" loginUrl="/login" />
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-4 sm:gap-6">
           <Link href="/bienvenue" className="font-heading text-xl font-bold text-primary">D-AGRO<span className="text-vert">BUSINESS</span></Link>
