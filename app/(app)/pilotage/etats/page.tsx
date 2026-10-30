@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { FileText } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { getContexte } from '@/lib/session'
 import { creerT } from '@/lib/i18n'
@@ -134,6 +136,13 @@ export default async function EtatsPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader titre={t('États financiers et ratios')} description={`${t('Exercice')} ${libN} ${t('comparé à')} ${precedent ? libN1 : t('l’exercice précédent (aucun exercice antérieur)')} — ${t('tirés de la balance, mis à jour à chaque écriture.')}`}>
+        <Link
+          href={`/comptabilite/etats-financiers${courant?.id ? `?exercice=${courant.id}` : ''}`}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+        >
+          <FileText className="w-4 h-4" />
+          <span>{t('Liasse SYSCOHADA (Système Normal)')}</span>
+        </Link>
         <ExerciceFilter libelleAria={t('Exercice')} libelleBouton={t('Afficher')} exercices={exercices ?? []} selectionne={courant?.id} />
         <ExportButtons titre={t('Compte de résultat comparatif')} sousTitre={`${ctx.organisationNom} — ${libN} / ${libN1}`} fichier={`compte-resultat-${libN}`}
           colonnes={[t('Compte'), t('Libellé'), t('Nature'), libN, libN1]}

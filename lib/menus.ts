@@ -107,6 +107,7 @@ export const MENUS: GroupeMenu[] = [
       { href: '/comptabilite/plan-comptable', label: 'Plan comptable' },
       { href: '/comptabilite/ecritures', label: 'Écritures' },
       { href: '/comptabilite/balance', label: 'Balance' },
+      { href: '/comptabilite/etats-financiers', label: 'États financiers SYSCOHADA' },
       { href: '/comptabilite/soldes-tiers', label: 'Créances et dettes' },
       { href: '/comptabilite/releve', label: 'Relevés de compte' },
       { href: '/comptabilite/analytique', label: 'Résultat analytique' },
