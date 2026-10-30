@@ -1749,4 +1749,9 @@ export const EN: Record<string, string> = {
   "Identifiant, téléphone ou e-mail": "Username, phone or email",
   "Connecté au serveur en ligne (synchronisation activée)": "Connected to online server (synchronization enabled)",
   "Authentification locale autonome sans réseau": "Autonomous local authentication without network",
+  "Aucun exercice comptable enregistré.": "No fiscal year recorded.",
+  "États financiers SYSCOHADA (Système Normal)": "SYSCOHADA Financial Statements (Standard System)",
+  "Bilan, Compte de Résultat et Tableau des Flux de Trésorerie (TFT) conformes aux normes OHADA pour l’exercice": "Balance Sheet, Income Statement and Cash Flow Statement (TFT) complying with OHADA standards for fiscal year",
+  "Liasse SYSCOHADA (Système Normal)": "SYSCOHADA Package (Standard System)",
+  "États financiers SYSCOHADA": "SYSCOHADA Financial Statements",
 }

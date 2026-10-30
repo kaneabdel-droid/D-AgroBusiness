@@ -1727,4 +1727,9 @@ export const AR: Record<string, string> = {
   "Identifiant, téléphone ou e-mail": "اسم المستخدم أو الهاتف أو البريد الإلكتروني",
   "Connecté au serveur en ligne (synchronisation activée)": "متصل بالخادم على الإنترنت (المزامنة مفعلة)",
   "Authentification locale autonome sans réseau": "مصادقة محلية مستقلة دون اتصال بالشبكة",
+  "Aucun exercice comptable enregistré.": "لا توجد سنة مالية مسجلة.",
+  "États financiers SYSCOHADA (Système Normal)": "القوائم المالية لـ SYSCOHADA (النظام العادي)",
+  "Bilan, Compte de Résultat et Tableau des Flux de Trésorerie (TFT) conformes aux normes OHADA pour l’exercice": "الميزانية العمومية، حساب النتائج وجدول تدفقات الخزينة (TFT) متوافقة مع معايير OHADA للسنة المالية",
+  "Liasse SYSCOHADA (Système Normal)": "الحزمة المالية لـ SYSCOHADA (النظام العادي)",
+  "États financiers SYSCOHADA": "القوائم المالية لـ SYSCOHADA",
 }
