@@ -14,12 +14,24 @@ import {
   DollarSign,
   Briefcase,
   Layers,
+  Download,
+  Printer,
+  Search,
+  Building,
+  BookOpen,
+  ShieldCheck,
+  ListOrdered,
 } from 'lucide-react'
 import { Card, TableWrap, th, td } from '@/components/ui/card'
 import { ExportButtons } from '@/components/ExportButtons'
 import { formatMontant } from '@/lib/utils'
 import type { Lang } from '@/lib/i18n'
-import type { EtatsFinanciersSyscohada, DetailCompte } from '@/lib/syscohada'
+import {
+  type EtatsFinanciersSyscohada,
+  type DetailCompte,
+  type NoteAnnexe,
+  exporterLiasseCompleteCSV,
+} from '@/lib/syscohada'
 
 export default function EtatsFinanciersClient({
   etats,
@@ -32,8 +44,12 @@ export default function EtatsFinanciersClient({
   lang?: Lang
   organisationNom: string
 }) {
-  const [activeTab, setActiveTab] = useState<'actif' | 'passif' | 'resultat' | 'tft' | 'controles'>('actif')
+  const [activeTab, setActiveTab] = useState<
+    'page_garde' | 'actif' | 'passif' | 'resultat' | 'tft' | 'indicateurs' | 'notes' | 'controles'
+  >('actif')
   const [compteOuvert, setCompteOuvert] = useState<string | null>(null)
+  const [noteSelectionnee, setNoteSelectionnee] = useState<string>('note-34')
+  const [filtreNote, setFiltreNote] = useState<string>('')
 
   const fm = (val: number | undefined | null) =>
     formatMontant(val ?? 0, devise, lang)
@@ -49,8 +65,67 @@ export default function EtatsFinanciersClient({
   const bilanEquilibreN = Math.abs(etats.controles.equilibreBilanN) < 1
   const tftEquilibre = Math.abs(etats.controles.ecartBouclageTFT) < 1
 
+  // Téléchargement CSV complet de la liasse
+  const telechargerLiasseComplete = () => {
+    const csvContent = exporterLiasseCompleteCSV(etats)
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `liasse-syscohada-${libN}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  // Notes filtrées
+  const notesFiltrees = etats.notesAnnexees.filter((n) => {
+    const q = filtreNote.toLowerCase()
+    return n.numero.toLowerCase().includes(q) || n.nomNote.toLowerCase().includes(q)
+  })
+  const noteCourante =
+    etats.notesAnnexees.find((n) => n.id === noteSelectionnee) ?? etats.notesAnnexees[0]
+
   return (
     <div className="space-y-6">
+      {/* Barre d'actions globale de la liasse */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-surface-border">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 text-xs font-semibold rounded bg-primary/10 text-primary uppercase tracking-wide">
+              SYSCOHADA Système Normal
+            </span>
+            <span className="text-xs text-foreground-muted">
+              {organisationNom} • Exercice {libN}
+            </span>
+          </div>
+          <p className="text-xs text-foreground-muted mt-1">
+            Liasse financière complète normalisée (Bilan, Compte de Résultat, TFT, Note 34 et 36 Notes Annexées)
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={telechargerLiasseComplete}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Exporter la liasse complète (CSV)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-foreground bg-surface-elevated hover:bg-surface-border/50 border border-surface-border rounded-lg transition-colors cursor-pointer"
+          >
+            <Printer className="w-4 h-4 text-foreground-muted" />
+            <span>Imprimer</span>
+          </button>
+        </div>
+      </div>
+
       {/* KPIs Synthèse */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="p-4">
@@ -75,7 +150,7 @@ export default function EtatsFinanciersClient({
             {fm(etats.compteResultat.find((c) => c.ref === 'XB')?.montantN)}
           </p>
           <p className="text-[11px] text-foreground-muted mt-0.5">
-            Ventes & travaux vendus
+            Ventes & prestations
           </p>
         </Card>
 
@@ -105,7 +180,7 @@ export default function EtatsFinanciersClient({
             {fm(etats.controles.resultatNetN)}
           </p>
           <p className="text-[11px] text-foreground-muted mt-0.5">
-            {etats.controles.resultatNetN >= 0 ? 'Bénéfice' : 'Perte'} de l&apos;exercice
+            {etats.controles.resultatNetN >= 0 ? 'Bénéfice net' : 'Perte nette'}
           </p>
         </Card>
 
@@ -122,17 +197,30 @@ export default function EtatsFinanciersClient({
             {fm(etats.controles.tresorerieNetteN)}
           </p>
           <p className="text-[11px] text-foreground-muted mt-0.5">
-            Actif trésorerie − Découverts
+            Disponibilités − Découverts
           </p>
         </Card>
       </div>
 
-      {/* Barre d'onglets SYSCOHADA */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-surface-border">
+      {/* Barre d'onglets de la Liasse Complète */}
+      <div className="flex flex-wrap items-center gap-1 border-b border-surface-border">
+        <button
+          type="button"
+          onClick={() => setActiveTab('page_garde')}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+            activeTab === 'page_garde'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
+          }`}
+        >
+          <Building className="w-4 h-4" />
+          <span>Fiche légale & Garde</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveTab('actif')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'actif'
               ? 'border-primary text-primary font-semibold'
               : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
@@ -145,7 +233,7 @@ export default function EtatsFinanciersClient({
         <button
           type="button"
           onClick={() => setActiveTab('passif')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'passif'
               ? 'border-primary text-primary font-semibold'
               : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
@@ -158,7 +246,7 @@ export default function EtatsFinanciersClient({
         <button
           type="button"
           onClick={() => setActiveTab('resultat')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'resultat'
               ? 'border-primary text-primary font-semibold'
               : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
@@ -171,7 +259,7 @@ export default function EtatsFinanciersClient({
         <button
           type="button"
           onClick={() => setActiveTab('tft')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'tft'
               ? 'border-primary text-primary font-semibold'
               : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
@@ -183,8 +271,34 @@ export default function EtatsFinanciersClient({
 
         <button
           type="button"
+          onClick={() => setActiveTab('indicateurs')}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+            activeTab === 'indicateurs'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>Note 34 : Indicateurs</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('notes')}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+            activeTab === 'notes'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Les 36 Notes Annexées</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('controles')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'controles'
               ? 'border-primary text-primary font-semibold'
               : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
@@ -196,7 +310,136 @@ export default function EtatsFinanciersClient({
       </div>
 
       {/* ==================================================================== */}
-      {/* 1. ONGLET : BILAN ACTIF */}
+      {/* 1. ONGLET : PAGE DE GARDE & FICHE D'IDENTIFICATION */}
+      {/* ==================================================================== */}
+      {activeTab === 'page_garde' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-150">
+          <Card className="p-6">
+            <div className="border-b border-surface-border pb-6 text-center space-y-1">
+              <p className="text-sm font-bold text-foreground tracking-wider uppercase">
+                {etats.fiche.pays}
+              </p>
+              <p className="text-xs text-foreground-muted uppercase">
+                {etats.fiche.ministere}
+              </p>
+              <p className="text-xs text-foreground-muted uppercase font-semibold">
+                {etats.fiche.direction}
+              </p>
+              <p className="text-xs text-primary font-medium mt-2">
+                {etats.fiche.centreDepot}
+              </p>
+              <h2 className="text-xl font-bold font-heading text-foreground pt-4">
+                ÉTATS FINANCIERS NORMALISÉS DU SYSTÈME COMPTABLE OUEST AFRICAIN (SYSCOHADA)
+              </h2>
+              <p className="text-sm text-foreground font-semibold">
+                SYSTÈME NORMAL • EXERCICE CLOS AU {new Date(etats.fiche.dateCloture).toLocaleDateString('fr-FR')}
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 mt-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground border-b border-surface-border pb-2 flex items-center gap-2">
+                  <Building className="w-4 h-4 text-primary" />
+                  Désignation de l&apos;Entreprise
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Dénomination sociale :</span>
+                    <span className="font-semibold text-foreground">{etats.fiche.denomination}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Sigle usuel :</span>
+                    <span className="font-semibold text-foreground">{etats.fiche.sigle}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">N° d&apos;identification fiscale (NINEA/NIF) :</span>
+                    <span className="font-mono font-semibold text-primary">{etats.fiche.nineaNif}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Adresse géographique :</span>
+                    <span className="text-foreground">{etats.fiche.adresse}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Activité principale :</span>
+                    <span className="text-foreground">{etats.fiche.activitePrincipale}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground border-b border-surface-border pb-2 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  Renseignements Fiscaux & Juridiques
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Forme juridique (Code 02) :</span>
+                    <span className="font-semibold text-foreground">Société Commerciale (SARL / SAS)</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Régime fiscal (Code 1) :</span>
+                    <span className="font-semibold text-foreground">Réel Normal (SYSCOHADA)</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Pays du siège social (Code 07) :</span>
+                    <span className="text-foreground">Sénégal (Espace UEMOA)</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Exercice comptable :</span>
+                    <span className="text-foreground font-mono">
+                      {etats.fiche.dateDebut} au {etats.fiche.dateFin} ({etats.fiche.dureeMois} mois)
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-surface-border/50">
+                    <span className="text-foreground-muted">Signataire des états financiers :</span>
+                    <span className="text-foreground font-semibold">
+                      {etats.fiche.signataireNom} ({etats.fiche.signataireQualite})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Suivi des 36 Notes de la liasse */}
+            <div className="mt-8">
+              <h3 className="text-sm font-semibold text-foreground border-b border-surface-border pb-2 mb-4 flex items-center gap-2">
+                <ListOrdered className="w-4 h-4 text-primary" />
+                Tableau de Suivi des Notes Annexées (Liasse SYSCOHADA)
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 text-xs">
+                {etats.notesAnnexees.map((note) => (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => {
+                      setNoteSelectionnee(note.id)
+                      setActiveTab('notes')
+                    }}
+                    className="p-2.5 rounded-lg border border-surface-border bg-surface-elevated hover:border-primary text-left transition-colors flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="truncate mr-2">
+                      <span className="font-bold text-foreground">{note.numero}</span>
+                      <p className="text-[11px] text-foreground-muted truncate">{note.nomNote}</p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        note.statut === 'A'
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : 'bg-surface-border text-foreground-muted'
+                      }`}
+                    >
+                      {note.statut}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 2. ONGLET : BILAN ACTIF */}
       {/* ==================================================================== */}
       {activeTab === 'actif' && (
         <div className="space-y-4 animate-in fade-in-50 duration-150">
@@ -248,40 +491,36 @@ export default function EtatsFinanciersClient({
                     <tr
                       className={`transition-colors ${
                         p.estTotal
-                          ? 'bg-sidebar font-bold text-foreground'
-                          : 'hover:bg-background/50 text-foreground'
+                          ? 'bg-surface-elevated font-bold text-foreground border-t-2 border-surface-border'
+                          : 'hover:bg-surface-elevated/50'
                       }`}
                     >
-                      <td className={`${td} text-center font-mono text-xs text-foreground-muted`}>
+                      <td className={`${td} text-center font-mono font-medium text-xs text-foreground-muted`}>
                         {p.ref}
                       </td>
-                      <td className={td}>
+                      <td className={`${td} font-medium`}>
                         <div className="flex items-center gap-1.5">
-                          {aComptes && !p.estTotal && (
+                          {aComptes && (
                             <button
                               type="button"
                               onClick={() => toggleDetail(p.ref)}
-                              className="text-foreground-muted hover:text-primary transition-colors cursor-pointer"
-                              title="Voir les comptes comptables"
+                              className="text-foreground-muted hover:text-foreground cursor-pointer"
+                              title="Déplier les comptes"
                             >
-                              {estDeplie ? (
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              ) : (
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              )}
+                              {estDeplie ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                             </button>
                           )}
-                          <span className={p.estTotal ? 'font-bold' : ''}>{p.libelle}</span>
+                          <span>{p.libelle}</span>
                         </div>
                       </td>
-                      <td className={`${td} text-center text-xs text-foreground-muted`}>
-                        {p.note}
-                      </td>
-                      <td className={`${td} text-right tabular-nums`}>{fm(p.brutN)}</td>
+                      <td className={`${td} text-center text-xs text-foreground-muted`}>{p.note}</td>
                       <td className={`${td} text-right tabular-nums text-foreground-muted`}>
-                        {p.amortN > 0 ? fm(p.amortN) : '—'}
+                        {p.brutN !== 0 ? fm(p.brutN) : '—'}
                       </td>
-                      <td className={`${td} text-right tabular-nums font-semibold`}>
+                      <td className={`${td} text-right tabular-nums text-foreground-muted`}>
+                        {p.amortN !== 0 ? fm(p.amortN) : '—'}
+                      </td>
+                      <td className={`${td} text-right tabular-nums font-semibold ${p.estTotal ? 'text-primary' : 'text-foreground'}`}>
                         {fm(p.netN)}
                       </td>
                       <td className={`${td} text-right tabular-nums text-foreground-muted`}>
@@ -289,31 +528,30 @@ export default function EtatsFinanciersClient({
                       </td>
                     </tr>
 
-                    {/* Sous-tableau déroulant des comptes */}
-                    {estDeplie && aComptes && (
-                      <tr className="bg-background/70 border-b border-surface-border">
-                        <td colSpan={7} className="px-6 py-3">
-                          <div className="text-xs font-semibold text-foreground-muted mb-2 flex items-center gap-1.5">
-                            <Info className="w-3.5 h-3.5 text-primary" />
-                            Comptes rattachés au poste {p.ref} — {p.libelle} :
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                            {p.comptesN?.map((c) => (
-                              <div
-                                key={c.numero}
-                                className="flex items-center justify-between p-2 rounded-lg bg-surface border border-surface-border text-xs"
-                              >
-                                <div>
-                                  <span className="font-mono font-bold text-primary mr-1.5">
-                                    {c.numero}
+                    {/* Détail des comptes dépliables */}
+                    {estDeplie && p.comptesN && (
+                      <tr className="bg-surface-elevated/30">
+                        <td colSpan={7} className="p-3 pl-10">
+                          <div className="rounded-lg border border-surface-border bg-surface p-3 space-y-1.5">
+                            <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-2">
+                              Comptes rattachés au poste {p.ref} ({p.libelle}) :
+                            </p>
+                            <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 text-xs">
+                              {p.comptesN.map((c) => (
+                                <div
+                                  key={c.numero}
+                                  className="flex items-center justify-between p-1.5 rounded bg-surface-elevated/50 border border-surface-border/40"
+                                >
+                                  <span className="font-mono text-primary font-medium">{c.numero}</span>
+                                  <span className="truncate mx-2 text-foreground-muted" title={c.libelle}>
+                                    {c.libelle}
                                   </span>
-                                  <span className="text-foreground">{c.libelle}</span>
+                                  <span className="tabular-nums font-semibold text-foreground">
+                                    {fm(c.solde)}
+                                  </span>
                                 </div>
-                                <span className="font-mono font-medium ml-2">
-                                  {fm(c.solde)}
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -327,7 +565,7 @@ export default function EtatsFinanciersClient({
       )}
 
       {/* ==================================================================== */}
-      {/* 2. ONGLET : BILAN PASSIF */}
+      {/* 3. ONGLET : BILAN PASSIF */}
       {/* ==================================================================== */}
       {activeTab === 'passif' && (
         <div className="space-y-4 animate-in fade-in-50 duration-150">
@@ -337,7 +575,7 @@ export default function EtatsFinanciersClient({
                 Bilan Passif — Système Normal
               </h2>
               <p className="text-xs text-foreground-muted">
-                Exercice clos au {new Date(etats.exerciceN.date_fin).toLocaleDateString('fr-FR')} • Montants en {devise}
+                Capitaux propres, Dettes financières et Passif circulant • Montants en {devise}
               </p>
             </div>
             <ExportButtons
@@ -375,44 +613,30 @@ export default function EtatsFinanciersClient({
                     <tr
                       className={`transition-colors ${
                         p.estTotal
-                          ? 'bg-sidebar font-bold text-foreground'
-                          : 'hover:bg-background/50 text-foreground'
+                          ? 'bg-surface-elevated font-bold text-foreground border-t-2 border-surface-border'
+                          : 'hover:bg-surface-elevated/50'
                       }`}
                     >
-                      <td className={`${td} text-center font-mono text-xs text-foreground-muted`}>
+                      <td className={`${td} text-center font-mono font-medium text-xs text-foreground-muted`}>
                         {p.ref}
                       </td>
-                      <td className={td}>
+                      <td className={`${td} font-medium`}>
                         <div className="flex items-center gap-1.5">
-                          {aComptes && !p.estTotal && (
+                          {aComptes && (
                             <button
                               type="button"
                               onClick={() => toggleDetail(p.ref)}
-                              className="text-foreground-muted hover:text-primary transition-colors cursor-pointer"
-                              title="Voir les comptes comptables"
+                              className="text-foreground-muted hover:text-foreground cursor-pointer"
+                              title="Déplier les comptes"
                             >
-                              {estDeplie ? (
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              ) : (
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              )}
+                              {estDeplie ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                             </button>
                           )}
-                          <span className={p.estTotal ? 'font-bold' : ''}>{p.libelle}</span>
+                          <span>{p.libelle}</span>
                         </div>
                       </td>
-                      <td className={`${td} text-center text-xs text-foreground-muted`}>
-                        {p.note}
-                      </td>
-                      <td
-                        className={`${td} text-right tabular-nums font-semibold ${
-                          p.ref === 'CJ'
-                            ? p.netN >= 0
-                              ? 'text-emerald-500'
-                              : 'text-rose-500'
-                            : ''
-                        }`}
-                      >
+                      <td className={`${td} text-center text-xs text-foreground-muted`}>{p.note}</td>
+                      <td className={`${td} text-right tabular-nums font-semibold ${p.estTotal ? 'text-primary' : 'text-foreground'}`}>
                         {fm(p.netN)}
                       </td>
                       <td className={`${td} text-right tabular-nums text-foreground-muted`}>
@@ -420,31 +644,30 @@ export default function EtatsFinanciersClient({
                       </td>
                     </tr>
 
-                    {/* Sous-tableau déroulant des comptes */}
-                    {estDeplie && aComptes && (
-                      <tr className="bg-background/70 border-b border-surface-border">
-                        <td colSpan={5} className="px-6 py-3">
-                          <div className="text-xs font-semibold text-foreground-muted mb-2 flex items-center gap-1.5">
-                            <Info className="w-3.5 h-3.5 text-primary" />
-                            Comptes rattachés au poste {p.ref} — {p.libelle} :
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                            {p.comptesN?.map((c) => (
-                              <div
-                                key={c.numero}
-                                className="flex items-center justify-between p-2 rounded-lg bg-surface border border-surface-border text-xs"
-                              >
-                                <div>
-                                  <span className="font-mono font-bold text-primary mr-1.5">
-                                    {c.numero}
+                    {/* Détail des comptes dépliables */}
+                    {estDeplie && p.comptesN && (
+                      <tr className="bg-surface-elevated/30">
+                        <td colSpan={5} className="p-3 pl-10">
+                          <div className="rounded-lg border border-surface-border bg-surface p-3 space-y-1.5">
+                            <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-2">
+                              Comptes rattachés au poste {p.ref} ({p.libelle}) :
+                            </p>
+                            <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 text-xs">
+                              {p.comptesN.map((c) => (
+                                <div
+                                  key={c.numero}
+                                  className="flex items-center justify-between p-1.5 rounded bg-surface-elevated/50 border border-surface-border/40"
+                                >
+                                  <span className="font-mono text-primary font-medium">{c.numero}</span>
+                                  <span className="truncate mx-2 text-foreground-muted" title={c.libelle}>
+                                    {c.libelle}
                                   </span>
-                                  <span className="text-foreground">{c.libelle}</span>
+                                  <span className="tabular-nums font-semibold text-foreground">
+                                    {fm(c.solde)}
+                                  </span>
                                 </div>
-                                <span className="font-mono font-medium ml-2">
-                                  {fm(c.solde)}
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -458,7 +681,7 @@ export default function EtatsFinanciersClient({
       )}
 
       {/* ==================================================================== */}
-      {/* 3. ONGLET : COMPTE DE RÉSULTAT */}
+      {/* 4. ONGLET : COMPTE DE RÉSULTAT */}
       {/* ==================================================================== */}
       {activeTab === 'resultat' && (
         <div className="space-y-4 animate-in fade-in-50 duration-150">
@@ -468,14 +691,14 @@ export default function EtatsFinanciersClient({
                 Compte de Résultat — Système Normal
               </h2>
               <p className="text-xs text-foreground-muted">
-                Soldes Intermédiaires de Gestion (SIG) OHADA • Montants en {devise}
+                Soldes Intermédiaires de Gestion (SIG) de l&apos;exercice • Montants en {devise}
               </p>
             </div>
             <ExportButtons
               titre={`Compte de Résultat (SYSCOHADA) — ${libN}`}
               sousTitre={`${organisationNom} — Exercice ${libN}`}
-              fichier={`compte-resultat-syscohada-${libN}`}
-              colonnes={['Réf.', 'Poste / Solde', 'Note', `Exercice (${libN})`, `Exercice (${libN1})`]}
+              fichier={`compte-resultat-${libN}`}
+              colonnes={['Réf.', 'Libellé', 'Note', `Montant (${libN})`, `Montant (${libN1})`]}
               lignes={etats.compteResultat.map((l) => [
                 l.ref,
                 l.libelle,
@@ -490,97 +713,88 @@ export default function EtatsFinanciersClient({
             <thead>
               <tr>
                 <th className={`${th} w-16 text-center`}>Réf.</th>
-                <th className={th}>Poste / Solde Intermédiaire</th>
+                <th className={th}>Libellé des opérations</th>
                 <th className={`${th} w-20 text-center`}>Note</th>
-                <th className={`${th} text-right font-semibold`}>Exercice ({libN})</th>
-                <th className={`${th} text-right text-foreground-muted`}>Exercice ({libN1})</th>
+                <th className={`${th} text-right font-semibold`}>Exercice {libN}</th>
+                <th className={`${th} text-right text-foreground-muted`}>Exercice {libN1}</th>
               </tr>
             </thead>
             <tbody>
-              {etats.compteResultat.map((p) => {
-                const estSIG = p.type === 'sig'
-                const aComptes = p.comptesN && p.comptesN.length > 0
-                const estDeplie = compteOuvert === p.ref
+              {etats.compteResultat.map((r) => {
+                const aComptes = r.comptesN && r.comptesN.length > 0
+                const estDeplie = compteOuvert === r.ref
+                const estSig = r.type === 'sig'
 
                 return (
-                  <React.Fragment key={p.ref}>
+                  <React.Fragment key={r.ref}>
                     <tr
                       className={`transition-colors ${
-                        estSIG
-                          ? 'bg-sidebar/80 font-bold border-t border-b border-primary/20 text-foreground'
-                          : 'hover:bg-background/50 text-foreground'
+                        estSig
+                          ? 'bg-surface-elevated font-bold text-foreground border-y border-surface-border'
+                          : 'hover:bg-surface-elevated/50'
                       }`}
                     >
-                      <td className={`${td} text-center font-mono text-xs text-foreground-muted`}>
-                        {p.ref}
+                      <td className={`${td} text-center font-mono font-medium text-xs ${estSig ? 'text-primary font-bold' : 'text-foreground-muted'}`}>
+                        {r.ref}
                       </td>
-                      <td className={td}>
+                      <td className={`${td} ${estSig ? 'font-bold' : ''}`}>
                         <div className="flex items-center gap-1.5">
-                          {aComptes && !estSIG && (
+                          {aComptes && (
                             <button
                               type="button"
-                              onClick={() => toggleDetail(p.ref)}
-                              className="text-foreground-muted hover:text-primary transition-colors cursor-pointer"
-                              title="Voir les comptes comptables"
+                              onClick={() => toggleDetail(r.ref)}
+                              className="text-foreground-muted hover:text-foreground cursor-pointer"
+                              title="Déplier les comptes"
                             >
-                              {estDeplie ? (
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              ) : (
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              )}
+                              {estDeplie ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                             </button>
                           )}
-                          <span className={estSIG ? 'font-bold text-primary' : ''}>
-                            {p.libelle}
-                          </span>
+                          <span>{r.libelle}</span>
                         </div>
                       </td>
-                      <td className={`${td} text-center text-xs text-foreground-muted`}>
-                        {p.note}
-                      </td>
+                      <td className={`${td} text-center text-xs text-foreground-muted`}>{r.note}</td>
                       <td
                         className={`${td} text-right tabular-nums font-semibold ${
-                          p.ref === 'XI'
-                            ? p.montantN >= 0
-                              ? 'text-emerald-500 font-bold text-base'
-                              : 'text-rose-500 font-bold text-base'
-                            : estSIG
+                          r.ref === 'XI'
+                            ? r.montantN >= 0
+                              ? 'text-emerald-500 font-bold'
+                              : 'text-rose-500 font-bold'
+                            : estSig
                             ? 'text-primary'
-                            : ''
+                            : 'text-foreground'
                         }`}
                       >
-                        {fm(p.montantN)}
+                        {fm(r.montantN)}
                       </td>
                       <td className={`${td} text-right tabular-nums text-foreground-muted`}>
-                        {fm(p.montantN1)}
+                        {fm(r.montantN1)}
                       </td>
                     </tr>
 
-                    {/* Sous-tableau déroulant des comptes */}
-                    {estDeplie && aComptes && (
-                      <tr className="bg-background/70 border-b border-surface-border">
-                        <td colSpan={5} className="px-6 py-3">
-                          <div className="text-xs font-semibold text-foreground-muted mb-2 flex items-center gap-1.5">
-                            <Info className="w-3.5 h-3.5 text-primary" />
-                            Comptes rattachés au poste {p.ref} — {p.libelle} :
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                            {p.comptesN?.map((c) => (
-                              <div
-                                key={c.numero}
-                                className="flex items-center justify-between p-2 rounded-lg bg-surface border border-surface-border text-xs"
-                              >
-                                <div>
-                                  <span className="font-mono font-bold text-primary mr-1.5">
-                                    {c.numero}
+                    {/* Comptes rattachés */}
+                    {estDeplie && r.comptesN && (
+                      <tr className="bg-surface-elevated/30">
+                        <td colSpan={5} className="p-3 pl-10">
+                          <div className="rounded-lg border border-surface-border bg-surface p-3 space-y-1.5">
+                            <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-2">
+                              Comptes de gestion ({r.libelle}) :
+                            </p>
+                            <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 text-xs">
+                              {r.comptesN.map((c) => (
+                                <div
+                                  key={c.numero}
+                                  className="flex items-center justify-between p-1.5 rounded bg-surface-elevated/50 border border-surface-border/40"
+                                >
+                                  <span className="font-mono text-primary font-medium">{c.numero}</span>
+                                  <span className="truncate mx-2 text-foreground-muted" title={c.libelle}>
+                                    {c.libelle}
                                   </span>
-                                  <span className="text-foreground">{c.libelle}</span>
+                                  <span className="tabular-nums font-semibold text-foreground">
+                                    {fm(c.solde)}
+                                  </span>
                                 </div>
-                                <span className="font-mono font-medium ml-2">
-                                  {fm(c.solde)}
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -594,25 +808,31 @@ export default function EtatsFinanciersClient({
       )}
 
       {/* ==================================================================== */}
-      {/* 4. ONGLET : TABLEAU DES FLUX DE TRÉSORERIE (TFT) */}
+      {/* 5. ONGLET : TABLEAU DES FLUX DE TRÉSORERIE (TFT) */}
       {/* ==================================================================== */}
       {activeTab === 'tft' && (
         <div className="space-y-4 animate-in fade-in-50 duration-150">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold font-heading text-foreground">
-                Tableau des Flux de Trésorerie (TFT) — Système Normal
+                Tableau des Flux de Trésorerie (TFT)
               </h2>
               <p className="text-xs text-foreground-muted">
-                Méthode indirecte SYSCOHADA (Opérations, Investissement, Financement) • Montants en {devise}
+                Flux d&apos;exploitation, investissement et financement selon la méthode indirecte SYSCOHADA
               </p>
             </div>
             <ExportButtons
-              titre={`Tableau des Flux de Trésorerie (SYSCOHADA) — ${libN}`}
+              titre={`Tableau des Flux de Trésorerie (TFT) — ${libN}`}
               sousTitre={`${organisationNom} — Exercice ${libN}`}
-              fichier={`tft-syscohada-${libN}`}
-              colonnes={['Réf.', 'Flux de trésorerie', `Exercice (${libN})`, `Exercice (${libN1})`]}
-              lignes={etats.tft.map((l) => [l.ref, l.libelle, l.montantN, l.montantN1])}
+              fichier={`tft-${libN}`}
+              colonnes={['Réf.', 'Libellé des flux', 'Note', `Exercice (${libN})`, `Exercice (${libN1})`]}
+              lignes={etats.tft.map((l) => [
+                l.ref,
+                l.libelle,
+                l.note ?? '',
+                l.montantN,
+                l.montantN1,
+              ])}
             />
           </div>
 
@@ -620,9 +840,10 @@ export default function EtatsFinanciersClient({
             <thead>
               <tr>
                 <th className={`${th} w-16 text-center`}>Réf.</th>
-                <th className={th}>Flux de trésorerie</th>
-                <th className={`${th} text-right font-semibold`}>Exercice ({libN})</th>
-                <th className={`${th} text-right text-foreground-muted`}>Exercice ({libN1})</th>
+                <th className={th}>Libellé des flux de trésorerie</th>
+                <th className={`${th} w-20 text-center`}>Note</th>
+                <th className={`${th} text-right font-semibold`}>Exercice {libN}</th>
+                <th className={`${th} text-right text-foreground-muted`}>Exercice {libN1}</th>
               </tr>
             </thead>
             <tbody>
@@ -635,33 +856,26 @@ export default function EtatsFinanciersClient({
                     key={l.ref}
                     className={`transition-colors ${
                       estTotal
-                        ? 'bg-sidebar/90 font-bold border-t border-b border-primary/20 text-foreground'
+                        ? 'bg-surface-elevated font-bold text-foreground border-y-2 border-surface-border'
                         : estSousTotal
-                        ? 'bg-background/40 font-semibold text-foreground'
-                        : 'hover:bg-background/50 text-foreground'
+                        ? 'bg-surface-elevated/40 font-semibold text-foreground border-y border-surface-border/50'
+                        : 'hover:bg-surface-elevated/50'
                     }`}
                   >
-                    <td className={`${td} text-center font-mono text-xs text-foreground-muted`}>
+                    <td className={`${td} text-center font-mono font-medium text-xs ${estTotal ? 'text-primary' : 'text-foreground-muted'}`}>
                       {l.ref}
                     </td>
-                    <td className={`${td} ${estTotal ? 'font-bold text-primary' : ''}`}>
-                      {l.libelle}
-                    </td>
+                    <td className={`${td} ${estTotal ? 'font-bold' : ''}`}>{l.libelle}</td>
+                    <td className={`${td} text-center text-xs text-foreground-muted`}>{l.note ?? ''}</td>
                     <td
                       className={`${td} text-right tabular-nums font-semibold ${
-                        l.ref === 'ZD'
-                          ? l.montantN >= 0
-                            ? 'text-emerald-500 font-bold'
-                            : 'text-rose-500 font-bold'
-                          : estTotal
-                          ? 'text-primary'
-                          : ''
+                        estTotal ? 'text-primary' : 'text-foreground'
                       }`}
                     >
                       {fm(l.montantN)}
                     </td>
                     <td className={`${td} text-right tabular-nums text-foreground-muted`}>
-                      {l.montantN1 ? fm(l.montantN1) : '—'}
+                      {fm(l.montantN1)}
                     </td>
                   </tr>
                 )
@@ -672,171 +886,296 @@ export default function EtatsFinanciersClient({
       )}
 
       {/* ==================================================================== */}
-      {/* 5. ONGLET : ÉQUILIBRE & CONTRÔLES OHADA */}
+      {/* 6. ONGLET : NOTE 34 — INDICATEURS FINANCIERS */}
+      {/* ==================================================================== */}
+      {activeTab === 'indicateurs' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-150">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold font-heading text-foreground">
+                Note 34 — Fiche de Synthèse des Principaux Indicateurs Financiers
+              </h2>
+              <p className="text-xs text-foreground-muted">
+                Soldes Intermédiaires, Ratios de rentabilité, Analyse du BFR et Fonds de Roulement
+              </p>
+            </div>
+            <ExportButtons
+              titre={`Note 34 Indicateurs Financiers — ${libN}`}
+              sousTitre={`${organisationNom} — Exercice ${libN}`}
+              fichier={`note-34-indicateurs-${libN}`}
+              colonnes={['Code', 'Indicateur', `Exercice (${libN})`, `Exercice (${libN1})`]}
+              lignes={etats.indicateurs.map((l) => [
+                l.code,
+                l.libelle,
+                l.montantN,
+                l.montantN1,
+              ])}
+            />
+          </div>
+
+          <TableWrap>
+            <thead>
+              <tr>
+                <th className={`${th} w-24 text-center`}>Code</th>
+                <th className={th}>Indicateurs Financiers & Ratios</th>
+                <th className={`${th} text-right font-semibold`}>Exercice {libN}</th>
+                <th className={`${th} text-right text-foreground-muted`}>Exercice {libN1}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {etats.indicateurs.map((ind, idx) => {
+                const estTitre = ind.type === 'titre'
+                const estTotal = ind.type === 'total'
+                const estSousTotal = ind.type === 'sous_total'
+
+                if (estTitre) {
+                  return (
+                    <tr key={idx} className="bg-surface-elevated/70 border-y border-surface-border">
+                      <td colSpan={4} className="py-2.5 px-4 font-bold text-xs uppercase tracking-wider text-primary">
+                        {ind.libelle}
+                      </td>
+                    </tr>
+                  )
+                }
+
+                return (
+                  <tr
+                    key={idx}
+                    className={`transition-colors ${
+                      estTotal
+                        ? 'bg-surface-elevated font-bold text-foreground border-y border-surface-border'
+                        : estSousTotal
+                        ? 'bg-surface-elevated/30 font-semibold'
+                        : 'hover:bg-surface-elevated/50'
+                    }`}
+                  >
+                    <td className={`${td} text-center font-mono text-xs text-foreground-muted`}>
+                      {ind.code}
+                    </td>
+                    <td className={`${td} ${estTotal ? 'font-bold' : ''}`}>{ind.libelle}</td>
+                    <td className={`${td} text-right tabular-nums font-semibold ${estTotal ? 'text-primary' : 'text-foreground'}`}>
+                      {typeof ind.montantN === 'number' ? fm(ind.montantN) : ind.montantN}
+                    </td>
+                    <td className={`${td} text-right tabular-nums text-foreground-muted`}>
+                      {typeof ind.montantN1 === 'number' ? fm(ind.montantN1) : ind.montantN1}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </TableWrap>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 7. ONGLET : LES 36 NOTES ANNEXÉES */}
+      {/* ==================================================================== */}
+      {activeTab === 'notes' && (
+        <div className="space-y-4 animate-in fade-in-50 duration-150">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold font-heading text-foreground">
+                Les 36 Notes Annexées — Système Normal
+              </h2>
+              <p className="text-xs text-foreground-muted">
+                Détail analytique des postes du Bilan et du Compte de Résultat
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" />
+                <input
+                  type="text"
+                  placeholder="Filtrer les notes..."
+                  value={filtreNote}
+                  onChange={(e) => setFiltreNote(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-xs bg-surface border border-surface-border rounded-lg text-foreground focus:outline-none focus:border-primary w-48 sm:w-64"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Liste des notes à gauche */}
+            <div className="space-y-1 max-h-[650px] overflow-y-auto pr-1 rounded-xl border border-surface-border bg-surface p-2">
+              {notesFiltrees.map((note) => {
+                const estActive = note.id === noteSelectionnee
+                return (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => setNoteSelectionnee(note.id)}
+                    className={`w-full p-2.5 rounded-lg text-left transition-colors flex items-center justify-between cursor-pointer ${
+                      estActive
+                        ? 'bg-primary text-white shadow-sm font-semibold'
+                        : 'hover:bg-surface-elevated text-foreground'
+                    }`}
+                  >
+                    <div className="truncate mr-2">
+                      <span className={`text-xs font-bold ${estActive ? 'text-white' : 'text-foreground'}`}>
+                        {note.numero}
+                      </span>
+                      <p className={`text-[11px] truncate ${estActive ? 'text-white/80' : 'text-foreground-muted'}`}>
+                        {note.nomNote}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        estActive
+                          ? 'bg-white/20 text-white'
+                          : note.statut === 'A'
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : 'bg-surface-border text-foreground-muted'
+                      }`}
+                    >
+                      {note.statut}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Détail de la note sélectionnée à droite */}
+            <div className="lg:col-span-2 space-y-4">
+              <Card className="p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-surface-border pb-3">
+                  <div>
+                    <span className="text-xs font-bold text-primary">{noteCourante.numero}</span>
+                    <h3 className="text-base font-bold font-heading text-foreground mt-0.5">
+                      {noteCourante.nomNote}
+                    </h3>
+                  </div>
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded ${
+                      noteCourante.statut === 'A'
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : 'bg-surface-border text-foreground-muted'
+                    }`}
+                  >
+                    {noteCourante.statut === 'A' ? 'Applicable' : 'Non Applicable'}
+                  </span>
+                </div>
+
+                <TableWrap>
+                  <thead>
+                    <tr>
+                      <th className={th}>Libellé / Rubrique</th>
+                      <th className={`${th} text-right font-semibold`}>Exercice {libN}</th>
+                      <th className={`${th} text-right text-foreground-muted`}>Exercice {libN1}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {noteCourante.items.map((item, i) => (
+                      <tr key={i} className="hover:bg-surface-elevated/50">
+                        <td className={td}>
+                          <div>
+                            <span className="font-medium text-foreground">{item.intitule}</span>
+                            {item.detail && (
+                              <p className="text-[11px] text-foreground-muted mt-0.5">{item.detail}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className={`${td} text-right tabular-nums font-semibold text-foreground`}>
+                          {typeof item.montantN === 'number' ? fm(item.montantN) : item.montantN}
+                        </td>
+                        <td className={`${td} text-right tabular-nums text-foreground-muted`}>
+                          {item.montantN1 !== undefined
+                            ? typeof item.montantN1 === 'number'
+                              ? fm(item.montantN1)
+                              : item.montantN1
+                            : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableWrap>
+
+                {noteCourante.commentaires && (
+                  <div className="p-3 rounded-lg bg-surface-elevated border border-surface-border text-xs text-foreground-muted flex items-start gap-2">
+                    <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <span>{noteCourante.commentaires}</span>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 8. ONGLET : ÉQUILIBRE & CONTRÔLES */}
       {/* ==================================================================== */}
       {activeTab === 'controles' && (
-        <div className="space-y-6 animate-in fade-in-50 duration-150">
+        <div className="space-y-4 animate-in fade-in-50 duration-150">
           <div>
             <h2 className="text-lg font-bold font-heading text-foreground">
-              Contrôles de cohérence comptable SYSCOHADA
+              Contrôles de Cohérence & d&apos;Équilibre SYSCOHADA
             </h2>
             <p className="text-xs text-foreground-muted">
-              Vérifications obligatoires des équilibres fondamentaux de la liasse financière
+              Vérifications obligatoires pour la certification et le dépôt de la liasse fiscale
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Contrôle 1 : Équilibre Actif = Passif */}
-            <Card className="p-5 border-l-4 border-l-primary">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    {bilanEquilibreN ? (
-                      <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    ) : (
-                      <AlertTriangle className="w-5 h-5 text-amber-500" />
-                    )}
-                    Équilibre du Bilan (Actif = Passif)
-                  </h3>
-                  <p className="text-xs text-foreground-muted mt-1">
-                    Le total général de l&apos;Actif doit correspondre exactement au total général du Passif.
-                  </p>
-                </div>
-                <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    bilanEquilibreN
-                      ? 'bg-emerald-500/10 text-emerald-500'
-                      : 'bg-amber-500/10 text-amber-500'
-                  }`}
-                >
-                  {bilanEquilibreN ? 'Conforme' : 'Écart détecté'}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-foreground-muted">Total Actif Net (BZ) :</span>
-                  <span className="font-mono font-semibold">{fm(etats.totalActifN.net)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-foreground-muted">Total Passif (PZ) :</span>
-                  <span className="font-mono font-semibold">{fm(etats.totalPassifN)}</span>
-                </div>
-                <div className="flex justify-between py-1 font-bold">
-                  <span>Écart de bouclage :</span>
-                  <span className={bilanEquilibreN ? 'text-emerald-500' : 'text-rose-500 font-mono'}>
-                    {fm(etats.controles.equilibreBilanN)}
+            <Card className="p-5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground-muted">Équilibre Bilan N</span>
+                {bilanEquilibreN ? (
+                  <span className="flex items-center gap-1 text-xs font-semibold text-emerald-500">
+                    <CheckCircle className="w-4 h-4" /> Conforme
                   </span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Contrôle 2 : Bouclage du Tableau des Flux de Trésorerie */}
-            <Card className="p-5 border-l-4 border-l-blue-500">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    {tftEquilibre ? (
-                      <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    ) : (
-                      <AlertTriangle className="w-5 h-5 text-blue-500" />
-                    )}
-                    Bouclage du TFT (Variation = Clôture − Ouverture)
-                  </h3>
-                  <p className="text-xs text-foreground-muted mt-1">
-                    La variation nette de trésorerie (A+B+C) doit égaler la trésorerie de clôture moins celle d&apos;ouverture.
-                  </p>
-                </div>
-                <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    tftEquilibre
-                      ? 'bg-emerald-500/10 text-emerald-500'
-                      : 'bg-blue-500/10 text-blue-500'
-                  }`}
-                >
-                  {tftEquilibre ? 'Vérifié' : 'Informatif'}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-foreground-muted">Trésorerie nette d&apos;ouverture (N-1) :</span>
-                  <span className="font-mono font-semibold">{fm(etats.controles.tresorerieNetteN1)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-foreground-muted">Trésorerie nette de clôture (N) :</span>
-                  <span className="font-mono font-semibold">{fm(etats.controles.tresorerieNetteN)}</span>
-                </div>
-                <div className="flex justify-between py-1 font-bold">
-                  <span>Variation nette de trésorerie :</span>
-                  <span className="font-mono text-primary">
-                    {fm(etats.controles.variationTresorerieN)}
+                ) : (
+                  <span className="flex items-center gap-1 text-xs font-semibold text-rose-500">
+                    <AlertTriangle className="w-4 h-4" /> Déséquilibre
                   </span>
-                </div>
+                )}
               </div>
+              <p className="text-xl font-bold font-heading tabular-nums text-foreground">
+                Écart : {fm(etats.controles.equilibreBilanN)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Total Actif Net ({fm(etats.totalActifN.net)}) − Total Passif ({fm(etats.totalPassifN)})
+              </p>
             </Card>
 
-            {/* Contrôle 3 : Concordance Résultat Bilan vs Compte de Résultat */}
-            <Card className="p-5 border-l-4 border-l-emerald-500">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    Concordance du Résultat Net
-                  </h3>
-                  <p className="text-xs text-foreground-muted mt-1">
-                    Le résultat net inscrit au Passif (Poste CJ) égale le solde net du Compte de Résultat (Poste XI).
-                  </p>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500">
-                  Parfaitement égal
-                </span>
+            {/* Contrôle 2 : Bouclage du TFT */}
+            <Card className="p-5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground-muted">Bouclage Trésorerie (TFT)</span>
+                {tftEquilibre ? (
+                  <span className="flex items-center gap-1 text-xs font-semibold text-emerald-500">
+                    <CheckCircle className="w-4 h-4" /> Conforme
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-xs font-semibold text-amber-500">
+                    <AlertTriangle className="w-4 h-4" /> Écart
+                  </span>
+                )}
               </div>
-
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-foreground-muted">Résultat net au Bilan Passif (CJ) :</span>
-                  <span className="font-mono font-semibold">{fm(etats.controles.resultatNetN)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-foreground-muted">Résultat net au Compte de Résultat (XI) :</span>
-                  <span className="font-mono font-semibold">{fm(etats.controles.resultatNetN)}</span>
-                </div>
-                <div className="flex justify-between py-1 font-bold">
-                  <span>Différence :</span>
-                  <span className="text-emerald-500 font-mono">0 {devise}</span>
-                </div>
-              </div>
+              <p className="text-xl font-bold font-heading tabular-nums text-foreground">
+                Écart : {fm(etats.controles.ecartBouclageTFT)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Flux net de la période − Variation trésorerie bilantielle
+              </p>
             </Card>
 
-            {/* Contrôle 4 : Référentiel SYSCOHADA Révisé */}
-            <Card className="p-5 border-l-4 border-l-purple-500">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground flex items-center gap-2">
-                    <Info className="w-5 h-5 text-purple-500" />
-                    Norme SYSCOHADA Système Normal
-                  </h3>
-                  <p className="text-xs text-foreground-muted mt-1">
-                    Présentation certifiée conforme à l&apos;Acte Uniforme OHADA relatif au droit comptable.
-                  </p>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-500">
-                  SYSCOHADA
+            {/* Contrôle 3 : Égalité FR - BFG = TN */}
+            <Card className="p-5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground-muted">Égalité FR − BFG = TN</span>
+                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-500">
+                  <CheckCircle className="w-4 h-4" /> Conforme
                 </span>
               </div>
-
-              <div className="mt-4 space-y-2 text-xs text-foreground-muted leading-relaxed">
-                <p>
-                  • <strong>Bilan</strong> : distinction nette Actif Immobilisé / Circulant / Trésorerie Actif, et Ressources Durables / Passif Circulant / Trésorerie Passif.
-                </p>
-                <p>
-                  • <strong>Compte de Résultat</strong> : structure par nature en 8 Soldes Intermédiaires de Gestion (Marge commerciale, Valeur Ajoutée, EBE, REX, RF, RAO, RHAO, Résultat Net).
-                </p>
-                <p>
-                  • <strong>Tableau des Flux de Trésorerie (TFT)</strong> : classification en flux d&apos;exploitation, investissement et financement.
-                </p>
-              </div>
+              <p className="text-xl font-bold font-heading tabular-nums text-foreground">
+                TN = {fm(etats.controles.tresorerieCalculeeN)}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                FR ({fm(etats.controles.fondsRoulementN)}) − BFG ({fm(etats.controles.besoinFinancementGlobalN)})
+              </p>
             </Card>
           </div>
         </div>
