@@ -28,8 +28,13 @@ export default function LiasseImprimable({
   lang?: Lang
   organisationNom: string
 }) {
-  const fm = (val: number | undefined | null) =>
-    formatMontant(val ?? 0, devise, lang)
+  const fm = (val: number | string | undefined | null) => {
+    if (val === null || val === undefined || val === '') return '-'
+    const n = Number(val)
+    if (isNaN(n)) return String(val)
+    if (n === 0) return '0'
+    return Math.round(n).toLocaleString('fr-FR')
+  }
 
   const libN = etats.exerciceN.libelle
   const libN1 = etats.exerciceN1?.libelle ?? 'N-1'
@@ -146,7 +151,7 @@ export default function LiasseImprimable({
       <style>{`
         @page {
           size: A4 portrait;
-          margin: 8mm 8mm 8mm 8mm;
+          margin: 6mm 8mm 6mm 8mm;
         }
         @media print {
           html, body {
@@ -154,7 +159,7 @@ export default function LiasseImprimable({
             padding: 0 !important;
             background: white !important;
             color: black !important;
-            font-size: 10px;
+            font-size: 9px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -165,6 +170,9 @@ export default function LiasseImprimable({
           .print-avoid-break {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+          }
+          .print-cdr-table tr {
+            height: 4.8mm !important;
           }
         }
       `}</style>
@@ -557,26 +565,30 @@ export default function LiasseImprimable({
         {/* ------------------------------------------------------------------ */}
         {/* PAGE 3 : BILAN DU SYSTÈME NORMAL — ACTIF                           */}
         {/* ------------------------------------------------------------------ */}
-        <div className="bg-surface print:bg-white p-6 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page space-y-2">
-          <div className="text-center space-y-0.5 border-b border-foreground/30 pb-2">
-            <h2 className="text-sm font-black font-heading uppercase text-foreground">
+        <div className="bg-surface print:bg-white p-4 print:p-0 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page print-avoid-break space-y-1">
+          <div className="text-center border-b border-foreground/30 pb-1 mb-1 print:pb-0.5 print:mb-0.5 leading-tight">
+            <div className="flex justify-between items-center text-[9px] print:text-[8px] text-foreground-muted">
+              <span className="font-semibold text-foreground">{etats.fiche.denomination}</span>
+              <span>NINEA : {etats.fiche.nineaNif}</span>
+            </div>
+            <h2 className="text-xs print:text-[10px] font-black font-heading uppercase text-foreground">
               BILAN DU SYSTÈME NORMAL — ACTIF
             </h2>
-            <p className="text-[10px] text-foreground-muted">
-              Exercice clos au {etats.fiche.dateCloture} • Durée : {etats.fiche.dureeMois} mois • Montants exprimés en {devise}
+            <p className="text-[9px] print:text-[7.5px] text-foreground-muted">
+              Exercice clos au {etats.fiche.dateCloture} • Durée : {etats.fiche.dureeMois} mois
             </p>
           </div>
 
-          <table className="w-full text-[9.5px] border border-foreground/40 border-collapse">
+          <table className="w-full text-[9px] print:text-[7.5px] border border-foreground/40 border-collapse">
             <thead>
               <tr className="bg-surface-elevated/70 print:bg-gray-100 font-bold border-b border-foreground/40 text-center">
-                <th className="p-1 border-r border-foreground/30 w-10">Réf.</th>
-                <th className="p-1 border-r border-foreground/30 text-left">ACTIF</th>
-                <th className="p-1 border-r border-foreground/30 w-12">Note</th>
-                <th className="p-1 border-r border-foreground/30 text-right w-24">Brut ({libN})</th>
-                <th className="p-1 border-r border-foreground/30 text-right w-24">Amort./Prov.</th>
-                <th className="p-1 border-r border-foreground/30 text-right w-24 font-bold">Net ({libN})</th>
-                <th className="p-1 text-right w-24 text-foreground-muted">Net ({libN1})</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 w-8">Réf.</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 text-left">ACTIF</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 w-10">Note</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 text-right w-24">Brut ({libN})</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 text-right w-24">Amort./Prov.</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 text-right w-24 font-bold">Net ({libN})</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 text-right w-24 text-foreground-muted">Net ({libN1})</th>
               </tr>
             </thead>
             <tbody>
@@ -587,13 +599,13 @@ export default function LiasseImprimable({
                     a.estTotal ? 'font-bold bg-surface-elevated/40 print:bg-gray-100' : ''
                   }`}
                 >
-                  <td className="p-0.5 border-r border-foreground/30 text-center font-mono">{a.ref}</td>
-                  <td className="p-0.5 border-r border-foreground/30">{a.libelle}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-center text-foreground-muted">{a.note}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums">{a.brutN !== 0 ? fm(a.brutN) : '—'}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums">{a.amortN !== 0 ? fm(a.amortN) : '—'}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(a.netN)}</td>
-                  <td className="p-0.5 text-right tabular-nums text-foreground-muted">{fm(a.netN1)}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center font-mono">{a.ref}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30">{a.libelle}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center text-foreground-muted">{a.note}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right tabular-nums">{a.brutN !== 0 ? fm(a.brutN) : '—'}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right tabular-nums">{a.amortN !== 0 ? fm(a.amortN) : '—'}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(a.netN)}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 text-right tabular-nums text-foreground-muted">{fm(a.netN1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -603,24 +615,28 @@ export default function LiasseImprimable({
         {/* ------------------------------------------------------------------ */}
         {/* PAGE 4 : BILAN DU SYSTÈME NORMAL — PASSIF                          */}
         {/* ------------------------------------------------------------------ */}
-        <div className="bg-surface print:bg-white p-6 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page space-y-2">
-          <div className="text-center space-y-0.5 border-b border-foreground/30 pb-2">
-            <h2 className="text-sm font-black font-heading uppercase text-foreground">
+        <div className="bg-surface print:bg-white p-4 print:p-0 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page print-avoid-break space-y-1">
+          <div className="text-center border-b border-foreground/30 pb-1 mb-1 print:pb-0.5 print:mb-0.5 leading-tight">
+            <div className="flex justify-between items-center text-[9px] print:text-[8px] text-foreground-muted">
+              <span className="font-semibold text-foreground">{etats.fiche.denomination}</span>
+              <span>NINEA : {etats.fiche.nineaNif}</span>
+            </div>
+            <h2 className="text-xs print:text-[10px] font-black font-heading uppercase text-foreground">
               BILAN DU SYSTÈME NORMAL — PASSIF
             </h2>
-            <p className="text-[10px] text-foreground-muted">
-              Exercice clos au {etats.fiche.dateCloture} • Durée : {etats.fiche.dureeMois} mois • Montants exprimés en {devise}
+            <p className="text-[9px] print:text-[7.5px] text-foreground-muted">
+              Exercice clos au {etats.fiche.dateCloture} • Durée : {etats.fiche.dureeMois} mois
             </p>
           </div>
 
-          <table className="w-full text-[9.5px] border border-foreground/40 border-collapse">
+          <table className="w-full text-[9px] print:text-[7.5px] border border-foreground/40 border-collapse">
             <thead>
               <tr className="bg-surface-elevated/70 print:bg-gray-100 font-bold border-b border-foreground/40 text-center">
-                <th className="p-1 border-r border-foreground/30 w-10">Réf.</th>
-                <th className="p-1 border-r border-foreground/30 text-left">PASSIF</th>
-                <th className="p-1 border-r border-foreground/30 w-12">Note</th>
-                <th className="p-1 border-r border-foreground/30 text-right w-28 font-bold">Net ({libN})</th>
-                <th className="p-1 text-right w-28 text-foreground-muted">Net ({libN1})</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 w-8">Réf.</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 text-left">PASSIF</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 w-10">Note</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 border-r border-foreground/30 text-right w-28 font-bold">Net ({libN})</th>
+                <th className="py-0.5 px-1 print:py-[1px] print:px-0.5 text-right w-28 text-foreground-muted">Net ({libN1})</th>
               </tr>
             </thead>
             <tbody>
@@ -631,11 +647,11 @@ export default function LiasseImprimable({
                     p.estTotal ? 'font-bold bg-surface-elevated/40 print:bg-gray-100' : ''
                   }`}
                 >
-                  <td className="p-0.5 border-r border-foreground/30 text-center font-mono">{p.ref}</td>
-                  <td className="p-0.5 border-r border-foreground/30">{p.libelle}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-center text-foreground-muted">{p.note}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(p.netN)}</td>
-                  <td className="p-0.5 text-right tabular-nums text-foreground-muted">{fm(p.netN1)}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center font-mono">{p.ref}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30">{p.libelle}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center text-foreground-muted">{p.note}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(p.netN)}</td>
+                  <td className="py-[1.5px] px-1 print:py-[0.5px] print:px-0.5 text-right tabular-nums text-foreground-muted">{fm(p.netN1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -645,39 +661,43 @@ export default function LiasseImprimable({
         {/* ------------------------------------------------------------------ */}
         {/* PAGE 5 : COMPTE DE RÉSULTAT DU SYSTÈME NORMAL                      */}
         {/* ------------------------------------------------------------------ */}
-        <div className="bg-surface print:bg-white p-6 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page space-y-2">
-          <div className="text-center space-y-0.5 border-b border-foreground/30 pb-2">
-            <h2 className="text-sm font-black font-heading uppercase text-foreground">
+        <div className="bg-surface print:bg-white p-4 print:p-0 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page print-avoid-break space-y-1">
+          <div className="text-center border-b border-foreground/30 pb-1 mb-1 print:pb-0.5 print:mb-0.5 leading-tight">
+            <div className="flex justify-between items-center text-[9px] print:text-[8px] text-foreground-muted">
+              <span className="font-semibold text-foreground">{etats.fiche.denomination}</span>
+              <span>NINEA : {etats.fiche.nineaNif}</span>
+            </div>
+            <h2 className="text-xs print:text-[10px] font-black font-heading uppercase text-foreground">
               COMPTE DE RÉSULTAT DU SYSTÈME NORMAL
             </h2>
-            <p className="text-[10px] text-foreground-muted">
-              Soldes Intermédiaires de Gestion • Exercice {libN} • Montants exprimés en {devise}
+            <p className="text-[9px] print:text-[7.5px] text-foreground-muted">
+              Exercice du 1er Janvier au 31 Décembre {libN} • Durée : {etats.fiche.dureeMois} mois
             </p>
           </div>
 
-          <table className="w-full text-[9.5px] border border-foreground/40 border-collapse">
+          <table className="w-full text-[8.5px] print:text-[6.8px] border border-foreground/40 border-collapse print-cdr-table">
             <thead>
               <tr className="bg-surface-elevated/70 print:bg-gray-100 font-bold border-b border-foreground/40 text-center">
-                <th className="p-1 border-r border-foreground/30 w-10">Réf.</th>
-                <th className="p-1 border-r border-foreground/30 text-left">LIBELLÉS DES OPÉRATIONS</th>
-                <th className="p-1 border-r border-foreground/30 w-12">Note</th>
-                <th className="p-1 border-r border-foreground/30 text-right w-28 font-bold">Exercice {libN}</th>
-                <th className="p-1 text-right w-28 text-foreground-muted">Exercice {libN1}</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 w-8">Réf.</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-left">LIBELLÉS DES OPÉRATIONS</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 w-10">Note</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right w-24 font-bold">Exercice {libN}</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 text-right w-24 text-foreground-muted">Exercice {libN1}</th>
               </tr>
             </thead>
             <tbody>
               {etats.compteResultat.map((cr) => (
                 <tr
                   key={cr.ref}
-                  className={`border-b border-foreground/20 leading-tight ${
+                  className={`border-b border-foreground/20 leading-none ${
                     cr.type === 'sig' ? 'font-bold bg-surface-elevated/40 print:bg-gray-100' : ''
                   }`}
                 >
-                  <td className="p-0.5 border-r border-foreground/30 text-center font-mono">{cr.ref}</td>
-                  <td className="p-0.5 border-r border-foreground/30">{cr.libelle}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-center text-foreground-muted">{cr.note}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(cr.montantN)}</td>
-                  <td className="p-0.5 text-right tabular-nums text-foreground-muted">{fm(cr.montantN1)}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center font-mono">{cr.ref}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30">{cr.libelle}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center text-foreground-muted">{cr.note}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(cr.montantN)}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 text-right tabular-nums text-foreground-muted">{fm(cr.montantN1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -687,24 +707,28 @@ export default function LiasseImprimable({
         {/* ------------------------------------------------------------------ */}
         {/* PAGE 6 : TABLEAU DES FLUX DE TRÉSORERIE (TFT)                      */}
         {/* ------------------------------------------------------------------ */}
-        <div className="bg-surface print:bg-white p-6 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page space-y-2">
-          <div className="text-center space-y-0.5 border-b border-foreground/30 pb-2">
-            <h2 className="text-sm font-black font-heading uppercase text-foreground">
+        <div className="bg-surface print:bg-white p-4 print:p-0 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page print-avoid-break space-y-1">
+          <div className="text-center border-b border-foreground/30 pb-1 mb-1 print:pb-0.5 print:mb-0.5 leading-tight">
+            <div className="flex justify-between items-center text-[9px] print:text-[8px] text-foreground-muted">
+              <span className="font-semibold text-foreground">{etats.fiche.denomination}</span>
+              <span>NINEA : {etats.fiche.nineaNif}</span>
+            </div>
+            <h2 className="text-xs print:text-[10px] font-black font-heading uppercase text-foreground">
               TABLEAU DES FLUX DE TRÉSORERIE (TFT)
             </h2>
-            <p className="text-[10px] text-foreground-muted">
-              Méthode indirecte SYSCOHADA • Exercice {libN} • Montants exprimés en {devise}
+            <p className="text-[9px] print:text-[7.5px] text-foreground-muted">
+              Méthode indirecte SYSCOHADA • Exercice {libN}
             </p>
           </div>
 
-          <table className="w-full text-[9.5px] border border-foreground/40 border-collapse">
+          <table className="w-full text-[8.5px] print:text-[7px] border border-foreground/40 border-collapse">
             <thead>
               <tr className="bg-surface-elevated/70 print:bg-gray-100 font-bold border-b border-foreground/40 text-center">
-                <th className="p-1 border-r border-foreground/30 w-10">Réf.</th>
-                <th className="p-1 border-r border-foreground/30 text-left">LIBELLÉS DES FLUX DE TRÉSORERIE</th>
-                <th className="p-1 border-r border-foreground/30 w-12">Note</th>
-                <th className="p-1 border-r border-foreground/30 text-right w-28 font-bold">Exercice {libN}</th>
-                <th className="p-1 text-right w-28 text-foreground-muted">Exercice {libN1}</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 w-8">Réf.</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-left">LIBELLÉS DES FLUX DE TRÉSORERIE</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 w-10">Note</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right w-24 font-bold">Exercice {libN}</th>
+                <th className="py-0.5 px-1 print:py-[0.5px] print:px-0.5 text-right w-24 text-foreground-muted">Exercice {libN1}</th>
               </tr>
             </thead>
             <tbody>
@@ -719,11 +743,11 @@ export default function LiasseImprimable({
                         : ''
                   }`}
                 >
-                  <td className="p-0.5 border-r border-foreground/30 text-center font-mono">{tf.ref}</td>
-                  <td className="p-0.5 border-r border-foreground/30">{tf.libelle}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-center text-foreground-muted">{tf.note ?? ''}</td>
-                  <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(tf.montantN)}</td>
-                  <td className="p-0.5 text-right tabular-nums text-foreground-muted">{fm(tf.montantN1)}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center font-mono">{tf.ref}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30">{tf.libelle}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-center text-foreground-muted">{tf.note ?? ''}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">{fm(tf.montantN)}</td>
+                  <td className="py-[1px] px-1 print:py-[0.5px] print:px-0.5 text-right tabular-nums text-foreground-muted">{fm(tf.montantN1)}</td>
                 </tr>
               ))}
             </tbody>

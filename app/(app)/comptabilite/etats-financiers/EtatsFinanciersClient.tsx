@@ -52,8 +52,13 @@ export default function EtatsFinanciersClient({
   const [noteSelectionnee, setNoteSelectionnee] = useState<string>('note-34')
   const [filtreNote, setFiltreNote] = useState<string>('')
 
-  const fm = (val: number | undefined | null) =>
-    formatMontant(val ?? 0, devise, lang)
+  const fm = (val: number | string | undefined | null) => {
+    if (val === null || val === undefined || val === '') return '-'
+    const n = Number(val)
+    if (isNaN(n)) return String(val)
+    if (n === 0) return '0'
+    return Math.round(n).toLocaleString('fr-FR')
+  }
 
   const libN = etats.exerciceN.libelle
   const libN1 = etats.exerciceN1?.libelle ?? 'N-1 (aucun exercice antérieur)'

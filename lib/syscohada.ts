@@ -1080,7 +1080,7 @@ export function genererEtatsFinanciersSyscohada(
   // 6. LES 36 NOTES ANNEXÉES (LIASSE COMPLÈTE SYSCOHADA)
   // =========================================================================
 
-  
+
   // Helper pour calculer les variations en valeur et en %
   function fmtVar(n: number, n1: number): { val: number; pct: string } {
     const val = n - n1
@@ -1104,7 +1104,7 @@ export function genererEtatsFinanciersSyscohada(
     }
     return { debit, credit }
   }
-const notesAnnexees: NoteAnnexe[] = [
+  const notesAnnexees: NoteAnnexe[] = [
     // -------------------------------------------------------------------------
     // NOTE 1 : DETTES GARANTIES PAR DES SÛRETÉS RÉELLES & ENGAGEMENTS FINANCIERS
     // -------------------------------------------------------------------------
