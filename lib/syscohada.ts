@@ -94,6 +94,12 @@ export type NoteItem = {
   montantN1?: number | string
   variation?: number | string
   detail?: string
+  colA?: number | string
+  colB?: number | string
+  colC?: number | string
+  colD?: number | string
+  colE?: number | string
+  colF?: number | string
 }
 
 export type NoteAnnexe = {
@@ -101,8 +107,14 @@ export type NoteAnnexe = {
   numero: string
   nomNote: string
   statut: 'A' | 'N/A'
+  colonnes?: string[]
   description?: string
   items: NoteItem[]
+  sousTableau?: {
+    nomSousTableau: string
+    colonnes: string[]
+    items: NoteItem[]
+  }
   commentaires?: string
 }
 
@@ -671,8 +683,8 @@ export function genererEtatsFinanciersSyscohada(
     .reduce((s, l) => s + Number(l.solde), 0)
   const resultatsAnterieursN1 = exercicePrecedent
     ? -toutesLignes
-        .filter((l) => l.exercice_id !== exercicePrecedent.id && idsCumulN1.has(l.exercice_id) && l.classe >= 6)
-        .reduce((s, l) => s + Number(l.solde), 0)
+      .filter((l) => l.exercice_id !== exercicePrecedent.id && idsCumulN1.has(l.exercice_id) && l.classe >= 6)
+      .reduce((s, l) => s + Number(l.solde), 0)
     : 0
 
   const s130_N = getSolde(balanceCumulN, /^130/)
@@ -937,7 +949,7 @@ export function genererEtatsFinanciersSyscohada(
 
   const tft: LigneTFT[] = [
     { ref: 'ZA', libelle: 'Trésorerie nette au 1er Janvier (Tréso Actif N-1 − Tréso Passif N-1)', montantN: tresoNetteOuverture, montantN1: 0, type: 'total' },
-    
+
     // Flux opérationnel
     { ref: 'FA', libelle: 'Capacité d’Autofinancement Globale (CAFG)', note: 'Note 34', montantN: cafgN, montantN1: cafgN1, type: 'rubrique' },
     { ref: 'FB', libelle: '− Variation de l’actif circulant HAO', note: 'Note 5', montantN: -deltaActifHAO_N, montantN1: -deltaActifHAO_N1, type: 'rubrique' },
@@ -1046,7 +1058,7 @@ export function genererEtatsFinanciersSyscohada(
     { code: 'RS', libelle: '+ Ressources Stables (Capitaux Propres + Dettes Fin.)', montantN: ressourcesStablesN, montantN1: ressourcesStablesN1, unite: 'F CFA' },
     { code: 'AI', libelle: '− Actif Immobilisé Net', montantN: -actifImmoN, montantN1: -actifImmoN1, unite: 'F CFA' },
     { code: 'FR', libelle: '= FONDS DE ROULEMENT (FR)', montantN: fondsRoulementN, montantN1: fondsRoulementN1, unite: 'F CFA', type: 'sous_total' },
-    
+
     { code: 'ACE', libelle: '+ Actif Circulant d’Exploitation (Stocks + Créances)', montantN: actifCirculantExploitationN, montantN1: actifCirculantExploitationN1, unite: 'F CFA' },
     { code: 'PCE', libelle: '− Passif Circulant d’Exploitation (Dettes)', montantN: -passifCirculantExploitationN, montantN1: -passifCirculantExploitationN1, unite: 'F CFA' },
     { code: 'BFE', libelle: '= BESOIN DE FINANCEMENT D’EXPLOITATION (BFE)', montantN: bfeN, montantN1: bfeN1, unite: 'F CFA', type: 'sous_total' },
@@ -1718,7 +1730,10 @@ export function genererEtatsFinanciersSyscohada(
  * Génère le fichier CSV complet de la liasse financière SYSCOHADA (Système Normal)
  * Conforme au format standardisé du modèle officiel.
  */
-export function exporterLiasseCompleteCSV(etats: EtatsFinanciersSyscohada): string {
+export function exporterLiasseCompleteCSV(
+  etats: EtatsFinanciersSyscohada,
+  notesStatutOverride?: Record<string, 'A' | 'N/A'>
+): string {
   const lignes: string[] = []
 
   // 1. Balance générale des comptes (8 colonnes)
@@ -1804,6 +1819,17 @@ export function exporterLiasseCompleteCSV(etats: EtatsFinanciersSyscohada): stri
   lignes.push(`ZM,,Pays du siège social :,,,,${etats.fiche.paysSiegeCode},,,,,,`)
   lignes.push(`ZI,ZI,Désignation précise de l'activité : ,,,,${etats.fiche.activitePrincipale},,,,,`)
   lignes.push(`,,,,,,,,,,,`)
+  // Tableau de pointage des 36 Notes Annexées (FR4 officiel)
+  lignes.push(`FICHE D'IDENTIFICATION ET RENSEIGNEMENTS DIVERS,,,`)
+  lignes.push(`,,,`)
+  lignes.push(`NOTES,INTITULES,A,N/A`)
+  for (const n of etats.notesAnnexees) {
+    const st = notesStatutOverride?.[n.id] ?? n.statut
+    const colA = st === 'A' ? 'X' : ''
+    const colNA = st === 'N/A' ? 'X' : ''
+    lignes.push(`"${n.numero}","${n.nomNote.replace(/"/g, '""')}",${colA},${colNA}`)
+  }
+  lignes.push(`,,,`)
 
   // 3. Bilan Actif (Système Normal)
   lignes.push(`BILAN SYSTÈME NORMAL,BILAN DU SYSTÈME NORMAL - ACTIF,,,,,,,`)
@@ -1850,6 +1876,8 @@ export function exporterLiasseCompleteCSV(etats: EtatsFinanciersSyscohada): stri
 
   // 8. Les 36 Notes Annexées
   for (const note of etats.notesAnnexees) {
+    const st = notesStatutOverride?.[note.id] ?? note.statut
+    if (st !== 'A') continue
     lignes.push(`${note.numero} - ${note.nomNote},,,,,,,Note`)
     lignes.push(`Libellés,Exercice N,Exercice N-1,Détails,,,`)
     for (const item of note.items) {
