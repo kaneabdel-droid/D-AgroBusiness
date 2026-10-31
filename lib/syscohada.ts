@@ -133,6 +133,7 @@ export type EtatsFinanciersSyscohada = {
   exerciceN: ExerciceComptable
   exerciceN1?: ExerciceComptable
   fiche: FicheIdentification
+  balanceLignes?: LigneBalance[]
   bilanActif: PosteBilanActif[]
   totalActifN: { brut: number; amort: number; net: number }
   totalActifN1: { net: number }
@@ -1698,6 +1699,7 @@ export function genererEtatsFinanciersSyscohada(
     exerciceN: exerciceCourant,
     exerciceN1: exercicePrecedent,
     fiche,
+    balanceLignes: toutesLignes,
     bilanActif,
     totalActifN,
     totalActifN1,
@@ -1719,67 +1721,144 @@ export function genererEtatsFinanciersSyscohada(
 export function exporterLiasseCompleteCSV(etats: EtatsFinanciersSyscohada): string {
   const lignes: string[] = []
 
-  // Entête officiel
-  lignes.push(`${etats.fiche.pays},,,,,,,,,`)
-  lignes.push(`${etats.fiche.ministere},,,,,,,,,`)
-  lignes.push(`${etats.fiche.direction},,,,,,,,,`)
-  lignes.push(`${etats.fiche.centreDepot},,,,,,,,,`)
-  lignes.push(`,,,,,,,,,`)
-  lignes.push(`ÉTATS FINANCIERS NORMALISÉS DU SYSTÈME COMPTABLE OUEST AFRICAIN (SYSCOHADA),,,,,,,,,`)
-  lignes.push(`SYSTÈME NORMAL — EXERCICE CLOS LE : ,,,,${etats.fiche.dateCloture},,,,,`)
-  lignes.push(`DÉNOMINATION SOCIALE : ,,,${etats.fiche.denomination},,,,,,`)
-  lignes.push(`SIGLE USUEL : ,,,${etats.fiche.sigle},,,,,,`)
-  lignes.push(`N° IDENTIFICATION FISCALE (NINEA/NIF) : ,,,${etats.fiche.nineaNif},,,,,,`)
-  lignes.push(`ADRESSE COMPLÈTE : ,,,${etats.fiche.adresse},,,,,,`)
-  lignes.push(`,,,,,,,,,`)
+  // 1. Balance générale des comptes (8 colonnes)
+  lignes.push(`ENTREPRISE :,"${etats.fiche.denomination}",,,,,,,,`)
+  lignes.push(`B,C,D,E,F,G,H,I,,`)
+  lignes.push(`N°,Intitulés ,Mouvements des comptes C,Mouvements des comptes D,Soldes N D,Soldes N C,Soldes N - 1 D,Soldes N - 1 C,,`)
+  lignes.push(`cptes,des comptes,Débit,Crédit,Débit,Crédit,Débit,Crédit,,`)
 
-  // 1. Bilan Actif
-  lignes.push(`--- BILAN DU SYSTÈME NORMAL - ACTIF ---,,,,,,,,,`)
-  lignes.push(`Réf.,Actif,Note,Brut N,Amort/Prov N,Net N,Net N-1,,,,`)
-  for (const a of etats.bilanActif) {
-    lignes.push(`"${a.ref}","${a.libelle}","${a.note}",${a.brutN},${a.amortN},${a.netN},${a.netN1},,,,`)
-  }
-  lignes.push(`,,,,,,,,,`)
+  if (etats.balanceLignes && etats.balanceLignes.length > 0) {
+    const lignesN = etats.balanceLignes.filter((l) => l.exercice_id === etats.exerciceN.id)
+    const lignesN1 = etats.exerciceN1
+      ? etats.balanceLignes.filter((l) => l.exercice_id === etats.exerciceN1?.id)
+      : []
+    const mapN1 = new Map(lignesN1.map((l) => [l.numero, l]))
 
-  // 2. Bilan Passif
-  lignes.push(`--- BILAN DU SYSTÈME NORMAL - PASSIF ---,,,,,,,,,`)
-  lignes.push(`Réf.,Passif,Note,Net N,Net N-1,,,,,,`)
-  for (const p of etats.bilanPassif) {
-    lignes.push(`"${p.ref}","${p.libelle}","${p.note}",${p.netN},${p.netN1},,,,,,`)
-  }
-  lignes.push(`,,,,,,,,,`)
+    let totMvtDebit = 0
+    let totMvtCredit = 0
+    let totSoldeND = 0
+    let totSoldeNC = 0
+    let totSoldeN1D = 0
+    let totSoldeN1C = 0
 
-  // 3. Compte de Résultat
-  lignes.push(`--- COMPTE DE RÉSULTAT DU SYSTÈME NORMAL ---,,,,,,,,,`)
-  lignes.push(`Réf.,Libellé,Note,Montant N,Montant N-1,,,,,,`)
-  for (const cr of etats.compteResultat) {
-    lignes.push(`"${cr.ref}","${cr.libelle}","${cr.note}",${cr.montantN},${cr.montantN1},,,,,,`)
-  }
-  lignes.push(`,,,,,,,,,`)
+    const comptesTries = [...lignesN].sort((a, b) => a.numero.localeCompare(b.numero, undefined, { numeric: true }))
 
-  // 4. Tableau des Flux de Trésorerie
-  lignes.push(`--- TABLEAU DES FLUX DE TRÉSORERIE (TFT) ---,,,,,,,,,`)
-  lignes.push(`Réf.,Libellé,Note,Montant N,Montant N-1,,,,,,`)
-  for (const tf of etats.tft) {
-    lignes.push(`"${tf.ref}","${tf.libelle}","${tf.note ?? ''}",${tf.montantN},${tf.montantN1},,,,,,`)
-  }
-  lignes.push(`,,,,,,,,,`)
+    for (const c of comptesTries) {
+      const n1 = mapN1.get(c.numero)
+      const soldeND = c.solde > 0 ? c.solde : 0
+      const soldeNC = c.solde < 0 ? -c.solde : 0
+      const soldeN1D = (n1?.solde ?? 0) > 0 ? (n1?.solde ?? 0) : 0
+      const soldeN1C = (n1?.solde ?? 0) < 0 ? -(n1?.solde ?? 0) : 0
 
-  // 5. Note 34 : Fiche de Synthèse des Indicateurs Financiers
-  lignes.push(`--- NOTE 34 : FICHE DE SYNTHÈSE DES PRINCIPAUX INDICATEURS FINANCIERS ---,,,,,,,,,`)
-  lignes.push(`Code,Libellé,Exercice N,Exercice N-1,,,,,,,`)
-  for (const ind of etats.indicateurs) {
-    lignes.push(`"${ind.code}","${ind.libelle}","${ind.montantN}","${ind.montantN1}",,,,,,`)
-  }
-  lignes.push(`,,,,,,,,,`)
+      totMvtDebit += c.total_debit
+      totMvtCredit += c.total_credit
+      totSoldeND += soldeND
+      totSoldeNC += soldeNC
+      totSoldeN1D += soldeN1D
+      totSoldeN1C += soldeN1C
 
-  // 6. Les 36 Notes Annexées
-  lignes.push(`--- NOTES ANNEXÉES (NOTES 1 À 36) ---,,,,,,,,,`)
-  for (const note of etats.notesAnnexees) {
-    lignes.push(`"${note.numero} - ${note.nomNote}",Statut : ${note.statut},,,,,,,,`)
-    for (const item of note.items) {
-      lignes.push(`,,"${item.intitule}","${item.montantN}","${item.montantN1 ?? ''}","${item.detail ?? ''}",,,,`)
+      lignes.push(
+        `${c.numero},"${c.libelle.replace(/"/g, '""')}",${c.total_debit || 0},${c.total_credit || 0},${soldeND || 0},${soldeNC || 0},${soldeN1D || 0},${soldeN1C || 0},,${Math.abs(c.solde)}`
+      )
     }
+
+    lignes.push(`,TOTAL,${totMvtDebit},${totMvtCredit},${totSoldeND},${totSoldeNC},${totSoldeN1D},${totSoldeN1C},,`)
+  }
+
+  lignes.push(`,,,,,,,,,`)
+
+  // 2. Page de garde officielle DGI
+  lignes.push(`,${etats.fiche.pays},,,,,,`)
+  lignes.push(`,${etats.fiche.ministere},,,,,,`)
+  lignes.push(`,${etats.fiche.direction},,,,,,`)
+  lignes.push(`,${etats.fiche.centreDepot},,,,,,`)
+  lignes.push(`,,,,,,,`)
+  lignes.push(`ETATS FINANCIERS NORMALISES DU SYSTEME,,,,,,,`)
+  lignes.push(`,,,,COMPTABLE OUEST AFRICAIN (SYSCOHADA),,,`)
+  lignes.push(`,,,,,,,`)
+  lignes.push(`,,,EXERCICE CLOS LE : ,,,,${etats.fiche.dateCloture}`)
+  lignes.push(`,,,,,,,`)
+  lignes.push(`,,,,DESIGNATION DE L'ENTREPRISE,,,`)
+  lignes.push(`,DENOMINATION SOCIALE : ,,,${etats.fiche.denomination},,,`)
+  lignes.push(`,SIGLE USUEL : ,,,${etats.fiche.sigle},,,`)
+  lignes.push(`,ADRESSE COMPLETE : ,,"${etats.fiche.adresse}",,,,`)
+  lignes.push(`,N° D'IDENTIFICATION FISCAL,,${etats.fiche.nineaNif},,,,`)
+  lignes.push(`,,,,,,,`)
+  lignes.push(`,,,,,SYSTEME NORMAL,,`)
+  lignes.push(`,,,,,,,`)
+  lignes.push(`,Documents déposés,,,,,,`)
+  lignes.push(`,Fiche d'identification et renseignements divers,,,,,,Date de dépôt`)
+  lignes.push(`,Bilan,,,,,,`)
+  lignes.push(`,Compte de résultat,,,,,,`)
+  lignes.push(`,Tableau des flux de trésorerie,,,,,,Nom de l'agent de la DGI ayant réceptionné le dépôt`)
+  lignes.push(`,Notes annexées,,,,,,`)
+  lignes.push(`,,,,,,,`)
+  lignes.push(`FICHE D'IDENTIFICATION ET RENSEIGNEMENTS DIVERS,,,,,,,,,,,`)
+  lignes.push(`,Dénomination sociale de l'entreprise :   ,,,,${etats.fiche.denomination},,,,,,`)
+  lignes.push(`${etats.fiche.sigle},,,,,,,,Sigle usuel :,,,`)
+  lignes.push(`,Adresse : ,,"${etats.fiche.adresse}",,,,,,,,`)
+  lignes.push(`,N° d'identification fiscale : ,,,${etats.fiche.nineaNif},,Exercice clos le : ,${etats.fiche.dateCloture},,Durée (en mois) :,,${etats.fiche.dureeMois}`)
+  lignes.push(`ZA,ZA,EXERCICE COMPTABLE : ,,,,DU : ,${etats.fiche.dateDebut},,AU : ,${etats.fiche.dateFin},`)
+  lignes.push(`ZK,,Forme juridique :,,,,${etats.fiche.formeJuridiqueCode},,,,,,`)
+  lignes.push(`ZL,,Régime fiscal :,,,,${etats.fiche.regimeFiscalCode},,,,,,,`)
+  lignes.push(`ZM,,Pays du siège social :,,,,${etats.fiche.paysSiegeCode},,,,,,`)
+  lignes.push(`ZI,ZI,Désignation précise de l'activité : ,,,,${etats.fiche.activitePrincipale},,,,,`)
+  lignes.push(`,,,,,,,,,,,`)
+
+  // 3. Bilan Actif (Système Normal)
+  lignes.push(`BILAN SYSTÈME NORMAL,BILAN DU SYSTÈME NORMAL - ACTIF,,,,,,,`)
+  lignes.push(`Réf.,ACTIF,Note,,EXERCICE ${etats.exerciceN.libelle},,EXERCICE ${etats.exerciceN1?.libelle ?? 'N-1'}`)
+  lignes.push(`,,,BRUT,AMORT/PROV,NET,NET`)
+  for (const a of etats.bilanActif) {
+    lignes.push(`"${a.ref}","${a.libelle}","${a.note}",${a.brutN},${a.amortN},${a.netN},${a.netN1}`)
+  }
+  lignes.push(`,,,,,,,`)
+
+  // 4. Bilan Passif (Système Normal)
+  lignes.push(`BILAN SYSTÈME NORMAL,BILAN DU SYSTÈME NORMAL - PASSIF,,,,,,,`)
+  lignes.push(`Réf.,PASSIF,Note,EXERCICE ${etats.exerciceN.libelle},EXERCICE ${etats.exerciceN1?.libelle ?? 'N-1'}`)
+  lignes.push(`,,,NET,NET`)
+  for (const p of etats.bilanPassif) {
+    lignes.push(`"${p.ref}","${p.libelle}","${p.note}",${p.netN},${p.netN1}`)
+  }
+  lignes.push(`,,,,,,,`)
+
+  // 5. Compte de Résultat
+  lignes.push(`COMPTE DE RESULTAT SYSTEME NORMAL DE L'EXERCICE DU ${etats.fiche.dateDebut} AU ${etats.fiche.dateFin},,,,`)
+  lignes.push(`Ref.,LIBELLES,Note,EXERCICE ${etats.exerciceN.libelle},EXERCICE ${etats.exerciceN1?.libelle ?? 'N-1'}`)
+  lignes.push(`,,,NET,NET`)
+  for (const cr of etats.compteResultat) {
+    lignes.push(`"${cr.ref}","${cr.libelle}","${cr.note}",${cr.montantN},${cr.montantN1}`)
+  }
+  lignes.push(`,,,,,`)
+
+  // 6. Tableau des Flux de Trésorerie
+  lignes.push(`,TABLEAU DES FLUX DE TRESORERIE,,,,,`)
+  lignes.push(`Ref.,LIBELLES,Note,EXERCICE ${etats.exerciceN.libelle},EXERCICE ${etats.exerciceN1?.libelle ?? 'N-1'}`)
+  for (const tf of etats.tft) {
+    lignes.push(`"${tf.ref}","${tf.libelle}","${tf.note ?? ''}",${tf.montantN},${tf.montantN1}`)
+  }
+  lignes.push(`,,,,,`)
+
+  // 7. Note 34 : Fiche de Synthèse des Indicateurs Financiers
+  lignes.push(`NOTE 34 - FICHE DE SYNTHESE DES PRINCIPAUX INDICATEURS FINANCIERS,,,,,,Note`)
+  lignes.push(`Code,Libellé,Exercice N,Exercice N-1,,,`)
+  for (const ind of etats.indicateurs) {
+    lignes.push(`"${ind.code}","${ind.libelle}","${ind.montantN}","${ind.montantN1}",,,`)
+  }
+  lignes.push(`,,,,,`)
+
+  // 8. Les 36 Notes Annexées
+  for (const note of etats.notesAnnexees) {
+    lignes.push(`${note.numero} - ${note.nomNote},,,,,,,Note`)
+    lignes.push(`Libellés,Exercice N,Exercice N-1,Détails,,,`)
+    for (const item of note.items) {
+      lignes.push(`"${item.intitule}","${item.montantN}","${item.montantN1 ?? ''}","${item.detail ?? ''}",,,`)
+    }
+    if (note.commentaires) {
+      lignes.push(`Commentaires :,"${note.commentaires.replace(/"/g, '""')}",,,,,`)
+    }
+    lignes.push(`,,,,,`)
   }
 
   return lignes.join('\n')

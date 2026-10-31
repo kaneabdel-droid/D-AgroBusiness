@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   ListOrdered,
 } from 'lucide-react'
+import LiasseImprimable from './LiasseImprimable'
 import { Card, TableWrap, th, td } from '@/components/ui/card'
 import { ExportButtons } from '@/components/ExportButtons'
 import { formatMontant } from '@/lib/utils'
@@ -45,7 +46,7 @@ export default function EtatsFinanciersClient({
   organisationNom: string
 }) {
   const [activeTab, setActiveTab] = useState<
-    'page_garde' | 'actif' | 'passif' | 'resultat' | 'tft' | 'indicateurs' | 'notes' | 'controles'
+    'page_garde' | 'actif' | 'passif' | 'resultat' | 'tft' | 'indicateurs' | 'notes' | 'controles' | 'edition_imprimable'
   >('actif')
   const [compteOuvert, setCompteOuvert] = useState<string | null>(null)
   const [noteSelectionnee, setNoteSelectionnee] = useState<string>('note-34')
@@ -88,7 +89,8 @@ export default function EtatsFinanciersClient({
     etats.notesAnnexees.find((n) => n.id === noteSelectionnee) ?? etats.notesAnnexees[0]
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6 print:hidden">
       {/* Barre d'actions globale de la liasse */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-surface-border">
         <div>
@@ -117,11 +119,24 @@ export default function EtatsFinanciersClient({
 
           <button
             type="button"
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-foreground bg-surface-elevated hover:bg-surface-border/50 border border-surface-border rounded-lg transition-colors cursor-pointer"
+            onClick={() => setActiveTab('edition_imprimable')}
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+              activeTab === 'edition_imprimable'
+                ? 'bg-primary text-white border-primary shadow-sm'
+                : 'text-foreground bg-surface-elevated hover:bg-surface-border/50 border-surface-border'
+            }`}
           >
-            <Printer className="w-4 h-4 text-foreground-muted" />
-            <span>Imprimer</span>
+            <Printer className="w-4 h-4" />
+            <span>Format Imprimable</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-primary hover:bg-primary/90 rounded-lg shadow-sm transition-colors cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Imprimer / PDF</span>
           </button>
         </div>
       </div>
@@ -306,6 +321,19 @@ export default function EtatsFinanciersClient({
         >
           <CheckCircle className={`w-4 h-4 ${bilanEquilibreN ? 'text-emerald-500' : 'text-amber-500'}`} />
           <span>Équilibre & Contrôles</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('edition_imprimable')}
+          className={`flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+            activeTab === 'edition_imprimable'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-foreground-muted hover:text-foreground hover:border-surface-border'
+          }`}
+        >
+          <Printer className="w-4 h-4" />
+          <span>Liasse Imprimable (Édition Complète)</span>
         </button>
       </div>
 
@@ -1106,6 +1134,15 @@ export default function EtatsFinanciersClient({
       {/* ==================================================================== */}
       {/* 8. ONGLET : ÉQUILIBRE & CONTRÔLES */}
       {/* ==================================================================== */}
+      {activeTab === 'edition_imprimable' && (
+        <LiasseImprimable
+          etats={etats}
+          devise={devise}
+          lang={lang}
+          organisationNom={organisationNom}
+        />
+      )}
+
       {activeTab === 'controles' && (
         <div className="space-y-4 animate-in fade-in-50 duration-150">
           <div>
@@ -1181,5 +1218,18 @@ export default function EtatsFinanciersClient({
         </div>
       )}
     </div>
+
+      {/* Mode impression globale : s'imprime automatiquement lors de window.print() */}
+      {activeTab !== 'edition_imprimable' && (
+        <div className="hidden print:block">
+          <LiasseImprimable
+            etats={etats}
+            devise={devise}
+            lang={lang}
+            organisationNom={organisationNom}
+          />
+        </div>
+      )}
+    </>
   )
 }
