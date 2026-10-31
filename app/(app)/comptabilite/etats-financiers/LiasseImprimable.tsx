@@ -4,11 +4,10 @@ import React, { useState, useEffect } from 'react'
 import {
   Printer,
   Download,
-  CheckCircle2,
   SlidersHorizontal,
   ChevronDown,
   ChevronUp,
-  FileSpreadsheet,
+  Filter,
 } from 'lucide-react'
 import { formatMontant } from '@/lib/utils'
 import type { Lang } from '@/lib/i18n'
@@ -35,25 +34,30 @@ export default function LiasseImprimable({
   const libN = etats.exerciceN.libelle
   const libN1 = etats.exerciceN1?.libelle ?? 'N-1'
 
-  // État local pour la date et l'URL d'édition à afficher sur la dernière page
   const [dateEdition, setDateEdition] = useState<string>('')
   const [urlEdition, setUrlEdition] = useState<string>('')
 
-  // NB: L'entreprise précise elle-même les notes applicables (A) ou non (N/A)
+  // 1. Possibilité à l'entreprise de préciser les notes Applicables (A) ou Non (N/A)
   const [notesStatut, setNotesStatut] = useState<Record<string, 'A' | 'N/A'>>(() => {
     const init: Record<string, 'A' | 'N/A'> = {}
     etats.notesAnnexees.forEach((n) => {
-      // Notes par défaut applicables si solde > 0 ou obligatoires
       init[n.id] = n.statut
     })
     return init
   })
 
+  // 2. Possibilité d'imprimer ou pas les pages non chiffrées
+  const [masquerNonChiffrees, setMasquerNonChiffrees] = useState<boolean>(true)
+
   const [afficherConfigNotes, setAfficherConfigNotes] = useState<boolean>(false)
 
   useEffect(() => {
     const now = new Date()
-    setDateEdition(now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
+    setDateEdition(
+      now.toLocaleDateString('fr-FR') +
+        ' à ' +
+        now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    )
     if (typeof window !== 'undefined') {
       setUrlEdition(window.location.href.split('?')[0])
     }
@@ -77,7 +81,6 @@ export default function LiasseImprimable({
   const appliquerToutesNA = () => {
     const maj: Record<string, 'A' | 'N/A'> = {}
     etats.notesAnnexees.forEach((n) => {
-      // Conserver obligatoires (Note 1, 2, 34)
       if (['note-1', 'note-2', 'note-34'].includes(n.id)) {
         maj[n.id] = 'A'
       } else {
@@ -108,13 +111,38 @@ export default function LiasseImprimable({
     URL.revokeObjectURL(url)
   }
 
-  // Filtrer uniquement les notes applicables pour l'édition détaillée
-  const notesApplicables = etats.notesAnnexees.filter((n) => notesStatut[n.id] === 'A')
-  const totalNotesA = notesApplicables.length
+  // Vérifie si une note contient des chiffres significatifs
+  const noteEstChiffree = (note: NoteAnnexe): boolean => {
+    // Les notes textuelles réglementaires ou synthétiques sont toujours considérées chiffrées
+    if (['note-1', 'note-2', 'note-34', 'note-35', 'note-36'].includes(note.id)) {
+      return true
+    }
+    return note.items.some((it) => {
+      const n = typeof it.montantN === 'number' ? it.montantN : Number(it.montantN) || 0
+      const n1 = typeof it.montantN1 === 'number' ? it.montantN1 : Number(it.montantN1) || 0
+      const a = typeof it.colA === 'number' ? it.colA : Number(it.colA) || 0
+      const b = typeof it.colB === 'number' ? it.colB : Number(it.colB) || 0
+      const c = typeof it.colC === 'number' ? it.colC : Number(it.colC) || 0
+      const d = typeof it.colD === 'number' ? it.colD : Number(it.colD) || 0
+      return n !== 0 || n1 !== 0 || a !== 0 || b !== 0 || c !== 0 || d !== 0
+    })
+  }
+
+  // Filtrage des notes pour le détail imprimable :
+  // 1. Statut = A
+  // 2. Si masquerNonChiffrees est coché : la note doit avoir des montants > 0
+  const notesAImprimer = etats.notesAnnexees.filter((n) => {
+    if (notesStatut[n.id] !== 'A') return false
+    if (masquerNonChiffrees && !noteEstChiffree(n)) return false
+    return true
+  })
+
+  const totalNotesA = etats.notesAnnexees.filter((n) => notesStatut[n.id] === 'A').length
+  const totalNotesImprimees = notesAImprimer.length
 
   return (
     <div className="space-y-6">
-      {/* Styles d'impression stricts A4 */}
+      {/* Styles d'impression A4 */}
       <style>{`
         @page {
           size: A4 portrait;
@@ -126,7 +154,7 @@ export default function LiasseImprimable({
             padding: 0 !important;
             background: white !important;
             color: black !important;
-            font-size: 11px;
+            font-size: 10px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -152,7 +180,7 @@ export default function LiasseImprimable({
               Édition Officielle de la Liasse Financière (Format Imprimable & PDF)
             </h3>
             <p className="text-xs text-foreground-muted mt-0.5">
-              Conforme au modèle officiel DGID SYSCOHADA (Système Normal) • {totalNotesA} / 36 notes marquées Applicables (A)
+              Conforme au modèle officiel DGID SYSCOHADA (Système Normal) • {totalNotesA} / 36 notes déclarées (A) • {totalNotesImprimees} notes éditées
             </p>
           </div>
 
@@ -177,52 +205,64 @@ export default function LiasseImprimable({
           </div>
         </div>
 
-        {/* Panneau de configuration des notes A / N/A */}
-        <div className="border-t border-surface-border pt-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setAfficherConfigNotes((prev) => !prev)}
-              className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Personnaliser les Notes Applicables (A) ou Non Applicables (N/A)</span>
-              {afficherConfigNotes ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
+        {/* Options d'impression et personnalisation A / N/A */}
+        <div className="border-t border-surface-border pt-3 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-elevated/40 p-2.5 rounded-lg border border-surface-border">
+            {/* Option : Imprimer ou pas les pages non chiffrées */}
+            <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={masquerNonChiffrees}
+                onChange={(e) => setMasquerNonChiffrees(e.target.checked)}
+                className="w-4 h-4 accent-primary rounded cursor-pointer"
+              />
+              <span>Masquer à l&apos;impression les notes non chiffrées (tableaux à zéro / néant)</span>
+            </label>
 
+            {/* Actions rapides sur les notes */}
             <div className="flex items-center gap-2 text-xs">
               <button
                 type="button"
                 onClick={detectionAutomatique}
-                className="px-2.5 py-1 text-[11px] font-medium rounded border border-surface-border bg-surface-elevated hover:bg-primary/10 transition-colors"
+                className="px-2.5 py-1 text-[11px] font-medium rounded border border-surface-border bg-surface hover:bg-primary/10 transition-colors cursor-pointer"
               >
                 Détection automatique
               </button>
               <button
                 type="button"
                 onClick={appliquerToutesA}
-                className="px-2.5 py-1 text-[11px] font-medium rounded border border-surface-border bg-surface-elevated hover:bg-primary/10 transition-colors"
+                className="px-2.5 py-1 text-[11px] font-medium rounded border border-surface-border bg-surface hover:bg-primary/10 transition-colors cursor-pointer"
               >
                 Toutes Applicables (A)
               </button>
               <button
                 type="button"
                 onClick={appliquerToutesNA}
-                className="px-2.5 py-1 text-[11px] font-medium rounded border border-surface-border bg-surface-elevated hover:bg-primary/10 transition-colors"
+                className="px-2.5 py-1 text-[11px] font-medium rounded border border-surface-border bg-surface hover:bg-primary/10 transition-colors cursor-pointer"
               >
                 Toutes N/A
+              </button>
+              <button
+                type="button"
+                onClick={() => setAfficherConfigNotes((prev) => !prev)}
+                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-primary rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer"
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                <span>Préciser note par note</span>
+                {afficherConfigNotes ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
             </div>
           </div>
 
           {afficherConfigNotes && (
-            <div className="mt-3 p-3 bg-surface-elevated/40 rounded-lg border border-surface-border">
+            <div className="p-3 bg-surface-elevated/60 rounded-lg border border-surface-border">
               <p className="text-[11px] text-foreground-muted mb-2">
-                Cliquez sur une note pour basculer son statut. Seules les notes marquées <strong>(A)</strong> seront éditées dans le détail des notes. Toutes les notes figurent sur le tableau récapitulatif officiel de la page 2.
+                Basculez chaque note entre <strong>(A) Applicable</strong> et <strong>(N/A) Non Applicable</strong>. Toutes les notes figurent sur le tableau récapitulatif FR4 de la page 2, et seules les notes applicables{masquerNonChiffrees ? ' chiffrées' : ''} sont détaillées ci-après.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {etats.notesAnnexees.map((n) => {
                   const estA = notesStatut[n.id] === 'A'
+                  const chifree = noteEstChiffree(n)
                   return (
                     <button
                       key={n.id}
@@ -236,9 +276,12 @@ export default function LiasseImprimable({
                       title={n.nomNote}
                     >
                       <span className="truncate">{n.numero}</span>
-                      <span className={`text-[9px] px-1 rounded ${estA ? 'bg-primary text-white' : 'bg-surface-border text-foreground-muted'}`}>
-                        {estA ? 'A' : 'N/A'}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {!chifree && <span className="text-[8px] text-foreground-muted">(0)</span>}
+                        <span className={`text-[9px] px-1 rounded ${estA ? 'bg-primary text-white' : 'bg-surface-border text-foreground-muted'}`}>
+                          {estA ? 'A' : 'N/A'}
+                        </span>
+                      </div>
                     </button>
                   )
                 })}
@@ -257,9 +300,9 @@ export default function LiasseImprimable({
         {/* PAGE 1 : PAGE DE GARDE OFFICIELLE & CERTIFICATION DU SIGNATAIRE     */}
         {/* ------------------------------------------------------------------ */}
         <div className="bg-surface print:bg-white p-6 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none print-break-page flex flex-col justify-between max-h-[1080px]">
-          <div className="space-y-4 text-center">
+          <div className="space-y-3 text-center">
             {/* Sceau & Ministère */}
-            <div className="border-b-2 border-foreground/80 pb-3 space-y-0.5">
+            <div className="border-b-2 border-foreground/80 pb-2 space-y-0.5">
               <p className="text-xs font-black uppercase tracking-widest text-foreground">
                 {etats.fiche.pays}
               </p>
@@ -283,7 +326,7 @@ export default function LiasseImprimable({
                 ÉTATS FINANCIERS NORMALISÉS DU SYSTÈME COMPTABLE OUEST AFRICAIN (SYSCOHADA)
               </h1>
               <p className="text-xs font-bold text-foreground">
-                EXERCICE CLOS AU {new Date(etats.fiche.dateCloture).toLocaleDateString('fr-FR')} • DURÉE : {etats.fiche.dureeMois} MOIS
+                EXERCICE CLOS LE : {new Date(etats.fiche.dateCloture).toLocaleDateString('fr-FR')} • DURÉE : {etats.fiche.dureeMois} MOIS
               </p>
             </div>
 
@@ -700,13 +743,13 @@ export default function LiasseImprimable({
             </p>
           </div>
 
-          <table className="w-full text-[9.5px] border border-foreground/40 border-collapse">
+          <table className="w-full text-[9px] border border-foreground/40 border-collapse">
             <thead>
               <tr className="bg-surface-elevated/70 print:bg-gray-100 font-bold border-b border-foreground/40 text-center">
-                <th className="p-1 border-r border-foreground/30 w-16">Code</th>
                 <th className="p-1 border-r border-foreground/30 text-left">Indicateurs & Agrégats Financiers</th>
                 <th className="p-1 border-r border-foreground/30 text-right w-28 font-bold">Exercice {libN}</th>
-                <th className="p-1 text-right w-28 text-foreground-muted">Exercice {libN1}</th>
+                <th className="p-1 border-r border-foreground/30 text-right w-28 text-foreground-muted">Exercice {libN1}</th>
+                <th className="p-1 text-center w-20">Var. en %</th>
               </tr>
             </thead>
             <tbody>
@@ -714,12 +757,16 @@ export default function LiasseImprimable({
                 if (ind.type === 'titre') {
                   return (
                     <tr key={i} className="bg-surface-elevated/80 print:bg-gray-200 font-bold border-y border-foreground/40">
-                      <td colSpan={4} className="p-1 text-[9.5px] uppercase tracking-wider text-primary">
+                      <td colSpan={4} className="p-1 text-[9px] uppercase tracking-wider text-primary">
                         {ind.libelle}
                       </td>
                     </tr>
                   )
                 }
+                const varPct = typeof ind.montantN === 'number' && typeof ind.montantN1 === 'number' && ind.montantN1 !== 0
+                  ? ((ind.montantN - ind.montantN1) / Math.abs(ind.montantN1) * 100).toFixed(1) + '%'
+                  : '—'
+
                 return (
                   <tr
                     key={i}
@@ -731,14 +778,14 @@ export default function LiasseImprimable({
                           : ''
                     }`}
                   >
-                    <td className="p-0.5 border-r border-foreground/30 text-center font-mono">{ind.code}</td>
                     <td className="p-0.5 border-r border-foreground/30">{ind.libelle}</td>
                     <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums font-semibold">
                       {typeof ind.montantN === 'number' ? fm(ind.montantN) : ind.montantN}
                     </td>
-                    <td className="p-0.5 text-right tabular-nums text-foreground-muted">
+                    <td className="p-0.5 border-r border-foreground/30 text-right tabular-nums text-foreground-muted">
                       {typeof ind.montantN1 === 'number' ? fm(ind.montantN1) : ind.montantN1}
                     </td>
+                    <td className="p-0.5 text-center tabular-nums text-[8.5px]">{varPct}</td>
                   </tr>
                 )
               })}
@@ -747,7 +794,7 @@ export default function LiasseImprimable({
         </div>
 
         {/* ------------------------------------------------------------------ */}
-        {/* PAGES 8+ : LES NOTES ANNEXÉES APPLICABLES (A) AVEC MULTI-COLONNES  */}
+        {/* PAGES 8+ : LES NOTES ANNEXÉES APPLICABLES AVEC MULTI-COLONNES      */}
         {/* ------------------------------------------------------------------ */}
         <div className="bg-surface print:bg-white p-6 rounded-xl border border-surface-border print:border-none shadow-sm print:shadow-none space-y-4">
           <div className="text-center border-b border-foreground/30 pb-2">
@@ -755,12 +802,12 @@ export default function LiasseImprimable({
               NOTES ANNEXÉES AUX ÉTATS FINANCIERS
             </h2>
             <p className="text-[10px] text-foreground-muted">
-              Tableaux réglementaires normalisés pour les {totalNotesA} notes applicables à l&apos;exercice
+              {totalNotesImprimees} notes applicables{masquerNonChiffrees ? ' chiffrées' : ''} éditées avec colonnes officielles de mouvements, variations et échéances
             </p>
           </div>
 
           <div className="space-y-4">
-            {notesApplicables.map((note) => (
+            {notesAImprimer.map((note) => (
               <div
                 key={note.id}
                 className="border border-foreground/30 rounded-lg p-2.5 space-y-1.5 bg-surface-elevated/15 print:bg-transparent print-avoid-break"
@@ -774,49 +821,234 @@ export default function LiasseImprimable({
                   </span>
                 </div>
 
-                {/* Tableau principal de la note */}
-                <table className="w-full text-[9px] border border-foreground/20 border-collapse">
-                  <thead>
-                    <tr className="bg-surface-elevated/50 print:bg-gray-100 font-bold border-b border-foreground/20 text-center">
-                      <th className="p-1 border-r border-foreground/20 text-left">Rubrique / Libellé</th>
-                      <th className="p-1 border-r border-foreground/20 text-right w-24">Exercice {libN}</th>
-                      <th className="p-1 border-r border-foreground/20 text-right w-24 text-foreground-muted">Exercice {libN1}</th>
-                      {note.items.some((it) => it.variation !== undefined) && (
-                        <th className="p-1 text-center w-16">Variation</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {note.items.map((it, idx) => (
-                      <tr key={idx} className="border-b border-foreground/10 leading-tight">
-                        <td className="p-0.5 border-r border-foreground/20">
-                          <span>{it.intitule}</span>
-                          {it.detail && <span className="block text-[8.5px] text-foreground-muted">{it.detail}</span>}
-                        </td>
-                        <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums font-semibold">
-                          {typeof it.montantN === 'number' ? fm(it.montantN) : it.montantN}
-                        </td>
-                        <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums text-foreground-muted">
-                          {it.montantN1 !== undefined
-                            ? typeof it.montantN1 === 'number'
-                              ? fm(it.montantN1)
-                              : it.montantN1
-                            : '—'}
-                        </td>
-                        {note.items.some((item) => item.variation !== undefined) && (
-                          <td className="p-0.5 text-center tabular-nums text-[8.5px]">
-                            {it.variation ?? '—'}
-                          </td>
-                        )}
+                {/* ---------------------------------------------------------- */}
+                {/* 1. RENDU SPÉCIFIQUE NOTE 3A : IMMOBILISATIONS BRUTES      */}
+                {/* ---------------------------------------------------------- */}
+                {note.id === 'note-3a' ? (
+                  <table className="w-full text-[8.5px] border border-foreground/30 border-collapse">
+                    <thead>
+                      <tr className="bg-surface-elevated/60 print:bg-gray-100 font-bold border-b border-foreground/30 text-center">
+                        <th className="p-1 border-r border-foreground/20 text-left">RUBRIQUES</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-18">Brut ouv. (A)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-18">Acquisitions (B)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-12">Virements (+)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-12">Rééval.</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-14">Cessions (C)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-12">Virements (-)</th>
+                        <th className="p-1 text-right w-18 font-bold">Brut clôt. (D)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {note.items.map((it, idx) => (
+                        <tr
+                          key={idx}
+                          className={`border-b border-foreground/15 leading-tight ${
+                            it.intitule.startsWith('TOTAL') || it.intitule === 'IMMOBILISATIONS INCORPORELLES' || it.intitule === 'IMMOBILISATIONS CORPORELLES'
+                              ? 'font-bold bg-surface-elevated/30 print:bg-gray-50'
+                              : ''
+                          }`}
+                        >
+                          <td className="p-0.5 border-r border-foreground/20">{it.intitule}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colA) || 0)}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colB) ? fm(Number(it.colB)) : '—'}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums text-foreground-muted">0</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums text-foreground-muted">0</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colE) ? fm(Number(it.colE)) : '0'}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums text-foreground-muted">0</td>
+                          <td className="p-0.5 text-right tabular-nums font-semibold">{fm(Number(it.montantN) || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : note.id === 'note-3b' ? (
+                  /* ---------------------------------------------------------- */
+                  /* 2. RENDU SPÉCIFIQUE NOTE 3B : LOCATION-ACQUISITION        */
+                  /* ---------------------------------------------------------- */
+                  <table className="w-full text-[9px] border border-foreground/30 border-collapse">
+                    <thead>
+                      <tr className="bg-surface-elevated/60 print:bg-gray-100 font-bold border-b border-foreground/30 text-center">
+                        <th className="p-1 border-r border-foreground/20 text-left">RUBRIQUES</th>
+                        <th className="p-1 border-r border-foreground/20 w-12">Nature</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-24">Brut ouv. (A)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-24">Acquisitions (B)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20">Diminutions (C)</th>
+                        <th className="p-1 text-right w-24 font-bold">Brut clôt. (D)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {note.items.map((it, idx) => (
+                        <tr key={idx} className="border-b border-foreground/15 leading-tight">
+                          <td className="p-0.5 border-r border-foreground/20 font-medium">{it.intitule}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-center">{it.detail || '—'}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colA) || 0)}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colB) ? fm(Number(it.colB)) : '—'}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colC) ? fm(Number(it.colC)) : '—'}</td>
+                          <td className="p-0.5 text-right tabular-nums font-semibold">{fm(Number(it.montantN) || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : note.id === 'note-3c' ? (
+                  /* ---------------------------------------------------------- */
+                  /* 3. RENDU SPÉCIFIQUE NOTE 3C : AMORTISSEMENTS              */
+                  /* ---------------------------------------------------------- */
+                  <table className="w-full text-[8.5px] border border-foreground/30 border-collapse">
+                    <thead>
+                      <tr className="bg-surface-elevated/60 print:bg-gray-100 font-bold border-b border-foreground/30 text-center">
+                        <th className="p-1 border-r border-foreground/20 text-left">RUBRIQUES</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-24">Amort. ouv. (A)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-24">Dotations exo (B)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20">Sorties (C)</th>
+                        <th className="p-1 text-right w-24 font-bold">Cumul clôt. (D=A+B-C)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {note.items.map((it, idx) => (
+                        <tr
+                          key={idx}
+                          className={`border-b border-foreground/15 leading-tight ${
+                            it.intitule.startsWith('TOTAL') || it.intitule === 'IMMOBILISATIONS INCORPORELLES' || it.intitule === 'IMMOBILISATIONS CORPORELLES'
+                              ? 'font-bold bg-surface-elevated/30 print:bg-gray-50'
+                              : ''
+                          }`}
+                        >
+                          <td className="p-0.5 border-r border-foreground/20">{it.intitule}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colA) || 0)}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colB) ? fm(Number(it.colB)) : '—'}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colC) ? fm(Number(it.colC)) : '0'}</td>
+                          <td className="p-0.5 text-right tabular-nums font-semibold">{fm(Number(it.montantN) || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : note.id === 'note-3d' ? (
+                  /* ---------------------------------------------------------- */
+                  /* 4. RENDU SPÉCIFIQUE NOTE 3D : PLUS/MOINS-VALUES DE CESSION */
+                  /* ---------------------------------------------------------- */
+                  <table className="w-full text-[9px] border border-foreground/30 border-collapse">
+                    <thead>
+                      <tr className="bg-surface-elevated/60 print:bg-gray-100 font-bold border-b border-foreground/30 text-center">
+                        <th className="p-1 border-r border-foreground/20 text-left">Rubriques</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20">Brut (A)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20">Amort. (B)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20">VNC (C=A-B)</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20">Prix cession (D)</th>
+                        <th className="p-1 text-right w-24 font-bold">Plus/Moins-value (E)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {note.items.map((it, idx) => (
+                        <tr key={idx} className="border-b border-foreground/15 leading-tight">
+                          <td className="p-0.5 border-r border-foreground/20 font-medium">{it.intitule}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colA) || 0)}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colB) || 0)}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colC) || 0)}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{fm(Number(it.colD) || 0)}</td>
+                          <td className="p-0.5 text-right tabular-nums font-semibold">{fm(Number(it.colE) || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : note.items.some((it) => it.colA !== undefined && it.colB !== undefined && it.colC !== undefined && note.id !== 'note-1') ? (
+                  /* ---------------------------------------------------------- */
+                  /* 5. NOTES AVEC ÉCHÉANCES : ≤ 1 an | 1 à 2 ans | > 2 ans    */
+                  /* (Notes 4, 7, 8, 9, 16A, 17, 18, 19)                       */
+                  /* ---------------------------------------------------------- */
+                  <table className="w-full text-[9px] border border-foreground/30 border-collapse">
+                    <thead>
+                      <tr className="bg-surface-elevated/60 print:bg-gray-100 font-bold border-b border-foreground/30 text-center">
+                        <th className="p-1 border-r border-foreground/20 text-left">Libellés</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20 font-bold">Année {libN}</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-20 text-foreground-muted">Année {libN1}</th>
+                        <th className="p-1 border-r border-foreground/20 text-center w-14">Var. %</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-16">≤ 1 an</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-16">1 à 2 ans</th>
+                        <th className="p-1 text-right w-16">&gt; 2 ans</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {note.items.map((it, idx) => (
+                        <tr
+                          key={idx}
+                          className={`border-b border-foreground/15 leading-tight ${
+                            it.intitule.startsWith('TOTAL') ? 'font-bold bg-surface-elevated/30 print:bg-gray-50' : ''
+                          }`}
+                        >
+                          <td className="p-0.5 border-r border-foreground/20">{it.intitule}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums font-semibold">
+                            {typeof it.montantN === 'number' ? fm(it.montantN) : it.montantN}
+                          </td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums text-foreground-muted">
+                            {typeof it.montantN1 === 'number' ? fm(it.montantN1) : it.montantN1 ?? '—'}
+                          </td>
+                          <td className="p-0.5 border-r border-foreground/20 text-center tabular-nums text-[8.5px]">
+                            {it.variationPct ?? '—'}
+                          </td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colA) ? fm(Number(it.colA)) : '—'}</td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">{Number(it.colB) ? fm(Number(it.colB)) : '—'}</td>
+                          <td className="p-0.5 text-right tabular-nums">{Number(it.colC) ? fm(Number(it.colC)) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  /* ---------------------------------------------------------- */
+                  /* 6. TABLE STANDARD MULTI-COLONNES (VARIATION EN VALEUR & %) */
+                  /* ---------------------------------------------------------- */
+                  <table className="w-full text-[9px] border border-foreground/20 border-collapse">
+                    <thead>
+                      <tr className="bg-surface-elevated/50 print:bg-gray-100 font-bold border-b border-foreground/20 text-center">
+                        <th className="p-1 border-r border-foreground/20 text-left">Rubrique / Libellé</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-24">Exercice {libN}</th>
+                        <th className="p-1 border-r border-foreground/20 text-right w-24 text-foreground-muted">Exercice {libN1}</th>
+                        {note.items.some((it) => it.variation !== undefined) && (
+                          <th className="p-1 border-r border-foreground/20 text-right w-20">Var. en valeur</th>
+                        )}
+                        <th className="p-1 text-center w-16">Var. en %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {note.items.map((it, idx) => (
+                        <tr
+                          key={idx}
+                          className={`border-b border-foreground/10 leading-tight ${
+                            it.intitule.startsWith('TOTAL') ? 'font-bold bg-surface-elevated/30 print:bg-gray-50' : ''
+                          }`}
+                        >
+                          <td className="p-0.5 border-r border-foreground/20">
+                            <span>{it.intitule}</span>
+                            {it.detail && <span className="block text-[8.5px] text-foreground-muted">{it.detail}</span>}
+                          </td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums font-semibold">
+                            {typeof it.montantN === 'number' ? fm(it.montantN) : it.montantN}
+                          </td>
+                          <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums text-foreground-muted">
+                            {it.montantN1 !== undefined
+                              ? typeof it.montantN1 === 'number'
+                                ? fm(it.montantN1)
+                                : it.montantN1
+                              : '—'}
+                          </td>
+                          {note.items.some((item) => item.variation !== undefined) && (
+                            <td className="p-0.5 border-r border-foreground/20 text-right tabular-nums">
+                              {typeof it.variation === 'number' ? fm(it.variation) : it.variation ?? '—'}
+                            </td>
+                          )}
+                          <td className="p-0.5 text-center tabular-nums text-[8.5px]">
+                            {it.variationPct ?? '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
 
-                {/* Sous-tableau spécial le cas échéant (ex: Engagements financiers Note 1) */}
+                {/* Sous-tableau spécial (ex: Engagements financiers Note 1, Transferts de charges Note 12) */}
                 {note.sousTableau && (
-                  <div className="pt-1 space-y-1">
-                    <p className="text-[9px] font-bold text-foreground uppercase">{note.sousTableau.nomSousTableau}</p>
+                  <div className="pt-1.5 space-y-1">
+                    <p className="text-[9px] font-bold text-foreground uppercase border-b border-foreground/20 pb-0.5">
+                      {note.sousTableau.nomSousTableau}
+                    </p>
                     <table className="w-full text-[9px] border border-foreground/20 border-collapse">
                       <thead>
                         <tr className="bg-surface-elevated/40 print:bg-gray-100 font-bold border-b border-foreground/20 text-center">

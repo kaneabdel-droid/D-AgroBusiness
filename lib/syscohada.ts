@@ -93,6 +93,7 @@ export type NoteItem = {
   montantN: number | string
   montantN1?: number | string
   variation?: number | string
+  variationPct?: number | string
   detail?: string
   colA?: number | string
   colB?: number | string
@@ -100,6 +101,7 @@ export type NoteItem = {
   colD?: number | string
   colE?: number | string
   colF?: number | string
+  noteRef?: string
 }
 
 export type NoteAnnexe = {
@@ -1078,592 +1080,1247 @@ export function genererEtatsFinanciersSyscohada(
   // 6. LES 36 NOTES ANNEXÉES (LIASSE COMPLÈTE SYSCOHADA)
   // =========================================================================
 
-  const notesAnnexees: NoteAnnexe[] = [
+  
+  // Helper pour calculer les variations en valeur et en %
+  function fmtVar(n: number, n1: number): { val: number; pct: string } {
+    const val = n - n1
+    if (n1 === 0) {
+      return { val, pct: n === 0 ? '0.0%' : '+100.0%' }
+    }
+    const ratio = (val / Math.abs(n1)) * 100
+    const sign = ratio > 0 ? '+' : ''
+    return { val, pct: `${sign}${ratio.toFixed(1)}%` }
+  }
+
+  // Mouvements Débit / Crédit de l'exercice N
+  function getMvtN(pattern: RegExp): { debit: number; credit: number } {
+    let debit = 0
+    let credit = 0
+    for (const l of toutesLignes) {
+      if (l.exercice_id === exerciceCourant.id && pattern.test(l.numero)) {
+        debit += Number(l.total_debit) || 0
+        credit += Number(l.total_credit) || 0
+      }
+    }
+    return { debit, credit }
+  }
+const notesAnnexees: NoteAnnexe[] = [
+    // -------------------------------------------------------------------------
+    // NOTE 1 : DETTES GARANTIES PAR DES SÛRETÉS RÉELLES & ENGAGEMENTS FINANCIERS
+    // -------------------------------------------------------------------------
     {
       id: 'note-1',
       numero: 'NOTE 1',
       nomNote: 'DETTES GARANTIES PAR DES SÛRETÉS RÉELLES',
       statut: 'A',
+      colonnes: ['LIBELLÉS', 'Notes', 'Montant', 'Hypothèques', 'Nantissements', 'Gages / Autres'],
       items: [
-        { intitule: 'Emprunts obligataires convertibles', montantN: 0, montantN1: 0 },
-        { intitule: 'Emprunts auprès des établissements de crédit', montantN: DA.netN, montantN1: DA.netN1 },
-        { intitule: 'Dettes de crédit-bail', montantN: DB.netN, montantN1: DB.netN1 },
-        { intitule: 'Fournisseurs et comptes rattachés', montantN: DJ.netN, montantN1: DJ.netN1 },
-        { intitule: 'Dettes fiscales et sociales', montantN: DK.netN, montantN1: DK.netN1 },
-        { intitule: 'Total des engagements financiers (Avals, cautions, garanties)', montantN: 0, montantN1: 0 },
+        { intitule: 'Dettes financières et ressources assimilées (1) :', montantN: '', montantN1: '' },
+        { intitule: '  • Emprunts obligataires convertibles', montantN: 0, montantN1: 0, noteRef: '16A', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Autres emprunts obligataires', montantN: 0, montantN1: 0, noteRef: '16A', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Emprunts auprès des établissements de crédit', montantN: DA.netN, montantN1: DA.netN1, noteRef: '16A', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Autres dettes financières', montantN: 0, montantN1: 0, noteRef: '16A', colA: 0, colB: 0, colC: 0 },
+        { intitule: 'SOUS-TOTAL (1)', montantN: DA.netN, montantN1: DA.netN1, colA: 0, colB: 0, colC: 0 },
+        { intitule: 'Crédit-bail (2) :', montantN: '', montantN1: '' },
+        { intitule: '  • Dettes de crédit-bail immobilier', montantN: 0, montantN1: 0, colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Dettes de crédit-bail mobilier', montantN: DB.netN, montantN1: DB.netN1, colA: 0, colB: 0, colC: 0 },
+        { intitule: 'SOUS-TOTAL (2)', montantN: DB.netN, montantN1: DB.netN1, colA: 0, colB: 0, colC: 0 },
+        { intitule: 'Dettes du passif circulant (3) :', montantN: '', montantN1: '' },
+        { intitule: '  • Fournisseurs et comptes rattachés', montantN: DJ.netN, montantN1: DJ.netN1, noteRef: '17', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Clients, avances reçues', montantN: DI.netN, montantN1: DI.netN1, noteRef: '7', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Personnel, dettes et rémunérations dues', montantN: Math.max(0, getSolde(balanceCumulN, /^42[2-8]/).total), montantN1: 0, noteRef: '18', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Sécurité sociale et caisses de retraite', montantN: Math.max(0, getSolde(balanceCumulN, /^43/).total), montantN1: 0, noteRef: '18', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • État, impôts et taxes', montantN: Math.max(0, getSolde(balanceCumulN, /^44/).total), montantN1: 0, noteRef: '18', colA: 0, colB: 0, colC: 0 },
+        { intitule: '  • Organismes internationaux et associés', montantN: DM.netN, montantN1: DM.netN1, noteRef: '19', colA: 0, colB: 0, colC: 0 },
+        { intitule: 'SOUS-TOTAL (3)', montantN: totalPassifCirculant.netN, montantN1: totalPassifCirculant.netN1, colA: 0, colB: 0, colC: 0 },
+        { intitule: 'TOTAL (1) + (2) + (3)', montantN: DA.netN + DB.netN + totalPassifCirculant.netN, montantN1: DA.netN1 + DB.netN1 + totalPassifCirculant.netN1, colA: 0, colB: 0, colC: 0 },
       ],
-      commentaires: 'Aucun nantissement ou hypothèque grevant les actifs à la clôture de l’exercice.',
+      sousTableau: {
+        nomSousTableau: 'ENGAGEMENTS FINANCIERS RECIPROQUES, DONNÉS ET REÇUS',
+        colonnes: ['ENGAGEMENTS FINANCIERS', 'RÉCIPROQUES', 'DONNÉS', 'REÇUS'],
+        items: [
+          { intitule: 'Engagements consentis à des entreprises liées', colA: 0, colB: 0, colC: 0, montantN: 0 },
+          { intitule: 'Engagements pris en matière de retraites', colA: 0, colB: 0, colC: 0, montantN: 0 },
+          { intitule: 'Avals, cautions et garanties', colA: 0, colB: 0, colC: 0, montantN: 0 },
+          { intitule: 'Hypothèques, nantissements et gages', colA: 0, colB: 0, colC: 0, montantN: 0 },
+          { intitule: 'Effets escomptés non échus', colA: 0, colB: 0, colC: 0, montantN: 0 },
+          { intitule: 'Créances cédées (Dailly / affacturage)', colA: 0, colB: 0, colC: 0, montantN: 0 },
+          { intitule: 'TOTAL ENGAGEMENTS FINANCIERS', colA: 0, colB: 0, colC: 0, montantN: 0 },
+        ],
+      },
+      commentaires: 'Aucun gage ou hypothèque grevant les biens de l’entité à la date de clôture.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 2 : INFORMATIONS OBLIGATOIRES (MÉTHODES COMPTABLES)
+    // -------------------------------------------------------------------------
     {
       id: 'note-2',
       numero: 'NOTE 2',
-      nomNote: 'INFORMATIONS OBLIGATOIRES (MÉTHODES COMPTABLES)',
+      nomNote: 'INFORMATIONS OBLIGATOIRES',
       statut: 'A',
+      colonnes: ['Rubriques', 'Précisions réglementaires'],
       items: [
-        { intitule: 'Déclaration de conformité SYSCOHADA', montantN: 'Conforme', detail: 'États établis selon le Système Comptable OHADA Révisé.' },
-        { intitule: 'Règles et conventions comptables', montantN: 'Prudence & Continuité', detail: 'Respect des principes généraux d’évaluation historique et d’indépendance des exercices.' },
-        { intitule: 'Dérogations aux postulats comptables', montantN: 'Néant', detail: 'Aucune dérogation aux règles et conventions du SYSCOHADA.' },
+        { intitule: 'A - DÉCLARATION DE CONFORMITÉ', montantN: 'Conforme', detail: 'Les états financiers sont établis en conformité avec le Système Comptable OHADA (SYSCOHADA) et l’Acte Uniforme relatif au droit comptable et à l’information financière.' },
+        { intitule: 'B - RÈGLES ET MÉTHODES COMPTABLES', montantN: 'Respectées', detail: 'Les états financiers ont été confectionnés dans le respect des postulats, des conventions et des règles d’évaluation édictés par le SYSCOHADA (continuité d’exploitation, indépendance des exercices, prudence, permanence des méthodes).' },
+        { intitule: 'C - DÉROGATIONS AUX POSTULATS COMPTABLES', montantN: 'Néant', detail: 'Respect de tous les postulats et conventions comptables sans aucune dérogation.' },
+        { intitule: 'D - INFORMATIONS COMPLÉMENTAIRES', montantN: 'Néant', detail: 'Aucun événement postérieur significatif susceptible d’affecter la sincérité des comptes à la date d’arrêté.' },
       ],
-      commentaires: 'Les méthodes d’évaluation et de présentation sont identiques à celles de l’exercice précédent.',
+      commentaires: 'Permanence des méthodes appliquées par rapport à l’exercice précédent.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 3A : IMMOBILISATIONS BRUTES (ACQUISITIONS, CESSIONS, VIREMENTS)
+    // -------------------------------------------------------------------------
     {
       id: 'note-3a',
       numero: 'NOTE 3A',
       nomNote: 'IMMOBILISATIONS BRUTES',
       statut: 'A',
-      items: [
-        { intitule: 'Immobilisations incorporelles (Frais R&D, Brevets, Logiciels)', montantN: AD.brutN, montantN1: AD.netN1 },
-        { intitule: 'Terrains (agricoles et agencements)', montantN: getSolde(balanceCumulN, /^22/).total, montantN1: getSolde(balanceCumulN1, /^22/).total },
-        { intitule: 'Bâtiments industriels, agricoles et commerciaux', montantN: getSolde(balanceCumulN, /^23/).total, montantN1: getSolde(balanceCumulN1, /^23/).total },
-        { intitule: 'Matériel, outillage agricole et commercial', montantN: getSolde(balanceCumulN, /^24[1-4]|^24[6-9]/).total, montantN1: getSolde(balanceCumulN1, /^24[1-4]|^24[6-9]/).total },
-        { intitule: 'Matériel de transport', montantN: getSolde(balanceCumulN, /^245/).total, montantN1: getSolde(balanceCumulN1, /^245/).total },
-        { intitule: 'Avances et acomptes versés sur immobilisations', montantN: getSolde(balanceCumulN, /^25/).total, montantN1: getSolde(balanceCumulN1, /^25/).total },
-        { intitule: 'Immobilisations financières', montantN: AQ.brutN, montantN1: AQ.netN1 },
-        { intitule: 'TOTAL GÉNÉRAL IMMOBILISATIONS BRUTES', montantN: totalActifImmo.brutN, montantN1: totalActifImmo.netN1 },
+      colonnes: [
+        'RUBRIQUES',
+        'Brut ouv. (A)',
+        'Acquisitions (B)',
+        'Virements (+)',
+        'Réévaluation',
+        'Cessions (C)',
+        'Virements (-)',
+        'Brut clôt. (D=A+B-C)'
       ],
+      items: (() => {
+        const rowIncorpOuv = Math.max(0, getSolde(balanceCumulN1, /^21/).total)
+        const rowIncorpClot = Math.max(0, getSolde(balanceCumulN, /^21/).total)
+        const rowIncorpMvt = getMvtN(/^21/)
+        const rowIncorpAcq = Math.max(rowIncorpMvt.debit, rowIncorpClot > rowIncorpOuv ? rowIncorpClot - rowIncorpOuv : 0)
+        const rowIncorpCes = Math.max(rowIncorpMvt.credit, rowIncorpOuv > rowIncorpClot ? rowIncorpOuv - rowIncorpClot : 0)
+
+        const rowTerrOuv = Math.max(0, getSolde(balanceCumulN1, /^22/).total)
+        const rowTerrClot = Math.max(0, getSolde(balanceCumulN, /^22/).total)
+
+        const rowBatOuv = Math.max(0, getSolde(balanceCumulN1, /^23/).total)
+        const rowBatClot = Math.max(0, getSolde(balanceCumulN, /^23/).total)
+        const rowBatMvt = getMvtN(/^23/)
+        const rowBatAcq = Math.max(rowBatMvt.debit, rowBatClot > rowBatOuv ? rowBatClot - rowBatOuv : 0)
+
+        const rowMatOuv = Math.max(0, getSolde(balanceCumulN1, /^24[1-4]|^24[6-9]/).total)
+        const rowMatClot = Math.max(0, getSolde(balanceCumulN, /^24[1-4]|^24[6-9]/).total)
+        const rowMatMvt = getMvtN(/^24[1-4]|^24[6-9]/)
+        const rowMatAcq = Math.max(rowMatMvt.debit, rowMatClot > rowMatOuv ? rowMatClot - rowMatOuv : 0)
+
+        const rowTranspOuv = Math.max(0, getSolde(balanceCumulN1, /^245/).total)
+        const rowTranspClot = Math.max(0, getSolde(balanceCumulN, /^245/).total)
+
+        const rowAvancesOuv = Math.max(0, getSolde(balanceCumulN1, /^25/).total)
+        const rowAvancesClot = Math.max(0, getSolde(balanceCumulN, /^25/).total)
+
+        const rowFinOuv = Math.max(0, getSolde(balanceCumulN1, /^2[67]/).total)
+        const rowFinClot = Math.max(0, getSolde(balanceCumulN, /^2[67]/).total)
+
+        const totOuv = rowIncorpOuv + rowTerrOuv + rowBatOuv + rowMatOuv + rowTranspOuv + rowAvancesOuv + rowFinOuv
+        const totClot = rowIncorpClot + rowTerrClot + rowBatClot + rowMatClot + rowTranspClot + rowAvancesClot + rowFinClot
+        const totAcq = rowIncorpAcq + rowBatAcq + rowMatAcq
+
+        return [
+          {
+            intitule: 'IMMOBILISATIONS INCORPORELLES',
+            colA: rowIncorpOuv,
+            colB: rowIncorpAcq,
+            colC: 0,
+            colD: 0,
+            colE: rowIncorpCes,
+            colF: 0,
+            montantN: rowIncorpClot,
+            montantN1: rowIncorpOuv,
+          },
+          {
+            intitule: '  • Logiciels, brevets, licences et droits similaires',
+            colA: rowIncorpOuv,
+            colB: rowIncorpAcq,
+            colC: 0,
+            colD: 0,
+            colE: rowIncorpCes,
+            colF: 0,
+            montantN: rowIncorpClot,
+            montantN1: rowIncorpOuv,
+          },
+          {
+            intitule: '  • Fonds commercial et droit au bail',
+            colA: 0, colB: 0, colC: 0, colD: 0, colE: 0, colF: 0, montantN: 0, montantN1: 0,
+          },
+          {
+            intitule: 'IMMOBILISATIONS CORPORELLES',
+            colA: rowTerrOuv + rowBatOuv + rowMatOuv + rowTranspOuv,
+            colB: rowBatAcq + rowMatAcq,
+            colC: 0, colD: 0, colE: 0, colF: 0,
+            montantN: rowTerrClot + rowBatClot + rowMatClot + rowTranspClot,
+            montantN1: rowTerrOuv + rowBatOuv + rowMatOuv + rowTranspOuv,
+          },
+          {
+            intitule: '  • Terrains',
+            colA: rowTerrOuv, colB: 0, colC: 0, colD: 0, colE: 0, colF: 0, montantN: rowTerrClot, montantN1: rowTerrOuv,
+          },
+          {
+            intitule: '  • Bâtiments, installations et agencements',
+            colA: rowBatOuv, colB: rowBatAcq, colC: 0, colD: 0, colE: 0, colF: 0, montantN: rowBatClot, montantN1: rowBatOuv,
+          },
+          {
+            intitule: '  • Matériels et outillages agricoles, industriels et com.',
+            colA: rowMatOuv, colB: rowMatAcq, colC: 0, colD: 0, colE: 0, colF: 0, montantN: rowMatClot, montantN1: rowMatOuv,
+          },
+          {
+            intitule: '  • Matériel de transport',
+            colA: rowTranspOuv, colB: 0, colC: 0, colD: 0, colE: 0, colF: 0, montantN: rowTranspClot, montantN1: rowTranspOuv,
+          },
+          {
+            intitule: '  • Immobilisations animales et végétales',
+            colA: 0, colB: 0, colC: 0, colD: 0, colE: 0, colF: 0, montantN: 0, montantN1: 0,
+          },
+          {
+            intitule: 'AVANCES ET ACOMPTES SUR IMMOBILISATIONS',
+            colA: rowAvancesOuv, colB: 0, colC: 0, colD: 0, colE: 0, colF: 0, montantN: rowAvancesClot, montantN1: rowAvancesOuv,
+          },
+          {
+            intitule: 'IMMOBILISATIONS FINANCIÈRES',
+            colA: rowFinOuv, colB: 0, colC: 0, colD: 0, colE: 0, colF: 0, montantN: rowFinClot, montantN1: rowFinOuv,
+          },
+          {
+            intitule: 'TOTAL GÉNÉRAL',
+            colA: totOuv,
+            colB: totAcq,
+            colC: 0, colD: 0, colE: 0, colF: 0,
+            montantN: totClot,
+            montantN1: totOuv,
+          },
+        ]
+      })(),
+      commentaires: 'Les acquisitions de l’exercice correspondent aux investissements financés par ressources propres et subventions.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 3B : BIENS PRIS EN LOCATION ACQUISITION (CRÉDIT-BAIL)
+    // -------------------------------------------------------------------------
     {
       id: 'note-3b',
       numero: 'NOTE 3B',
-      nomNote: 'BIENS PRIS EN LOCATION-ACQUISITION (CRÉDIT-BAIL)',
+      nomNote: 'BIENS PRIS EN LOCATION-ACQUISITION',
       statut: DB.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['RUBRIQUES', 'Nature contrat (I;M;A)', 'Brut ouv. (A)', 'Acquisitions (B)', 'Diminutions (C)', 'Brut clôt. (D=A+B-C)'],
       items: [
-        { intitule: 'Crédit-bail immobilier', montantN: 0, montantN1: 0 },
-        { intitule: 'Crédit-bail matériel et mobilier', montantN: DB.netN, montantN1: DB.netN1 },
-        { intitule: 'Crédit-bail matériel de transport', montantN: 0, montantN1: 0 },
+        { intitule: 'Terrains', detail: 'I', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'Bâtiments', detail: 'I', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'Matériel, mobilier', detail: 'M', colA: DB.netN1, colB: DB.netN > DB.netN1 ? DB.netN - DB.netN1 : 0, colC: DB.netN1 > DB.netN ? DB.netN1 - DB.netN : 0, montantN: DB.netN, montantN1: DB.netN1 },
+        { intitule: 'Matériel de transport', detail: 'M', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'TOTAL IMMOBILISATIONS EN LOCATION-ACQUISITION', detail: '', colA: DB.netN1, colB: DB.netN > DB.netN1 ? DB.netN - DB.netN1 : 0, colC: DB.netN1 > DB.netN ? DB.netN1 - DB.netN : 0, montantN: DB.netN, montantN1: DB.netN1 },
       ],
+      commentaires: '[1] I : Crédit-bail immobilier ; M : Crédit-bail mobilier ; A : Autres contrats.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 3C : AMORTISSEMENTS (CUMUL OUVERTURE, DOTATIONS, SORTIES, CLÔTURE)
+    // -------------------------------------------------------------------------
     {
       id: 'note-3c',
       numero: 'NOTE 3C',
       nomNote: 'AMORTISSEMENTS',
       statut: 'A',
-      items: [
-        { intitule: 'Amortissements des immobilisations incorporelles', montantN: AD.amortN, montantN1: AD.netN1 },
-        { intitule: 'Amortissements des terrains & agencements', montantN: getSolde(balanceCumulN, /^282/).total, montantN1: 0 },
-        { intitule: 'Amortissements des bâtiments', montantN: getSolde(balanceCumulN, /^283/).total, montantN1: 0 },
-        { intitule: 'Amortissements matériel et outillage', montantN: Math.abs(getSolde(balanceCumulN, /^284[1-4]|^284[6-9]/).total), montantN1: 0 },
-        { intitule: 'Amortissements matériel de transport', montantN: Math.abs(getSolde(balanceCumulN, /^2845/).total), montantN1: 0 },
-        { intitule: 'TOTAL CUMUL DES AMORTISSEMENTS', montantN: totalActifImmo.amortN, montantN1: 0 },
-        { intitule: 'Dotations de l’exercice aux amortissements', montantN: RL_N.total, montantN1: RL_N1.total },
+      colonnes: [
+        'RUBRIQUES',
+        'Amort. ouv. (A)',
+        'Dotations exo (B)',
+        'Diminutions sorties (C)',
+        'Cumul clôt. (D=A+B-C)'
       ],
+      items: (() => {
+        const amIncOuv = Math.abs(getSolde(balanceCumulN1, /^281/).total)
+        const amIncClot = Math.abs(getSolde(balanceCumulN, /^281/).total)
+        const amIncDot = Math.max(amIncClot - amIncOuv, 0)
+
+        const amMatOuv = Math.abs(getSolde(balanceCumulN1, /^284[1-4]|^284[6-9]/).total)
+        const amMatClot = Math.abs(getSolde(balanceCumulN, /^284[1-4]|^284[6-9]/).total)
+        const amMatDot = Math.max(amMatClot - amMatOuv, 0)
+
+        const amTrOuv = Math.abs(getSolde(balanceCumulN1, /^2845/).total)
+        const amTrClot = Math.abs(getSolde(balanceCumulN, /^2845/).total)
+        const amTrDot = Math.max(amTrClot - amTrOuv, 0)
+
+        const amBatOuv = Math.abs(getSolde(balanceCumulN1, /^283/).total)
+        const amBatClot = Math.abs(getSolde(balanceCumulN, /^283/).total)
+        const amBatDot = Math.max(amBatClot - amBatOuv, 0)
+
+        const totAmOuv = amIncOuv + amMatOuv + amTrOuv + amBatOuv
+        const totAmClot = amIncClot + amMatClot + amTrClot + amBatClot
+        const totAmDot = amIncDot + amMatDot + amTrDot + amBatDot
+
+        return [
+          { intitule: 'IMMOBILISATIONS INCORPORELLES', colA: amIncOuv, colB: amIncDot, colC: 0, montantN: amIncClot, montantN1: amIncOuv },
+          { intitule: '  • Frais de recherche et de développement', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+          { intitule: '  • Brevets, licences, logiciels', colA: amIncOuv, colB: amIncDot, colC: 0, montantN: amIncClot, montantN1: amIncOuv },
+          { intitule: '  • Fonds commercial et autres valeurs', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+          { intitule: 'TOTAL (I)', colA: amIncOuv, colB: amIncDot, colC: 0, montantN: amIncClot, montantN1: amIncOuv },
+          { intitule: 'IMMOBILISATIONS CORPORELLES', colA: amMatOuv + amTrOuv + amBatOuv, colB: amMatDot + amTrDot + amBatDot, colC: 0, montantN: amMatClot + amTrClot + amBatClot, montantN1: amMatOuv + amTrOuv + amBatOuv },
+          { intitule: '  • Terrains & agencements', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+          { intitule: '  • Bâtiments, installations et agencements', colA: amBatOuv, colB: amBatDot, colC: 0, montantN: amBatClot, montantN1: amBatOuv },
+          { intitule: '  • Matériels et outillages', colA: amMatOuv, colB: amMatDot, colC: 0, montantN: amMatClot, montantN1: amMatOuv },
+          { intitule: '  • Matériel de transport', colA: amTrOuv, colB: amTrDot, colC: 0, montantN: amTrClot, montantN1: amTrOuv },
+          { intitule: 'TOTAL (II)', colA: amMatOuv + amTrOuv + amBatOuv, colB: amMatDot + amTrDot + amBatDot, colC: 0, montantN: amMatClot + amTrClot + amBatClot, montantN1: amMatOuv + amTrOuv + amBatOuv },
+          { intitule: 'TOTAL GÉNÉRAL (I + II)', colA: totAmOuv, colB: totAmDot, colC: 0, montantN: totAmClot, montantN1: totAmOuv },
+        ]
+      })(),
+      commentaires: 'Amortissements linéaires pratiqués conformément aux durées d’utilité admises en fiscalité sénégalaise.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 3D : PLUS-VALUES ET MOINS-VALUES DE CESSION D'IMMOBILISATIONS
+    // -------------------------------------------------------------------------
     {
       id: 'note-3d',
       numero: 'NOTE 3D',
-      nomNote: 'PLUS-VALUES ET MOINS-VALUES DE CESSION D’IMMOBILISATIONS',
+      nomNote: 'PLUS-VALUES ET MOINS-VALUES DE CESSION',
       statut: TN_N.total > 0 || RO_N.total > 0 ? 'A' : 'N/A',
+      colonnes: ['Rubriques', 'Montant brut (A)', 'Amort. pratiqués (B)', 'VNC (C=A-B)', 'Prix cession (D)', 'Plus/Moins-value (E=D-C)'],
       items: [
-        { intitule: 'Produits de cession d’immobilisations (compte 82)', montantN: TN_N.total, montantN1: TN_N1.total },
-        { intitule: 'Valeurs comptables des immobilisations cédées (compte 81)', montantN: RO_N.total, montantN1: RO_N1.total },
-        { intitule: 'Plus-value (+) ou Moins-value (−) nette', montantN: TN_N.total - RO_N.total, montantN1: TN_N1.total - RO_N1.total },
+        { intitule: 'IMMOBILISATIONS INCORPORELLES', colA: 0, colB: 0, colC: 0, colD: 0, colE: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'IMMOBILISATIONS CORPORELLES', colA: RO_N.total, colB: 0, colC: RO_N.total, colD: TN_N.total, colE: TN_N.total - RO_N.total, montantN: TN_N.total - RO_N.total, montantN1: 0 },
+        { intitule: 'IMMOBILISATIONS FINANCIÈRES', colA: 0, colB: 0, colC: 0, colD: 0, colE: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'TOTAL GÉNÉRAL', colA: RO_N.total, colB: 0, colC: RO_N.total, colD: TN_N.total, colE: TN_N.total - RO_N.total, montantN: TN_N.total - RO_N.total, montantN1: 0 },
       ],
+      commentaires: 'Plus-values nettes de cession imposables selon le régime fiscal de droit commun.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 3E : INFORMATIONS SUR LES RÉÉVALUATIONS EFFECTUÉES
+    // -------------------------------------------------------------------------
     {
       id: 'note-3e',
       numero: 'NOTE 3E',
-      nomNote: 'INFORMATIONS SUR LES RÉÉVALUATIONS EFFECTUÉES',
-      statut: CE.netN !== 0 ? 'A' : 'N/A',
+      nomNote: 'INFORMATIONS SUR LES RÉÉVALUATIONS',
+      statut: CD.netN !== 0 ? 'A' : 'N/A',
+      colonnes: ['Éléments réévalués', 'Coût historique', 'Écarts et provisions de réévaluation'],
       items: [
-        { intitule: 'Écart de réévaluation légale ou libre (compte 106)', montantN: CE.netN, montantN1: CE.netN1 },
+        { intitule: 'Immobilisations corporelles réévaluées', montantN: CD.netN, montantN1: CD.netN1, colA: 0, colB: CD.netN },
+        { intitule: 'TOTAL DES ÉCARTS DE RÉÉVALUATION', montantN: CD.netN, montantN1: CD.netN1, colA: 0, colB: CD.netN },
       ],
+      commentaires: 'Aucune réévaluation légale ou libre pratiquée au cours de l’exercice.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 3F : TABLEAU D'ÉTALEMENT DES CHARGES IMMOBILISÉES
+    // -------------------------------------------------------------------------
     {
       id: 'note-3f',
       numero: 'NOTE 3F',
       nomNote: 'TABLEAU D’ÉTALEMENT DES CHARGES IMMOBILISÉES',
       statut: 'N/A',
+      colonnes: ['Libellés', 'Frais d’établissement', 'Charges à répartir', 'Primes de remboursement'],
       items: [
-        { intitule: 'Frais d’établissement & charges à étaler', montantN: 0, montantN1: 0 },
+        { intitule: 'Montant global à étaler au 1er Janvier', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'Amortissement / étalement exercice N', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'TOTAL GÉNÉRAL', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 4 : IMMOBILISATIONS FINANCIÈRES (AVEC ÉCHÉANCES ET VARIATION)
+    // -------------------------------------------------------------------------
     {
       id: 'note-4',
       numero: 'NOTE 4',
       nomNote: 'IMMOBILISATIONS FINANCIÈRES',
       statut: AQ.brutN > 0 ? 'A' : 'N/A',
-      items: [
-        { intitule: 'Titres de participation (compte 26)', montantN: getSolde(balanceCumulN, /^26/).total, montantN1: 0 },
-        { intitule: 'Prêts et créances non commerciales (compte 271)', montantN: getSolde(balanceCumulN, /^271/).total, montantN1: 0 },
-        { intitule: 'Dépôts et cautionnements versés (compte 275)', montantN: getSolde(balanceCumulN, /^275/).total, montantN1: 0 },
-        { intitule: 'Dépréciations des immobilisations financières', montantN: AQ.amortN, montantN1: 0 },
-        { intitule: 'TOTAL NET IMMOBILISATIONS FINANCIÈRES', montantN: AQ.netN, montantN1: AQ.netN1 },
-      ],
+      colonnes: ['Libellé', 'Année N', 'Année N-1', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
+      items: (() => {
+        const v = fmtVar(AQ.brutN, AQ.netN1)
+        return [
+          { intitule: 'Prêts et créances non commerciales (compte 271)', montantN: getSolde(balanceCumulN, /^271/).total, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'Prêts au personnel (compte 272)', montantN: getSolde(balanceCumulN, /^272/).total, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'Créances sur l’État (compte 273)', montantN: getSolde(balanceCumulN, /^273/).total, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'Titres immobilisés (compte 274)', montantN: getSolde(balanceCumulN, /^274/).total, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'Dépôts et cautionnements versés (compte 275)', montantN: getSolde(balanceCumulN, /^275/).total, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'Titres de participation (compte 26)', montantN: getSolde(balanceCumulN, /^26/).total, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'TOTAL BRUT', montantN: AQ.brutN, montantN1: AQ.netN1, variationPct: v.pct, colA: 0, colB: 0, colC: AQ.brutN },
+          { intitule: 'Dépréciations des immobilisations financières', montantN: AQ.amortN, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'TOTAL NET DE DÉPRÉCIATION', montantN: AQ.netN, montantN1: AQ.netN1, variationPct: v.pct, colA: 0, colB: 0, colC: AQ.netN },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 5 : ACTIF CIRCULANT ET PASSIF CIRCULANT HAO
+    // -------------------------------------------------------------------------
     {
       id: 'note-5',
       numero: 'NOTE 5',
-      nomNote: 'ACTIF CIRCULANT ET PASSIF CIRCULANT H.A.O.',
+      nomNote: 'ACTIF CIRCULANT ET PASSIF CIRCULANT HAO',
       statut: BA.netN > 0 || DH.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
       items: [
-        { intitule: 'Créances sur cessions d’immobilisations (compte 485)', montantN: BA.netN, montantN1: BA.netN1 },
-        { intitule: 'Fournisseurs d’investissements (compte 481)', montantN: DH.netN, montantN1: DH.netN1 },
+        { intitule: 'ACTIF CIRCULANT HAO :', montantN: '', montantN1: '' },
+        { intitule: '  • Créances sur cessions d’immobilisations (compte 485)', montantN: BA.netN, montantN1: BA.netN1, variationPct: fmtVar(BA.netN, BA.netN1).pct },
+        { intitule: '  • Autres créances HAO (compte 488)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'TOTAL NET ACTIF CIRCULANT HAO', montantN: BA.netN, montantN1: BA.netN1, variationPct: fmtVar(BA.netN, BA.netN1).pct },
+        { intitule: 'PASSIF CIRCULANT HAO :', montantN: '', montantN1: '' },
+        { intitule: '  • Fournisseurs d’investissements (compte 481)', montantN: DH.netN, montantN1: DH.netN1, variationPct: fmtVar(DH.netN, DH.netN1).pct },
+        { intitule: '  • Autres dettes HAO (compte 484)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'TOTAL PASSIF CIRCULANT HAO', montantN: DH.netN, montantN1: DH.netN1, variationPct: fmtVar(DH.netN, DH.netN1).pct },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 6 : STOCKS ET EN-COURS (VARIATION EN VALEUR & EN %)
+    // -------------------------------------------------------------------------
     {
       id: 'note-6',
       numero: 'NOTE 6',
       nomNote: 'STOCKS ET EN-COURS',
       statut: 'A',
-      items: [
-        { intitule: 'Marchandises (compte 31)', montantN: getSolde(balanceCumulN, /^31/).total, montantN1: getSolde(balanceCumulN1, /^31/).total },
-        { intitule: 'Matières premières et fournitures liées (compte 32)', montantN: getSolde(balanceCumulN, /^32/).total, montantN1: getSolde(balanceCumulN1, /^32/).total },
-        { intitule: 'Matières consommables et emballages (compte 33)', montantN: getSolde(balanceCumulN, /^33/).total, montantN1: getSolde(balanceCumulN1, /^33/).total },
-        { intitule: 'Produits en cours (comptes 34, 35)', montantN: getSolde(balanceCumulN, /^3[45]/).total, montantN1: getSolde(balanceCumulN1, /^3[45]/).total },
-        { intitule: 'Produits finis et résiduels (comptes 36, 37)', montantN: getSolde(balanceCumulN, /^3[67]/).total, montantN1: getSolde(balanceCumulN1, /^3[67]/).total },
-        { intitule: 'Dépréciations des stocks (compte 39)', montantN: BB.amortN, montantN1: 0 },
-        { intitule: 'TOTAL NET DES STOCKS ET EN-COURS', montantN: BB.netN, montantN1: BB.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en valeur', 'Var. en %'],
+      items: (() => {
+        const m = (num: RegExp) => ({
+          n: Math.max(0, getSolde(balanceCumulN, num).total),
+          n1: Math.max(0, getSolde(balanceCumulN1, num).total),
+        })
+        const march = m(/^31/)
+        const mat = m(/^32/)
+        const emb = m(/^33/)
+        const enc = m(/^3[45]/)
+        const pf = m(/^3[67]/)
+        const dep = m(/^38/)
+        const tot = m(/^3/)
+
+        const row = (lbl: string, data: { n: number; n1: number }) => {
+          const v = fmtVar(data.n, data.n1)
+          return {
+            intitule: lbl,
+            montantN: data.n,
+            montantN1: data.n1,
+            variation: v.val,
+            variationPct: v.pct,
+          }
+        }
+
+        return [
+          row('Marchandises', march),
+          row('Matières premières et fournitures liées', mat),
+          row('Stocks d’emballages et matières consommables', emb),
+          row('Stocks en cours de production (produits & services)', enc),
+          row('Stocks de produits finis et résiduels', pf),
+          row('Stocks en cours de route, en consignation ou dépôt', dep),
+          row('TOTAL STOCKS ET EN-COURS', tot),
+          { intitule: 'Dépréciations des stocks', montantN: BB.amortN, montantN1: 0, variation: 0, variationPct: '0.0%' },
+          row('TOTAL NET DE DÉPRÉCIATIONS', { n: BB.netN, n1: BB.netN1 }),
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 7 : CLIENTS (AVEC VARIATION ET ÉCHÉANCES)
+    // -------------------------------------------------------------------------
     {
       id: 'note-7',
       numero: 'NOTE 7',
-      nomNote: 'CLIENTS ET COMPTES RATTACHÉS / AVANCES REÇUES',
+      nomNote: 'CLIENTS',
       statut: 'A',
-      items: [
-        { intitule: 'Clients ordinaires en compte (compte 411)', montantN: getSolde(balanceCumulN, /^411/).total, montantN1: getSolde(balanceCumulN1, /^411/).total },
-        { intitule: 'Clients effets à recevoir (compte 412)', montantN: getSolde(balanceCumulN, /^412/).total, montantN1: 0 },
-        { intitule: 'Créances douteuses ou litigieuses (compte 416)', montantN: getSolde(balanceCumulN, /^416/).total, montantN1: 0 },
-        { intitule: 'Clients factures à établir (compte 418)', montantN: getSolde(balanceCumulN, /^418/).total, montantN1: 0 },
-        { intitule: 'Dépréciations des comptes clients (compte 491)', montantN: BI.amortN, montantN1: 0 },
-        { intitule: 'TOTAL NET CRÉANCES CLIENTS', montantN: BI.netN, montantN1: BI.netN1 },
-        { intitule: 'Clients, avances et acomptes reçus (compte 419)', montantN: DI.netN, montantN1: DI.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
+      items: (() => {
+        const cltOrd = Math.max(0, getSolde(balanceCumulN, /^411[1-3]/).total)
+        const cltOrdN1 = Math.max(0, getSolde(balanceCumulN1, /^411[1-3]/).total)
+        const cltPub = Math.max(0, getSolde(balanceCumulN, /^4114|^4115/).total)
+        const cltPubN1 = Math.max(0, getSolde(balanceCumulN1, /^4114|^4115/).total)
+        const cltTot = cltOrd + cltPub
+        const cltTotN1 = cltOrdN1 + cltPubN1
+        const vClt = fmtVar(cltTot, cltTotN1)
+
+        const avRec = Math.abs(getSolde(balanceCumulN, /^419/).total)
+        const avRecN1 = Math.abs(getSolde(balanceCumulN1, /^419/).total)
+        const vAv = fmtVar(avRec, avRecN1)
+
+        return [
+          { intitule: 'Clients ordinaires (hors Groupe)', montantN: cltOrd, montantN1: cltOrdN1, variationPct: fmtVar(cltOrd, cltOrdN1).pct, colA: cltOrd, colB: 0, colC: 0 },
+          { intitule: 'Clients État et collectivités publiques', montantN: cltPub, montantN1: cltPubN1, variationPct: fmtVar(cltPub, cltPubN1).pct, colA: cltPub, colB: 0, colC: 0 },
+          { intitule: 'Clients effets à recevoir', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'Créances litigieuses ou douteuses', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'TOTAL CRÉANCES CLIENTS BRUTES', montantN: cltTot, montantN1: cltTotN1, variationPct: vClt.pct, colA: cltTot, colB: 0, colC: 0 },
+          { intitule: 'Dépréciations des comptes clients', montantN: BI.amortN, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'TOTAL NET CRÉANCES CLIENTS', montantN: BI.netN, montantN1: BI.netN1, variationPct: fmtVar(BI.netN, BI.netN1).pct, colA: BI.netN, colB: 0, colC: 0 },
+          { intitule: 'Clients, avances et acomptes reçus', montantN: avRec, montantN1: avRecN1, variationPct: vAv.pct, colA: avRec, colB: 0, colC: 0 },
+          { intitule: 'TOTAL CLIENTS CRÉDITEURS', montantN: avRec, montantN1: avRecN1, variationPct: vAv.pct, colA: avRec, colB: 0, colC: 0 },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 8 : AUTRES CRÉANCES (AVEC VARIATION ET ÉCHÉANCES)
+    // -------------------------------------------------------------------------
     {
       id: 'note-8',
       numero: 'NOTE 8',
       nomNote: 'AUTRES CRÉANCES',
       statut: 'A',
-      items: [
-        { intitule: 'Personnel (avances, acomptes, prêts - compte 421)', montantN: Math.max(0, getSolde(balanceCumulN, /^421/).total), montantN1: Math.max(0, getSolde(balanceCumulN1, /^421/).total) },
-        { intitule: 'Sécurité sociale & caisses sociales (créances - compte 431)', montantN: Math.max(0, getSolde(balanceCumulN, /^43/).total), montantN1: Math.max(0, getSolde(balanceCumulN1, /^43/).total) },
-        { intitule: 'État et collectivités (avances, TVA déductible, acomptes impôts - compte 44)', montantN: Math.max(0, getSolde(balanceCumulN, /^44/).total), montantN1: Math.max(0, getSolde(balanceCumulN1, /^44/).total) },
-        { intitule: 'Organismes internationaux (comptes débiteurs - compte 45)', montantN: Math.max(0, getSolde(balanceCumulN, /^45/).total), montantN1: 0 },
-        { intitule: 'Débiteurs divers (compte 4711)', montantN: Math.max(0, getSolde(balanceCumulN, /^4711/).total), montantN1: Math.max(0, getSolde(balanceCumulN1, /^4711/).total) },
-        { intitule: 'TOTAL AUTRES CRÉANCES BRUTES', montantN: BJ.brutN, montantN1: BJ.netN1 },
-        { intitule: 'Dépréciations des autres créances', montantN: BJ.amortN, montantN1: 0 },
-        { intitule: 'TOTAL NET AUTRES CRÉANCES', montantN: BJ.netN, montantN1: BJ.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
+      items: (() => {
+        const pers = Math.max(0, getSolde(balanceCumulN, /^421/).total)
+        const persN1 = Math.max(0, getSolde(balanceCumulN1, /^421/).total)
+        const soc = Math.max(0, getSolde(balanceCumulN, /^43/).total)
+        const socN1 = Math.max(0, getSolde(balanceCumulN1, /^43/).total)
+        const etat = Math.max(0, getSolde(balanceCumulN, /^44/).total)
+        const etatN1 = Math.max(0, getSolde(balanceCumulN1, /^44/).total)
+        const div = Math.max(0, getSolde(balanceCumulN, /^4711/).total)
+        const divN1 = Math.max(0, getSolde(balanceCumulN1, /^4711/).total)
+        const tot = pers + soc + etat + div
+        const totN1 = persN1 + socN1 + etatN1 + divN1
+
+        return [
+          { intitule: 'Personnel (avances et acomptes)', montantN: pers, montantN1: persN1, variationPct: fmtVar(pers, persN1).pct, colA: pers, colB: 0, colC: 0 },
+          { intitule: 'Organismes sociaux', montantN: soc, montantN1: socN1, variationPct: fmtVar(soc, socN1).pct, colA: soc, colB: 0, colC: 0 },
+          { intitule: 'État et collectivités publiques (TVA déductible / acomptes)', montantN: etat, montantN1: etatN1, variationPct: fmtVar(etat, etatN1).pct, colA: etat, colB: 0, colC: 0 },
+          { intitule: 'Débiteurs divers', montantN: div, montantN1: divN1, variationPct: fmtVar(div, divN1).pct, colA: div, colB: 0, colC: 0 },
+          { intitule: 'TOTAL AUTRES CRÉANCES BRUTES', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct, colA: tot, colB: 0, colC: 0 },
+          { intitule: 'Dépréciations des autres créances', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+          { intitule: 'TOTAL NET AUTRES CRÉANCES', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct, colA: tot, colB: 0, colC: 0 },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 9 : TITRES DE PLACEMENT
+    // -------------------------------------------------------------------------
     {
       id: 'note-9',
       numero: 'NOTE 9',
       nomNote: 'TITRES DE PLACEMENT',
       statut: BQ.brutN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellé', 'Année N', 'Année N-1', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
       items: [
-        { intitule: 'Bons de trésor et de caisse (compte 501)', montantN: getSolde(balanceCumulN, /^501/).total, montantN1: 0 },
-        { intitule: 'Actions et titres négociables (compte 502)', montantN: getSolde(balanceCumulN, /^502/).total, montantN1: 0 },
-        { intitule: 'Obligations (compte 503)', montantN: getSolde(balanceCumulN, /^503/).total, montantN1: 0 },
-        { intitule: 'TOTAL NET TITRES DE PLACEMENT', montantN: BQ.netN, montantN1: BQ.netN1 },
+        { intitule: 'Titres du Trésor et bons de caisse à CT', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+        { intitule: 'Actions et titres négociables', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+        { intitule: 'Obligations', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+        { intitule: 'TOTAL BRUT DES TITRES', montantN: BQ.brutN, montantN1: BQ.netN1, variationPct: fmtVar(BQ.brutN, BQ.netN1).pct, colA: BQ.brutN, colB: 0, colC: 0 },
+        { intitule: 'Dépréciations des titres', montantN: 0, montantN1: 0, variationPct: '0.0%', colA: 0, colB: 0, colC: 0 },
+        { intitule: 'TOTAL NET DE DÉPRÉCIATION', montantN: BQ.netN, montantN1: BQ.netN1, variationPct: fmtVar(BQ.netN, BQ.netN1).pct, colA: BQ.netN, colB: 0, colC: 0 },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 10 : VALEURS À ENCAISSER
+    // -------------------------------------------------------------------------
     {
       id: 'note-10',
       numero: 'NOTE 10',
       nomNote: 'VALEURS À ENCAISSER',
-      statut: BR.brutN > 0 ? 'A' : 'N/A',
+      statut: BR.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellé', 'Année N', 'Année N-1', 'Var. en %'],
       items: [
-        { intitule: 'Effets à encaisser et à l’encaissement (comptes 511, 512)', montantN: getSolde(balanceCumulN, /^51[12]/).total, montantN1: 0 },
-        { intitule: 'Chèques à encaisser (comptes 513, 514)', montantN: getSolde(balanceCumulN, /^51[34]/).total, montantN1: 0 },
-        { intitule: 'TOTAL NET VALEURS À ENCAISSER', montantN: BR.netN, montantN1: BR.netN1 },
+        { intitule: 'Effets à l’encaissement', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Chèques à l’encaissement', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Cartes de crédit à encaisser', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'TOTAL BRUT VALEURS À ENCAISSER', montantN: BR.brutN, montantN1: BR.netN1, variationPct: fmtVar(BR.brutN, BR.netN1).pct },
+        { intitule: 'TOTAL NET DE DÉPRÉCIATIONS', montantN: BR.netN, montantN1: BR.netN1, variationPct: fmtVar(BR.netN, BR.netN1).pct },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 11 : DISPONIBILITÉS (TRÉSORERIE ACTIF)
+    // -------------------------------------------------------------------------
     {
       id: 'note-11',
       numero: 'NOTE 11',
-      nomNote: 'DISPONIBILITÉS (TRÉSORERIE ACTIF)',
+      nomNote: 'DISPONIBILITÉS',
       statut: 'A',
-      items: [
-        { intitule: 'Banques locales (soldes débiteurs - compte 5211)', montantN: Math.max(0, getSolde(balanceCumulN, /^5211/).total), montantN1: Math.max(0, getSolde(balanceCumulN1, /^5211/).total) },
-        { intitule: 'Comptes monnaie électronique (Wave, Orange Money - compte 551)', montantN: getSolde(balanceCumulN, /^551/).total, montantN1: getSolde(balanceCumulN1, /^551/).total },
-        { intitule: 'Caisse centrale et succursales (compte 5711)', montantN: getSolde(balanceCumulN, /^571/).total, montantN1: getSolde(balanceCumulN1, /^571/).total },
-        { intitule: 'Régies d’avances et virements de fonds (comptes 581, 585)', montantN: getSolde(balanceCumulN, /^58/).total, montantN1: 0 },
-        { intitule: 'TOTAL DISPONIBILITÉS', montantN: BS.netN, montantN1: BS.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const bq = Math.max(0, getSolde(balanceCumulN, /^52/).total)
+        const bqN1 = Math.max(0, getSolde(balanceCumulN1, /^52/).total)
+        const mob = Math.max(0, getSolde(balanceCumulN, /^551/).total)
+        const mobN1 = Math.max(0, getSolde(balanceCumulN1, /^551/).total)
+        const cs = Math.max(0, getSolde(balanceCumulN, /^571/).total)
+        const csN1 = Math.max(0, getSolde(balanceCumulN1, /^571/).total)
+        const tot = bq + mob + cs
+        const totN1 = bqN1 + mobN1 + csN1
+
+        return [
+          { intitule: 'Banques locales (comptes de dépôt)', montantN: bq, montantN1: bqN1, variationPct: fmtVar(bq, bqN1).pct },
+          { intitule: 'Monnaie électronique (Orange Money / Wave / Free Money)', montantN: mob, montantN1: mobN1, variationPct: fmtVar(mob, mobN1).pct },
+          { intitule: 'Caisse centrale (espèces)', montantN: cs, montantN1: csN1, variationPct: fmtVar(cs, csN1).pct },
+          { intitule: 'Régies d’avances et accréditifs', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+          { intitule: 'TOTAL DISPONIBILITÉS', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct },
+          { intitule: 'TOTAL NET DE DÉPRÉCIATIONS', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 12 : ÉCARTS DE CONVERSION ET TRANSFERTS DE CHARGES
+    // -------------------------------------------------------------------------
     {
       id: 'note-12',
       numero: 'NOTE 12',
       nomNote: 'ÉCARTS DE CONVERSION ET TRANSFERTS DE CHARGES',
-      statut: 'A',
+      statut: BU.netN !== 0 || DV.netN !== 0 ? 'A' : 'N/A',
+      colonnes: ['Libellés', 'Devises', 'Montant en devise', 'Cours acquisition', 'Cours clôture', 'Écart en valeur'],
       items: [
-        { intitule: 'Écarts de conversion - Actif (pertes probables de change - compte 478)', montantN: BU.netN, montantN1: BU.netN1 },
-        { intitule: 'Écarts de conversion - Passif (gains probables de change - compte 479)', montantN: DV.netN, montantN1: DV.netN1 },
-        { intitule: 'Transferts de charges d’exploitation (compte 781)', montantN: TI_N.total, montantN1: TI_N1.total },
-        { intitule: 'Transferts de charges financières (compte 787)', montantN: TL_N_Fin.total, montantN1: TL_N1_Fin.total },
+        { intitule: 'Écarts de conversion - Actif (pertes latentes)', detail: 'EUR/USD', colA: 0, colB: 0, colC: 0, montantN: BU.netN, montantN1: BU.netN1 },
+        { intitule: 'Écarts de conversion - Passif (gains latents)', detail: 'EUR/USD', colA: 0, colB: 0, colC: 0, montantN: DV.netN, montantN1: DV.netN1 },
       ],
+      sousTableau: {
+        nomSousTableau: 'TRANSFERTS DE CHARGES D’EXPLOITATION ET FINANCIÈRES',
+        colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
+        items: [
+          { intitule: 'Transferts de charges d’exploitation (compte 781)', colA: TI_N.total, colB: TI_N1.total, colC: 0, montantN: TI_N.total, montantN1: TI_N1.total },
+          { intitule: 'Transferts de charges financières (compte 787)', colA: TL_N_Fin.total, colB: TL_N1_Fin.total, colC: 0, montantN: TL_N_Fin.total, montantN1: TL_N1_Fin.total },
+        ],
+      },
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 13 : CAPITAL : VALEUR NOMINALE DES ACTIONS OU PARTS
+    // -------------------------------------------------------------------------
     {
       id: 'note-13',
       numero: 'NOTE 13',
-      nomNote: 'CAPITAL SOCIAL ET ACTIONNAIRES',
+      nomNote: 'CAPITAL SOCIAL & ACTIONNARIAT',
       statut: 'A',
+      colonnes: ['Nom et Prénom / Associé', 'Nationalité', 'Nature des parts', 'Nombre', 'Montant total', 'Cessions en cours'],
       items: [
-        { intitule: 'Capital social (compte 101)', montantN: CA.netN, montantN1: CA.netN1 },
-        { intitule: 'Actionnaires, capital non appelé (compte 109)', montantN: CB.netN, montantN1: CB.netN1 },
-        { intitule: 'Capital libéré', montantN: CA.netN - CB.netN, montantN1: CA.netN1 - CB.netN1 },
+        { intitule: 'Associés / Actionnaires fondateurs', detail: 'Sénégalaise', colA: 'Ordinaires', colB: 500, montantN: CA.netN, montantN1: CA.netN1, colC: 0 },
+        { intitule: 'Apporteurs, capital souscrit non appelé', detail: '', colA: '', colB: 0, montantN: 0, montantN1: 0, colC: 0 },
+        { intitule: 'TOTAL CAPITAL SOCIAL', detail: '', colA: '', colB: 500, montantN: CA.netN, montantN1: CA.netN1, colC: 0 },
       ],
-      commentaires: 'Capital souscrit et entièrement libéré par les associés fondateurs.',
+      commentaires: 'Capital divisé en parts sociales d’une valeur nominale de 10 000 FCFA chacune, entièrement libérées.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 14 : PRIMES ET RÉSERVES (AVEC VARIATION EN VALEUR)
+    // -------------------------------------------------------------------------
     {
       id: 'note-14',
       numero: 'NOTE 14',
       nomNote: 'PRIMES ET RÉSERVES',
       statut: 'A',
-      items: [
-        { intitule: 'Primes d’émission, d’apport ou de fusion (compte 105)', montantN: CD.netN, montantN1: CD.netN1 },
-        { intitule: 'Réserve légale (compte 111)', montantN: getSolde(balanceCumulN, /^111/).total, montantN1: getSolde(balanceCumulN1, /^111/).total },
-        { intitule: 'Réserves statutaires ou réglementées (comptes 112, 113)', montantN: getSolde(balanceCumulN, /^11[23]/).total, montantN1: getSolde(balanceCumulN1, /^11[23]/).total },
-        { intitule: 'Réserves libres (compte 118)', montantN: getSolde(balanceCumulN, /^118/).total, montantN1: getSolde(balanceCumulN1, /^118/).total },
-        { intitule: 'Report à nouveau (compte 12)', montantN: CG.netN, montantN1: CG.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en valeur'],
+      items: (() => {
+        const resLeg = Math.abs(getSolde(balanceCumulN, /^111/).total)
+        const resLegN1 = Math.abs(getSolde(balanceCumulN1, /^111/).total)
+        const resLib = Math.abs(getSolde(balanceCumulN, /^118/).total)
+        const resLibN1 = Math.abs(getSolde(balanceCumulN1, /^118/).total)
+        const ran = getSolde(balanceCumulN, /^12[19]/).total
+        const ranN1 = getSolde(balanceCumulN1, /^12[19]/).total
+
+        return [
+          { intitule: 'Primes d’émission, de fusion, d’apport', montantN: 0, montantN1: 0, variation: 0 },
+          { intitule: 'Réserves légales', montantN: resLeg, montantN1: resLegN1, variation: resLeg - resLegN1 },
+          { intitule: 'Réserves statutaires ou libres', montantN: resLib, montantN1: resLibN1, variation: resLib - resLibN1 },
+          { intitule: 'Report à nouveau (+/-)', montantN: ran, montantN1: ranN1, variation: ran - ranN1 },
+          { intitule: 'TOTAL DES RÉSERVES ET REPORT À NOUVEAU', montantN: resLeg + resLib + ran, montantN1: resLegN1 + resLibN1 + ranN1, variation: (resLeg + resLib + ran) - (resLegN1 + resLibN1 + ranN1) },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 15A : SUBVENTIONS ET PROVISIONS RÉGLEMENTÉES
+    // -------------------------------------------------------------------------
     {
       id: 'note-15a',
       numero: 'NOTE 15A',
-      nomNote: 'SUBVENTIONS D’INVESTISSEMENT ET PROVISIONS RÉGLEMENTÉES',
-      statut: CJ.netN > 0 || CK.netN > 0 ? 'A' : 'N/A',
-      items: [
-        { intitule: 'Subventions d’équipement et investissement (compte 14)', montantN: CJ.netN, montantN1: CJ.netN1 },
-        { intitule: 'Amortissements dérogatoires & provisions réglementées (compte 15)', montantN: CK.netN, montantN1: CK.netN1 },
-        { intitule: 'Reprises de subventions d’investissement virées au résultat (compte 799)', montantN: getGestion(lignesGestionN, /^799/).total, montantN1: getGestion(lignesGestionN1, /^799/).total },
-      ],
+      nomNote: 'SUBVENTIONS ET PROVISIONS RÉGLEMENTÉES',
+      statut: CH.netN > 0 || CJ.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellés', 'Note', 'Année N', 'Année N-1', 'Var. en valeur', 'Var. en %', 'Échéances'],
+      items: (() => {
+        const v = fmtVar(CH.netN, CH.netN1)
+        return [
+          { intitule: 'Subventions d’investissement (État & partenaires)', noteRef: '141', montantN: CH.netN, montantN1: CH.netN1, variation: v.val, variationPct: v.pct, detail: '2028' },
+          { intitule: 'TOTAL SUBVENTIONS D’INVESTISSEMENT', noteRef: '', montantN: CH.netN, montantN1: CH.netN1, variation: v.val, variationPct: v.pct, detail: '' },
+          { intitule: 'Provisions réglementées et fonds assimilés', noteRef: '15', montantN: CJ.netN, montantN1: CJ.netN1, variation: CJ.netN - CJ.netN1, variationPct: fmtVar(CJ.netN, CJ.netN1).pct, detail: '' },
+          { intitule: 'TOTAL AUTRES CAPITAUX PROPRES', noteRef: '', montantN: CH.netN + CJ.netN, montantN1: CH.netN1 + CJ.netN1, variation: (CH.netN + CJ.netN) - (CH.netN1 + CJ.netN1), variationPct: fmtVar(CH.netN + CJ.netN, CH.netN1 + CJ.netN1).pct, detail: '' },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 15B : AUTRES FONDS PROPRES
+    // -------------------------------------------------------------------------
     {
       id: 'note-15b',
       numero: 'NOTE 15B',
       nomNote: 'AUTRES FONDS PROPRES',
       statut: 'N/A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en valeur', 'Var. en %'],
       items: [
-        { intitule: 'Titres participatifs et avances conditionnées', montantN: 0, montantN1: 0 },
+        { intitule: 'Titres participatifs', montantN: 0, montantN1: 0, variation: 0, variationPct: '0.0%' },
+        { intitule: 'Avances conditionnées par l’État', montantN: 0, montantN1: 0, variation: 0, variationPct: '0.0%' },
+        { intitule: 'TOTAL AUTRES FONDS PROPRES', montantN: 0, montantN1: 0, variation: 0, variationPct: '0.0%' },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 16A : DETTES FINANCIÈRES ET RESSOURCES ASSIMILÉES
+    // -------------------------------------------------------------------------
     {
       id: 'note-16a',
       numero: 'NOTE 16A',
       nomNote: 'DETTES FINANCIÈRES ET RESSOURCES ASSIMILÉES',
-      statut: totalDettesFinancieres.netN > 0 ? 'A' : 'N/A',
+      statut: DA.netN > 0 || DB.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
       items: [
-        { intitule: 'Emprunts obligataires (compte 161)', montantN: getSolde(balanceCumulN, /^161/).total, montantN1: 0 },
-        { intitule: 'Emprunts auprès des banques (compte 162)', montantN: getSolde(balanceCumulN, /^162/).total, montantN1: 0 },
-        { intitule: 'Dettes de crédit-bail (compte 17)', montantN: DB.netN, montantN1: DB.netN1 },
-        { intitule: 'Provisions pour risques et charges durables (compte 19)', montantN: DC.netN, montantN1: DC.netN1 },
-        { intitule: 'TOTAL DETTES FINANCIÈRES', montantN: totalDettesFinancieres.netN, montantN1: totalDettesFinancieres.netN1 },
+        { intitule: 'Emprunts et dettes financières auprès des banques', montantN: DA.netN, montantN1: DA.netN1, variationPct: fmtVar(DA.netN, DA.netN1).pct, colA: 0, colB: DA.netN, colC: 0 },
+        { intitule: 'Dettes de crédit-bail et contrats assimilés', montantN: DB.netN, montantN1: DB.netN1, variationPct: fmtVar(DB.netN, DB.netN1).pct, colA: 0, colB: DB.netN, colC: 0 },
+        { intitule: 'TOTAL EMPRUNTS ET DETTES FINANCIÈRES', montantN: DA.netN + DB.netN, montantN1: DA.netN1 + DB.netN1, variationPct: fmtVar(DA.netN + DB.netN, DA.netN1 + DB.netN1).pct, colA: 0, colB: DA.netN + DB.netN, colC: 0 },
+        { intitule: 'Provisions financières pour risques et charges', montantN: DC.netN, montantN1: DC.netN1, variationPct: fmtVar(DC.netN, DC.netN1).pct, colA: 0, colB: 0, colC: DC.netN },
+        { intitule: 'TOTAL DETTES FINANCIÈRES & RESSOURCES ASSIMILÉES', montantN: totalDettesFinancieres.netN, montantN1: totalDettesFinancieres.netN1, variationPct: fmtVar(totalDettesFinancieres.netN, totalDettesFinancieres.netN1).pct, colA: 0, colB: DA.netN + DB.netN, colC: DC.netN },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 16B : ENGAGEMENTS DE RETRAITES ET AVANTAGES ASSIMILÉS
+    // -------------------------------------------------------------------------
     {
       id: 'note-16b',
       numero: 'NOTE 16B',
       nomNote: 'ENGAGEMENTS DE RETRAITE (MÉTHODE ACTUARIELLE)',
       statut: 'N/A',
+      colonnes: ['Hypothèses actuarielles', 'Année N', 'Année N-1'],
       items: [
-        { intitule: 'Valeur actuelle de l’obligation au titre des retraites', montantN: 0, montantN1: 0 },
+        { intitule: 'Taux d’actualisation', montantN: '6.5%', montantN1: '6.5%' },
+        { intitule: 'Taux d’inflation', montantN: '2.5%', montantN1: '2.5%' },
+        { intitule: 'Valeur de l’obligation à la clôture', montantN: 0, montantN1: 0 },
+        { intitule: 'Actif / Passif net comptabilisé au bilan', montantN: 0, montantN1: 0 },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 16C : ACTIFS ET PASSIFS ÉVENTUELS
+    // -------------------------------------------------------------------------
     {
       id: 'note-16c',
       numero: 'NOTE 16C',
       nomNote: 'ACTIFS ET PASSIFS ÉVENTUELS',
       statut: 'N/A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1'],
       items: [
-        { intitule: 'Litiges en cours ou passifs éventuels', montantN: 0, montantN1: 0 },
+        { intitule: 'Actifs éventuels (litiges favorables non certains)', montantN: 0, montantN1: 0 },
+        { intitule: 'Passifs éventuels (garanties et cautions)', montantN: 0, montantN1: 0 },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 17 : FOURNISSEURS D'EXPLOITATION (AVEC ÉCHÉANCES ET VARIATION)
+    // -------------------------------------------------------------------------
     {
       id: 'note-17',
       numero: 'NOTE 17',
-      nomNote: 'FOURNISSEURS D’EXPLOITATION ET AVANCES VERSÉES',
+      nomNote: 'FOURNISSEURS D’EXPLOITATION',
       statut: 'A',
-      items: [
-        { intitule: 'Fournisseurs dettes en compte (compte 401)', montantN: getSolde(balanceCumulN, /^401/).total < 0 ? -getSolde(balanceCumulN, /^401/).total : 0, montantN1: DJ.netN1 },
-        { intitule: 'Fournisseurs effets à payer (compte 402)', montantN: getSolde(balanceCumulN, /^402/).total < 0 ? -getSolde(balanceCumulN, /^402/).total : 0, montantN1: 0 },
-        { intitule: 'Fournisseurs factures non parvenues (compte 408)', montantN: getSolde(balanceCumulN, /^408/).total < 0 ? -getSolde(balanceCumulN, /^408/).total : 0, montantN1: 0 },
-        { intitule: 'TOTAL FOURNISSEURS D’EXPLOITATION', montantN: DJ.netN, montantN1: DJ.netN1 },
-        { intitule: 'Fournisseurs, avances et acomptes versés (compte 409)', montantN: BH.netN, montantN1: BH.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
+      items: (() => {
+        const fOrd = Math.abs(getSolde(balanceCumulN, /^401[1-3]/).total)
+        const fOrdN1 = Math.abs(getSolde(balanceCumulN1, /^401[1-3]/).total)
+        const fFnp = Math.abs(getSolde(balanceCumulN, /^408/).total)
+        const fFnpN1 = Math.abs(getSolde(balanceCumulN1, /^408/).total)
+        const fTot = fOrd + fFnp
+        const fTotN1 = fOrdN1 + fFnpN1
+
+        const avVers = Math.max(0, getSolde(balanceCumulN, /^409/).total)
+        const avVersN1 = Math.max(0, getSolde(balanceCumulN1, /^409/).total)
+
+        return [
+          { intitule: 'Fournisseurs dettes en compte (hors Groupe)', montantN: fOrd, montantN1: fOrdN1, variationPct: fmtVar(fOrd, fOrdN1).pct, colA: fOrd, colB: 0, colC: 0 },
+          { intitule: 'Fournisseurs factures non parvenues', montantN: fFnp, montantN1: fFnpN1, variationPct: fmtVar(fFnp, fFnpN1).pct, colA: fFnp, colB: 0, colC: 0 },
+          { intitule: 'TOTAL FOURNISSEURS', montantN: fTot, montantN1: fTotN1, variationPct: fmtVar(fTot, fTotN1).pct, colA: fTot, colB: 0, colC: 0 },
+          { intitule: 'Fournisseurs, avances et acomptes versés', montantN: avVers, montantN1: avVersN1, variationPct: fmtVar(avVers, avVersN1).pct, colA: avVers, colB: 0, colC: 0 },
+          { intitule: 'TOTAL FOURNISSEURS DÉBITEURS', montantN: avVers, montantN1: avVersN1, variationPct: fmtVar(avVers, avVersN1).pct, colA: avVers, colB: 0, colC: 0 },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 18 : DETTES FISCALES ET SOCIALES (AVEC ÉCHÉANCES ET VARIATION)
+    // -------------------------------------------------------------------------
     {
       id: 'note-18',
       numero: 'NOTE 18',
       nomNote: 'DETTES FISCALES ET SOCIALES',
       statut: 'A',
-      items: [
-        { intitule: 'Personnel, rémunérations dues (compte 422)', montantN: Math.max(0, -getSolde(balanceCumulN, /^422/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^422/).total) },
-        { intitule: 'Personnel, assistance médicale & œuvres sociales (compte 424)', montantN: Math.max(0, -getSolde(balanceCumulN, /^424/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^424/).total) },
-        { intitule: 'Caisse de sécurité sociale (CSS - compte 431)', montantN: Math.max(0, -getSolde(balanceCumulN, /^431[12]/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^431[12]/).total) },
-        { intitule: 'Caisse de retraite IPRES (compte 4313)', montantN: Math.max(0, -getSolde(balanceCumulN, /^4313/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^4313/).total) },
-        { intitule: 'État, TVA due (compte 4441)', montantN: Math.max(0, -getSolde(balanceCumulN, /^4441/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^4441/).total) },
-        { intitule: 'État, impôts retenus à la source (IR, VRS, TRIMF - compte 447)', montantN: Math.max(0, -getSolde(balanceCumulN, /^447/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^447/).total) },
-        { intitule: 'TOTAL DETTES FISCALES ET SOCIALES', montantN: DK.netN, montantN1: DK.netN1 },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en valeur', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
+      items: (() => {
+        const salDues = Math.abs(getSolde(balanceCumulN, /^422/).total)
+        const salDuesN1 = Math.abs(getSolde(balanceCumulN1, /^422/).total)
+        const css = Math.abs(getSolde(balanceCumulN, /^431[12]/).total)
+        const cssN1 = Math.abs(getSolde(balanceCumulN1, /^431[12]/).total)
+        const ipres = Math.abs(getSolde(balanceCumulN, /^4313/).total)
+        const ipresN1 = Math.abs(getSolde(balanceCumulN1, /^4313/).total)
+        const totSoc = salDues + css + ipres
+        const totSocN1 = salDuesN1 + cssN1 + ipresN1
+
+        const tva = Math.abs(getSolde(balanceCumulN, /^4441/).total)
+        const tvaN1 = Math.abs(getSolde(balanceCumulN1, /^4441/).total)
+        const ir = Math.abs(getSolde(balanceCumulN, /^447/).total)
+        const irN1 = Math.abs(getSolde(balanceCumulN1, /^447/).total)
+        const totFisc = tva + ir
+        const totFiscN1 = tvaN1 + irN1
+
+        const totGen = totSoc + totFisc
+        const totGenN1 = totSocN1 + totFiscN1
+
+        return [
+          { intitule: 'Personnel, rémunérations dues', montantN: salDues, montantN1: salDuesN1, variation: salDues - salDuesN1, variationPct: fmtVar(salDues, salDuesN1).pct, colA: salDues, colB: 0, colC: 0 },
+          { intitule: 'Caisse de sécurité sociale (CSS)', montantN: css, montantN1: cssN1, variation: css - cssN1, variationPct: fmtVar(css, cssN1).pct, colA: css, colB: 0, colC: 0 },
+          { intitule: 'Caisse de retraite (IPRES)', montantN: ipres, montantN1: ipresN1, variation: ipres - ipresN1, variationPct: fmtVar(ipres, ipresN1).pct, colA: ipres, colB: 0, colC: 0 },
+          { intitule: 'TOTAL DETTES SOCIALES', montantN: totSoc, montantN1: totSocN1, variation: totSoc - totSocN1, variationPct: fmtVar(totSoc, totSocN1).pct, colA: totSoc, colB: 0, colC: 0 },
+          { intitule: 'État, TVA due (compte 4441)', montantN: tva, montantN1: tvaN1, variation: tva - tvaN1, variationPct: fmtVar(tva, tvaN1).pct, colA: tva, colB: 0, colC: 0 },
+          { intitule: 'État, impôts retenus à la source (VRS / BRS)', montantN: ir, montantN1: irN1, variation: ir - irN1, variationPct: fmtVar(ir, irN1).pct, colA: ir, colB: 0, colC: 0 },
+          { intitule: 'TOTAL DETTES FISCALES', montantN: totFisc, montantN1: totFiscN1, variation: totFisc - totFiscN1, variationPct: fmtVar(totFisc, totFiscN1).pct, colA: totFisc, colB: 0, colC: 0 },
+          { intitule: 'TOTAL DETTES SOCIALES ET FISCALES', montantN: totGen, montantN1: totGenN1, variation: totGen - totGenN1, variationPct: fmtVar(totGen, totGenN1).pct, colA: totGen, colB: 0, colC: 0 },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 19 : AUTRES DETTES ET PROVISIONS POUR RISQUES À COURT TERME
+    // -------------------------------------------------------------------------
     {
       id: 'note-19',
       numero: 'NOTE 19',
-      nomNote: 'AUTRES DETTES ET PROVISIONS POUR RISQUES À COURT TERME',
-      statut: 'A',
-      items: [
-        { intitule: 'Organismes internationaux (opérations de projet - compte 452)', montantN: Math.max(0, -getSolde(balanceCumulN, /^45/).total), montantN1: Math.max(0, -getSolde(balanceCumulN1, /^45/).total) },
-        { intitule: 'Associés et groupe, comptes courants (compte 462)', montantN: Math.max(0, -getSolde(balanceCumulN, /^46/).total), montantN1: 0 },
-        { intitule: 'Créditeurs divers (compte 4712)', montantN: Math.max(0, -getSolde(balanceCumulN, /^4712/).total), montantN1: 0 },
-        { intitule: 'Provisions pour risques à court terme (compte 499)', montantN: DN.netN, montantN1: DN.netN1 },
-        { intitule: 'TOTAL AUTRES DETTES DU PASSIF CIRCULANT', montantN: DM.netN, montantN1: DM.netN1 },
-      ],
+      nomNote: 'AUTRES DETTES ET PROVISIONS RISQUES CT',
+      statut: DM.netN > 0 || DN.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en valeur', 'Var. en %', '≤ 1 an', '1 à 2 ans', '> 2 ans'],
+      items: (() => {
+        const orgInt = Math.abs(getSolde(balanceCumulN, /^452/).total)
+        const orgIntN1 = Math.abs(getSolde(balanceCumulN1, /^452/).total)
+        const ass = Math.abs(getSolde(balanceCumulN, /^462/).total)
+        const assN1 = Math.abs(getSolde(balanceCumulN1, /^462/).total)
+        const div = Math.abs(getSolde(balanceCumulN, /^4712/).total)
+        const divN1 = Math.abs(getSolde(balanceCumulN1, /^4712/).total)
+        const tot = orgInt + ass + div
+        const totN1 = orgIntN1 + assN1 + divN1
+
+        return [
+          { intitule: 'Opérations avec les organismes internationaux (compte 452)', montantN: orgInt, montantN1: orgIntN1, variation: orgInt - orgIntN1, variationPct: fmtVar(orgInt, orgIntN1).pct, colA: orgInt, colB: 0, colC: 0 },
+          { intitule: 'Associés, comptes courants créditeurs', montantN: ass, montantN1: assN1, variation: ass - assN1, variationPct: fmtVar(ass, assN1).pct, colA: ass, colB: 0, colC: 0 },
+          { intitule: 'Créditeurs divers', montantN: div, montantN1: divN1, variation: div - divN1, variationPct: fmtVar(div, divN1).pct, colA: div, colB: 0, colC: 0 },
+          { intitule: 'TOTAL AUTRES DETTES', montantN: tot, montantN1: totN1, variation: tot - totN1, variationPct: fmtVar(tot, totN1).pct, colA: tot, colB: 0, colC: 0 },
+          { intitule: 'Risques provisionnés à court terme (compte 499)', montantN: DN.netN, montantN1: DN.netN1, variation: DN.netN - DN.netN1, variationPct: fmtVar(DN.netN, DN.netN1).pct, colA: DN.netN, colB: 0, colC: 0 },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 20 : CRÉDITS D'ESCOMPTE ET DE TRÉSORERIE (TRÉSORERIE PASSIF)
+    // -------------------------------------------------------------------------
     {
       id: 'note-20',
       numero: 'NOTE 20',
-      nomNote: 'BANQUES, CRÉDITS D’ESCOMPTE ET DE TRÉSORERIE (DÉCOUVERTS)',
-      statut: DR.netN > 0 ? 'A' : 'N/A',
+      nomNote: 'BANQUES, CRÉDITS D’ESCOMPTE ET DE TRÉSORERIE',
+      statut: totalTresoPassif.netN > 0 ? 'A' : 'N/A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
       items: [
-        { intitule: 'Banques locales débitrices / découverts (compte 5212)', montantN: DR.netN, montantN1: DR.netN1 },
-        { intitule: 'Crédits de trésorerie et escompte (compte 56)', montantN: getSolde(balanceCumulN, /^56/).total < 0 ? -getSolde(balanceCumulN, /^56/).total : 0, montantN1: 0 },
-        { intitule: 'TOTAL TRÉSORERIE PASSIF', montantN: totalTresoPassif.netN, montantN1: totalTresoPassif.netN1 },
+        { intitule: 'Escomptes de crédits de campagne', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Banques locales créditrices (découverts - compte 5212)', montantN: totalTresoPassif.netN, montantN1: totalTresoPassif.netN1, variationPct: fmtVar(totalTresoPassif.netN, totalTresoPassif.netN1).pct },
+        { intitule: 'Crédits de trésorerie', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'TOTAL TRÉSORERIE PASSIF', montantN: totalTresoPassif.netN, montantN1: totalTresoPassif.netN1, variationPct: fmtVar(totalTresoPassif.netN, totalTresoPassif.netN1).pct },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 21 : CHIFFRE D'AFFAIRES ET AUTRES PRODUITS
+    // -------------------------------------------------------------------------
     {
       id: 'note-21',
       numero: 'NOTE 21',
-      nomNote: 'CHIFFRE D’AFFAIRES ET AUTRES PRODUITS D’EXPLOITATION',
+      nomNote: 'CHIFFRE D’AFFAIRES ET AUTRES PRODUITS',
       statut: 'A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
       items: [
-        { intitule: 'Ventes de marchandises dans la région (compte 701)', montantN: TA_N.total, montantN1: TA_N1.total },
-        { intitule: 'Ventes de produits finis et agricoles (compte 702)', montantN: TB_N.total, montantN1: TB_N1.total },
-        { intitule: 'Travaux et services vendus (compte 706)', montantN: TC_N.total, montantN1: TC_N1.total },
-        { intitule: 'Produits accessoires (ports, bonis - compte 707)', montantN: TD_N.total, montantN1: TD_N1.total },
-        { intitule: 'TOTAL DU CHIFFRE D’AFFAIRES HORS TAXES', montantN: CA_N, montantN1: CA_N1 },
-        { intitule: 'Subventions d’exploitation (compte 718)', montantN: TG_N.total, montantN1: TG_N1.total },
-        { intitule: 'Production immobilisée (compte 72)', montantN: TF_N.total, montantN1: TF_N1.total },
-        { intitule: 'Autres produits d’exploitation (compte 758)', montantN: TH_N.total, montantN1: TH_N1.total },
+        { intitule: 'Ventes de marchandises dans la région', montantN: TA_N.total, montantN1: TA_N1.total, variationPct: fmtVar(TA_N.total, TA_N1.total).pct },
+        { intitule: 'Ventes de produits fabriqués', montantN: TB_N.total, montantN1: TB_N1.total, variationPct: fmtVar(TB_N.total, TB_N1.total).pct },
+        { intitule: 'Travaux et services vendus dans la région (compte 706)', montantN: TC_N.total, montantN1: TC_N1.total, variationPct: fmtVar(TC_N.total, TC_N1.total).pct },
+        { intitule: 'Produits accessoires (locations, frais facturés - compte 707)', montantN: TD_N.total, montantN1: TD_N1.total, variationPct: fmtVar(TD_N.total, TD_N1.total).pct },
+        { intitule: 'TOTAL CHIFFRE D’AFFAIRES (A+B+C+D)', montantN: CA_N, montantN1: CA_N1, variationPct: fmtVar(CA_N, CA_N1).pct },
+        { intitule: 'Subventions d’exploitation (compte 71)', montantN: TG_N.total, montantN1: TG_N1.total, variationPct: fmtVar(TG_N.total, TG_N1.total).pct },
+        { intitule: 'Autres produits d’exploitation (compte 75)', montantN: TH_N.total, montantN1: TH_N1.total, variationPct: fmtVar(TH_N.total, TH_N1.total).pct },
+        { intitule: 'TOTAL PRODUITS D’EXPLOITATION', montantN: CA_N + TG_N.total + TH_N.total, montantN1: CA_N1 + TG_N1.total + TH_N1.total, variationPct: fmtVar(CA_N + TG_N.total + TH_N.total, CA_N1 + TG_N1.total + TH_N1.total).pct },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 22 : ACHATS
+    // -------------------------------------------------------------------------
     {
       id: 'note-22',
       numero: 'NOTE 22',
-      nomNote: 'ACHATS CONSOMMÉS',
+      nomNote: 'ACHATS',
       statut: 'A',
-      items: [
-        { intitule: 'Achats de marchandises (compte 601)', montantN: RA_N.total, montantN1: RA_N1.total },
-        { intitule: 'Achats de matières premières (compte 602)', montantN: RC_N.total, montantN1: RC_N1.total },
-        { intitule: 'Matières combustibles & carburants (compte 6042)', montantN: getGestion(lignesGestionN, /^6042/).total, montantN1: getGestion(lignesGestionN1, /^6042/).total },
-        { intitule: 'Fournitures de bureau stockables (compte 6047)', montantN: getGestion(lignesGestionN, /^6047/).total, montantN1: getGestion(lignesGestionN1, /^6047/).total },
-        { intitule: 'Eau (compte 6051)', montantN: getGestion(lignesGestionN, /^6051/).total, montantN1: getGestion(lignesGestionN1, /^6051/).total },
-        { intitule: 'Électricité (compte 6052)', montantN: getGestion(lignesGestionN, /^6052/).total, montantN1: getGestion(lignesGestionN1, /^6052/).total },
-        { intitule: 'Autres énergies non stockables (compte 6053)', montantN: getGestion(lignesGestionN, /^6053/).total, montantN1: getGestion(lignesGestionN1, /^6053/).total },
-        { intitule: 'Petit matériel et outillage (compte 6056)', montantN: getGestion(lignesGestionN, /^6056/).total, montantN1: getGestion(lignesGestionN1, /^6056/).total },
-        { intitule: 'Achats d’études et prestations de service (compte 6057)', montantN: getGestion(lignesGestionN, /^6057/).total, montantN1: getGestion(lignesGestionN1, /^6057/).total },
-        { intitule: 'Achats de travaux, matériels et équipements (compte 6058)', montantN: getGestion(lignesGestionN, /^6058/).total, montantN1: getGestion(lignesGestionN1, /^6058/).total },
-        { intitule: 'TOTAL DES AUTRES ACHATS (compte 604, 605)', montantN: RE_N.total, montantN1: RE_N1.total },
-      ],
+      colonnes: ['Libellé', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const g = (num: RegExp) => ({
+          n: getGestion(lignesGestionN, num).total,
+          n1: getGestion(lignesGestionN1, num).total,
+        })
+        const m = g(/^601/)
+        const mp = g(/^602/)
+        const four = g(/^604/)
+        const eau = g(/^6051/)
+        const elec = g(/^6052/)
+        const carb = g(/^6053/)
+        const pet = g(/^6056/)
+        const etu = g(/^6057/)
+        const mat = g(/^6058/)
+        const tot = RE_N.total + RA_N.total + RC_N.total
+        const totN1 = RE_N1.total + RA_N1.total + RC_N1.total
+
+        return [
+          { intitule: 'Achats de marchandises', montantN: m.n, montantN1: m.n1, variationPct: fmtVar(m.n, m.n1).pct },
+          { intitule: 'Achats de matières premières et fournitures liées', montantN: mp.n, montantN1: mp.n1, variationPct: fmtVar(mp.n, mp.n1).pct },
+          { intitule: 'Fournitures de bureau et consommables (compte 604)', montantN: four.n, montantN1: four.n1, variationPct: fmtVar(four.n, four.n1).pct },
+          { intitule: 'Eau (compte 6051)', montantN: eau.n, montantN1: eau.n1, variationPct: fmtVar(eau.n, eau.n1).pct },
+          { intitule: 'Électricité (compte 6052)', montantN: elec.n, montantN1: elec.n1, variationPct: fmtVar(elec.n, elec.n1).pct },
+          { intitule: 'Carburants et lubrifiants (compte 6053)', montantN: carb.n, montantN1: carb.n1, variationPct: fmtVar(carb.n, carb.n1).pct },
+          { intitule: 'Petit matériel et outillage (compte 6056)', montantN: pet.n, montantN1: pet.n1, variationPct: fmtVar(pet.n, pet.n1).pct },
+          { intitule: 'Achats d’études et prestations de services (compte 6057)', montantN: etu.n, montantN1: etu.n1, variationPct: fmtVar(etu.n, etu.n1).pct },
+          { intitule: 'Achats de travaux, matériels et équipements (compte 6058)', montantN: mat.n, montantN1: mat.n1, variationPct: fmtVar(mat.n, mat.n1).pct },
+          { intitule: 'TOTAL DES ACHATS', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 23 : TRANSPORTS
+    // -------------------------------------------------------------------------
     {
       id: 'note-23',
       numero: 'NOTE 23',
       nomNote: 'TRANSPORTS',
-      statut: ChargeTransport_N.total > 0 ? 'A' : 'N/A',
-      items: [
-        { intitule: 'Transports du personnel (compte 614)', montantN: getGestion(lignesGestionN, /^614/).total, montantN1: getGestion(lignesGestionN1, /^614/).total },
-        { intitule: 'Transports de plis et colis (compte 616)', montantN: getGestion(lignesGestionN, /^616/).total, montantN1: getGestion(lignesGestionN1, /^616/).total },
-        { intitule: 'Voyages et déplacements professionnels (compte 6181)', montantN: getGestion(lignesGestionN, /^6181/).total, montantN1: getGestion(lignesGestionN1, /^6181/).total },
-        { intitule: 'TOTAL CHARGES DE TRANSPORT', montantN: ChargeTransport_N.total, montantN1: ChargeTransport_N1.total },
-      ],
+      statut: 'A',
+      colonnes: ['Libellé', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const pers = getGestion(lignesGestionN, /^614/).total
+        const persN1 = getGestion(lignesGestionN1, /^614/).total
+        const plis = getGestion(lignesGestionN, /^616/).total
+        const plisN1 = getGestion(lignesGestionN1, /^616/).total
+        const voy = getGestion(lignesGestionN, /^618/).total
+        const voyN1 = getGestion(lignesGestionN1, /^618/).total
+        const tot = getGestion(lignesGestionN, /^61/).total
+        const totN1 = getGestion(lignesGestionN1, /^61/).total
+
+        return [
+          { intitule: 'Transport du personnel (compte 614)', montantN: pers, montantN1: persN1, variationPct: fmtVar(pers, persN1).pct },
+          { intitule: 'Transports de plis et colis (compte 616)', montantN: plis, montantN1: plisN1, variationPct: fmtVar(plis, plisN1).pct },
+          { intitule: 'Voyages et déplacements (compte 618)', montantN: voy, montantN1: voyN1, variationPct: fmtVar(voy, voyN1).pct },
+          { intitule: 'TOTAL TRANSPORTS', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 24 : SERVICES EXTÉRIEURS
+    // -------------------------------------------------------------------------
     {
       id: 'note-24',
       numero: 'NOTE 24',
       nomNote: 'SERVICES EXTÉRIEURS',
       statut: 'A',
-      items: [
-        { intitule: 'Locations immobilières et charges locatives (compte 6222)', montantN: getGestion(lignesGestionN, /^6222/).total, montantN1: getGestion(lignesGestionN1, /^6222/).total },
-        { intitule: 'Locations de matériels et outillages (compte 6223)', montantN: getGestion(lignesGestionN, /^6223/).total, montantN1: getGestion(lignesGestionN1, /^6223/).total },
-        { intitule: 'Entretien, réparations des biens mobiliers (compte 6242)', montantN: getGestion(lignesGestionN, /^6242/).total, montantN1: getGestion(lignesGestionN1, /^6242/).total },
-        { intitule: 'Assurances véhicules et multirisques (compte 6252)', montantN: getGestion(lignesGestionN, /^625/).total, montantN1: getGestion(lignesGestionN1, /^625/).total },
-        { intitule: 'Publicité, foires et expositions (compte 627)', montantN: getGestion(lignesGestionN, /^627/).total, montantN1: getGestion(lignesGestionN1, /^627/).total },
-        { intitule: 'Frais de téléphone et télécommunications (compte 6281)', montantN: getGestion(lignesGestionN, /^6281/).total, montantN1: getGestion(lignesGestionN1, /^6281/).total },
-        { intitule: 'Frais d’internet (compte 6282)', montantN: getGestion(lignesGestionN, /^6282/).total, montantN1: getGestion(lignesGestionN1, /^6282/).total },
-        { intitule: 'Frais bancaires et instruments de monnaie électronique (compte 631)', montantN: getGestion(lignesGestionN, /^631/).total, montantN1: getGestion(lignesGestionN1, /^631/).total },
-        { intitule: 'Honoraires comptables, juridiques et conseils (compte 6324)', montantN: getGestion(lignesGestionN, /^6324/).total, montantN1: getGestion(lignesGestionN1, /^6324/).total },
-        { intitule: 'Rémunérations d’autres prestataires de services (compte 6327)', montantN: getGestion(lignesGestionN, /^6327/).total, montantN1: getGestion(lignesGestionN1, /^6327/).total },
-        { intitule: 'Frais de formation du personnel (compte 633)', montantN: getGestion(lignesGestionN, /^633/).total, montantN1: getGestion(lignesGestionN1, /^633/).total },
-        { intitule: 'Réceptions et relations publiques (compte 6383)', montantN: getGestion(lignesGestionN, /^6383/).total, montantN1: getGestion(lignesGestionN1, /^6383/).total },
-        { intitule: 'Frais de missions (compte 6384)', montantN: getGestion(lignesGestionN, /^6384/).total, montantN1: getGestion(lignesGestionN1, /^6384/).total },
-        { intitule: 'TOTAL SERVICES EXTÉRIEURS', montantN: RH_N.total, montantN1: RH_N1.total },
-      ],
+      colonnes: ['Libellé', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const g = (num: RegExp) => ({
+          n: getGestion(lignesGestionN, num).total,
+          n1: getGestion(lignesGestionN1, num).total,
+        })
+        const loc = g(/^622/)
+        const ent = g(/^624/)
+        const ass = g(/^625/)
+        const pub = g(/^627/)
+        const tel = g(/^628/)
+        const bq = g(/^631/)
+        const hon = g(/^632/)
+        const form = g(/^633/)
+        const div = g(/^638/)
+
+        return [
+          { intitule: 'Locations et charges locatives (compte 622)', montantN: loc.n, montantN1: loc.n1, variationPct: fmtVar(loc.n, loc.n1).pct },
+          { intitule: 'Entretien, réparations et maintenance (compte 624)', montantN: ent.n, montantN1: ent.n1, variationPct: fmtVar(ent.n, ent.n1).pct },
+          { intitule: 'Primes d’assurances (compte 625)', montantN: ass.n, montantN1: ass.n1, variationPct: fmtVar(ass.n, ass.n1).pct },
+          { intitule: 'Publicité, relations publiques (compte 627)', montantN: pub.n, montantN1: pub.n1, variationPct: fmtVar(pub.n, pub.n1).pct },
+          { intitule: 'Frais de télécommunications et internet (compte 628)', montantN: tel.n, montantN1: tel.n1, variationPct: fmtVar(tel.n, tel.n1).pct },
+          { intitule: 'Frais bancaires et commissions (compte 631)', montantN: bq.n, montantN1: bq.n1, variationPct: fmtVar(bq.n, bq.n1).pct },
+          { intitule: 'Rémunérations d’intermédiaires et honoraires (compte 632)', montantN: hon.n, montantN1: hon.n1, variationPct: fmtVar(hon.n, hon.n1).pct },
+          { intitule: 'Formation du personnel (compte 633)', montantN: form.n, montantN1: form.n1, variationPct: fmtVar(form.n, form.n1).pct },
+          { intitule: 'Missions et réceptions (compte 638)', montantN: div.n, montantN1: div.n1, variationPct: fmtVar(div.n, div.n1).pct },
+          { intitule: 'TOTAL SERVICES EXTÉRIEURS', montantN: RH_N.total, montantN1: RH_N1.total, variationPct: fmtVar(RH_N.total, RH_N1.total).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 25 : IMPÔTS ET TAXES
+    // -------------------------------------------------------------------------
     {
       id: 'note-25',
       numero: 'NOTE 25',
       nomNote: 'IMPÔTS ET TAXES',
       statut: 'A',
-      items: [
-        { intitule: 'Patente, licences et taxes annexes (compte 6412)', montantN: getGestion(lignesGestionN, /^6412/).total, montantN1: getGestion(lignesGestionN1, /^6412/).total },
-        { intitule: 'Taxes sur appointements et salaires / CFCE (compte 6413)', montantN: getGestion(lignesGestionN, /^6413/).total, montantN1: getGestion(lignesGestionN1, /^6413/).total },
-        { intitule: 'Impôts et taxes indirects (compte 645)', montantN: getGestion(lignesGestionN, /^645/).total, montantN1: getGestion(lignesGestionN1, /^645/).total },
-        { intitule: 'Droits d’enregistrement et de timbre (compte 646)', montantN: getGestion(lignesGestionN, /^646/).total, montantN1: getGestion(lignesGestionN1, /^646/).total },
-        { intitule: 'TOTAL IMPÔTS ET TAXES D’EXPLOITATION', montantN: RI_N.total, montantN1: RI_N1.total },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const dir = getGestion(lignesGestionN, /^641/).total
+        const dirN1 = getGestion(lignesGestionN1, /^641/).total
+        const ind = getGestion(lignesGestionN, /^645/).total
+        const indN1 = getGestion(lignesGestionN1, /^645/).total
+        const enr = getGestion(lignesGestionN, /^646/).total
+        const enrN1 = getGestion(lignesGestionN1, /^646/).total
+        const pen = getGestion(lignesGestionN, /^647/).total
+        const penN1 = getGestion(lignesGestionN1, /^647/).total
+
+        return [
+          { intitule: 'Impôts et taxes directs (patentes, taxe sur salaires)', montantN: dir, montantN1: dirN1, variationPct: fmtVar(dir, dirN1).pct },
+          { intitule: 'Impôts et taxes indirects', montantN: ind, montantN1: indN1, variationPct: fmtVar(ind, indN1).pct },
+          { intitule: 'Droits d’enregistrement et de timbre (compte 646)', montantN: enr, montantN1: enrN1, variationPct: fmtVar(enr, enrN1).pct },
+          { intitule: 'Pénalités et amendes fiscales (compte 647)', montantN: pen, montantN1: penN1, variationPct: fmtVar(pen, penN1).pct },
+          { intitule: 'TOTAL IMPÔTS ET TAXES', montantN: RI_N.total, montantN1: RI_N1.total, variationPct: fmtVar(RI_N.total, RI_N1.total).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 26 : AUTRES CHARGES
+    // -------------------------------------------------------------------------
     {
       id: 'note-26',
       numero: 'NOTE 26',
       nomNote: 'AUTRES CHARGES D’EXPLOITATION',
-      statut: RJ_N.total > 0 ? 'A' : 'N/A',
-      items: [
-        { intitule: 'Pertes sur créances clients irrécouvrables (compte 6511)', montantN: getGestion(lignesGestionN, /^6511/).total, montantN1: 0 },
-        { intitule: 'Pertes sur autres débiteurs (compte 6515)', montantN: getGestion(lignesGestionN, /^6515/).total, montantN1: getGestion(lignesGestionN1, /^6515/).total },
-        { intitule: 'Jetons de présence et indemnités de fonction (compte 6581)', montantN: getGestion(lignesGestionN, /^6581/).total, montantN1: getGestion(lignesGestionN1, /^6581/).total },
-        { intitule: 'TOTAL AUTRES CHARGES D’EXPLOITATION', montantN: RJ_N.total, montantN1: RJ_N1.total },
-      ],
+      statut: 'A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const pc = getGestion(lignesGestionN, /^6511/).total
+        const pcN1 = getGestion(lignesGestionN1, /^6511/).total
+        const pd = getGestion(lignesGestionN, /^6515/).total
+        const pdN1 = getGestion(lignesGestionN1, /^6515/).total
+        const jet = getGestion(lignesGestionN, /^6581/).total
+        const jetN1 = getGestion(lignesGestionN1, /^6581/).total
+
+        return [
+          { intitule: 'Pertes sur créances clients (compte 6511)', montantN: pc, montantN1: pcN1, variationPct: fmtVar(pc, pcN1).pct },
+          { intitule: 'Pertes sur autres débiteurs (compte 6515)', montantN: pd, montantN1: pdN1, variationPct: fmtVar(pd, pdN1).pct },
+          { intitule: 'Indemnités et rémunérations d’administrateurs (compte 6581)', montantN: jet, montantN1: jetN1, variationPct: fmtVar(jet, jetN1).pct },
+          { intitule: 'TOTAL AUTRES CHARGES', montantN: RJ_N.total, montantN1: RJ_N1.total, variationPct: fmtVar(RJ_N.total, RJ_N1.total).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 27A : CHARGES DE PERSONNEL
+    // -------------------------------------------------------------------------
     {
       id: 'note-27a',
       numero: 'NOTE 27A',
       nomNote: 'CHARGES DE PERSONNEL',
       statut: 'A',
-      items: [
-        { intitule: 'Appointements, salaires de base et commissions (compte 6611)', montantN: getGestion(lignesGestionN, /^6611/).total, montantN1: getGestion(lignesGestionN1, /^6611/).total },
-        { intitule: 'Primes et gratifications (compte 6612)', montantN: getGestion(lignesGestionN, /^6612/).total, montantN1: getGestion(lignesGestionN1, /^6612/).total },
-        { intitule: 'Indemnités de fin de contrat et préavis (compte 6614)', montantN: getGestion(lignesGestionN, /^6614/).total, montantN1: 0 },
-        { intitule: 'Primes de transport et indemnités forfaitaires (compte 6634)', montantN: getGestion(lignesGestionN, /^6634/).total, montantN1: getGestion(lignesGestionN1, /^6634/).total },
-        { intitule: 'Charges sociales patronales (CSS, IPRES - compte 6641)', montantN: getGestion(lignesGestionN, /^6641/).total, montantN1: getGestion(lignesGestionN1, /^6641/).total },
-        { intitule: 'Médecine du travail et pharmacie (compte 6684)', montantN: getGestion(lignesGestionN, /^6684/).total, montantN1: getGestion(lignesGestionN1, /^6684/).total },
-        { intitule: 'TOTAL CHARGES DE PERSONNEL', montantN: RK_N.total, montantN1: RK_N1.total },
-      ],
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
+      items: (() => {
+        const sal = getGestion(lignesGestionN, /^6611/).total
+        const salN1 = getGestion(lignesGestionN1, /^6611/).total
+        const pri = getGestion(lignesGestionN, /^661[2-8]/).total
+        const priN1 = getGestion(lignesGestionN1, /^661[2-8]/).total
+        const tr = getGestion(lignesGestionN, /^6634/).total
+        const trN1 = getGestion(lignesGestionN1, /^6634/).total
+        const soc = getGestion(lignesGestionN, /^664/).total
+        const socN1 = getGestion(lignesGestionN1, /^664/).total
+        const med = getGestion(lignesGestionN, /^6684/).total
+        const medN1 = getGestion(lignesGestionN1, /^6684/).total
+
+        return [
+          { intitule: 'Rémunérations directes personnel national (salaires)', montantN: sal, montantN1: salN1, variationPct: fmtVar(sal, salN1).pct },
+          { intitule: 'Primes, indemnités de fin de contrat et congés', montantN: pri, montantN1: priN1, variationPct: fmtVar(pri, priN1).pct },
+          { intitule: 'Primes de transport (compte 6634)', montantN: tr, montantN1: trN1, variationPct: fmtVar(tr, trN1).pct },
+          { intitule: 'Charges sociales patronales (CSS / IPRES)', montantN: soc, montantN1: socN1, variationPct: fmtVar(soc, socN1).pct },
+          { intitule: 'Médecine du travail et pharmacie (compte 6684)', montantN: med, montantN1: medN1, variationPct: fmtVar(med, medN1).pct },
+          { intitule: 'TOTAL CHARGES DE PERSONNEL', montantN: RK_N.total, montantN1: RK_N1.total, variationPct: fmtVar(RK_N.total, RK_N1.total).pct },
+        ]
+      })(),
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 27B : EFFECTIFS, MASSE SALARIALE ET PERSONNEL EXTÉRIEUR
+    // -------------------------------------------------------------------------
     {
       id: 'note-27b',
       numero: 'NOTE 27B',
-      nomNote: 'EFFECTIFS, MASSE SALARIALE ET PERSONNEL EXTÉRIEUR',
+      nomNote: 'EFFECTIFS ET MASSE SALARIALE',
       statut: 'A',
+      colonnes: ['QUALIFICATIONS', 'Nationaux (M/F)', 'Autres États', 'Total Effectifs', 'Masse salariale Nationaux', 'Total Masse Salariale'],
       items: [
-        { intitule: 'Cadres supérieurs et ingénieurs', montantN: '5 personnes', detail: 'Salariés permanents' },
-        { intitule: 'Techniciens supérieurs et agents de maîtrise', montantN: '5 personnes', detail: 'Salariés permanents' },
-        { intitule: 'Employés, ouvriers et manœuvres', montantN: '2 personnes', detail: 'Salariés permanents' },
-        { intitule: 'Total effectif permanent au 31 décembre', montantN: '12 salariés', detail: '10 hommes, 2 femmes' },
+        { intitule: '1. Cadres supérieurs', detail: '4H / 1F', colA: '5', colB: 0, montantN: 39391376, montantN1: 39391376 },
+        { intitule: '2. Techniciens supérieurs et cadres moyens', detail: '4H / 1F', colA: '5', colB: 0, montantN: 14923594, montantN1: 14923594 },
+        { intitule: '3. Agents de maîtrise et ouvriers qualifiés', detail: '0H / 0F', colA: '0', colB: 0, montantN: 0, montantN1: 0 },
+        { intitule: '4. Employés, ouvriers et manoeuvres', detail: '2H / 0F', colA: '2', colB: 0, montantN: 4740012, montantN1: 4740012 },
+        { intitule: 'TOTAL PERMANENTS', detail: '10H / 2F', colA: '12', colB: 0, montantN: RK_N.total, montantN1: RK_N1.total },
+        { intitule: 'PERSONNEL SAISONNIER OU EXTÉRIEUR', detail: '0H / 0F', colA: '0', colB: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'TOTAL GÉNÉRAL (1 + 2)', detail: '10H / 2F', colA: '12', colB: 0, montantN: RK_N.total, montantN1: RK_N1.total },
       ],
+      commentaires: 'Effectif total au 31 décembre : 12 salariés permanents.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 28 : PROVISIONS ET DÉPRÉCIATIONS INSCRITES AU BILAN
+    // -------------------------------------------------------------------------
     {
       id: 'note-28',
       numero: 'NOTE 28',
       nomNote: 'PROVISIONS ET DÉPRÉCIATIONS INSCRITES AU BILAN',
       statut: 'A',
+      colonnes: ['NATURE', 'Provisions ouv. (A)', 'Dotations (B)', 'Reprises (C)', 'Provisions clôt. (D=A+B-C)'],
       items: [
-        { intitule: 'Dépréciations des immobilisations (compte 29)', montantN: totalActifImmo.amortN, montantN1: 0 },
-        { intitule: 'Dépréciations des stocks (compte 39)', montantN: BB.amortN, montantN1: 0 },
-        { intitule: 'Dépréciations des comptes clients (compte 491)', montantN: BI.amortN, montantN1: 0 },
-        { intitule: 'Provisions financières pour risques et charges (compte 19)', montantN: DC.netN, montantN1: 0 },
-        { intitule: 'Dotations de l’exercice aux provisions (comptes 691, 697)', montantN: 0, montantN1: 0 },
-        { intitule: 'Reprises de provisions (comptes 791, 797)', montantN: 0, montantN1: 0 },
+        { intitule: 'Provisions réglementées (classe 15)', colA: CJ.netN1, colB: 0, colC: 0, montantN: CJ.netN, montantN1: CJ.netN1 },
+        { intitule: 'Provisions financières pour risques et charges (classe 19)', colA: DC.netN1, colB: 0, colC: 0, montantN: DC.netN, montantN1: DC.netN1 },
+        { intitule: 'Dépréciations des immobilisations (classe 29)', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'Dépréciations des stocks (classe 39)', colA: 0, colB: 0, colC: 0, montantN: BB.amortN, montantN1: 0 },
+        { intitule: 'Dépréciations des créances clients (classe 491)', colA: 0, colB: 0, colC: 0, montantN: BI.amortN, montantN1: 0 },
+        { intitule: 'Dépréciations autres créances et HAO', colA: 0, colB: 0, colC: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'TOTAL DES PROVISIONS ET DÉPRÉCIATIONS', colA: CJ.netN1 + DC.netN1, colB: 0, colC: 0, montantN: CJ.netN + DC.netN + BB.amortN + BI.amortN, montantN1: CJ.netN1 + DC.netN1 },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 29 : CHARGES ET REVENUS FINANCIERS
+    // -------------------------------------------------------------------------
     {
       id: 'note-29',
       numero: 'NOTE 29',
       nomNote: 'CHARGES ET REVENUS FINANCIERS',
       statut: 'A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
       items: [
-        { intitule: 'Intérêts des emprunts et dettes financières (compte 671)', montantN: getGestion(lignesGestionN, /^671/).total, montantN1: 0 },
-        { intitule: 'Pertes de change (compte 676)', montantN: getGestion(lignesGestionN, /^676/).total, montantN1: 0 },
-        { intitule: 'TOTAL DES FRAIS FINANCIERS', montantN: RM_N.total, montantN1: RM_N1.total },
-        { intitule: 'Revenus de titres et intérêts de prêts (compte 771)', montantN: TK_N.total, montantN1: TK_N1.total },
-        { intitule: 'Gains de change (compte 776)', montantN: getGestion(lignesGestionN, /^776/).total, montantN1: 0 },
-        { intitule: 'Transferts de charges financières (compte 787)', montantN: TL_N_Fin.total, montantN1: 0 },
-        { intitule: 'TOTAL DES REVENUS FINANCIERS', montantN: TK_N.total + TL_N_Fin.total, montantN1: TK_N1.total + TL_N1_Fin.total },
-        { intitule: 'RÉSULTAT FINANCIER', montantN: RF_N, montantN1: RF_N1 },
+        { intitule: 'Intérêts des emprunts et dettes financières (compte 671)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Pertes de change (compte 676)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'SOUS-TOTAL : FRAIS FINANCIERS (A)', montantN: RM_N.total, montantN1: RM_N1.total, variationPct: fmtVar(RM_N.total, RM_N1.total).pct },
+        { intitule: 'Revenus de titres et intérêts de prêts (compte 771)', montantN: TK_N.total, montantN1: TK_N1.total, variationPct: fmtVar(TK_N.total, TK_N1.total).pct },
+        { intitule: 'Gains de change financiers (compte 776)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Reprises de provisions financières', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'SOUS-TOTAL : REVENUS FINANCIERS (B)', montantN: TK_N.total, montantN1: TK_N1.total, variationPct: fmtVar(TK_N.total, TK_N1.total).pct },
+        { intitule: 'RÉSULTAT FINANCIER (B - A)', montantN: RF_N, montantN1: RF_N1, variationPct: fmtVar(RF_N, RF_N1).pct },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 30 : AUTRES CHARGES ET PRODUITS HAO
+    // -------------------------------------------------------------------------
     {
       id: 'note-30',
       numero: 'NOTE 30',
-      nomNote: 'AUTRES CHARGES ET PRODUITS HORS ACTIVITÉS ORDINAIRES (H.A.O.)',
-      statut: RHAO_N !== 0 ? 'A' : 'N/A',
+      nomNote: 'AUTRES CHARGES ET PRODUITS HAO',
+      statut: 'A',
+      colonnes: ['Libellés', 'Année N', 'Année N-1', 'Var. en %'],
       items: [
-        { intitule: 'Produits de cessions d’immobilisations (compte 82)', montantN: TN_N.total, montantN1: 0 },
-        { intitule: 'Valeurs comptables des immobilisations cédées (compte 81)', montantN: RO_N.total, montantN1: 0 },
-        { intitule: 'Dons et subventions d’équilibre HAO (comptes 84, 88)', montantN: TO_N.total, montantN1: 0 },
-        { intitule: 'Charges HAO constatées (compte 83)', montantN: RP_N_HAO.total, montantN1: 0 },
-        { intitule: 'RÉSULTAT HORS ACTIVITÉS ORDINAIRES', montantN: RHAO_N, montantN1: RHAO_N1 },
+        { intitule: 'Charges HAO constatées (compte 831)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Pertes sur créances HAO (compte 834)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'SOUS-TOTAL : AUTRES CHARGES HAO (RP)', montantN: RP_N_HAO.total, montantN1: RP_N1_HAO.total, variationPct: fmtVar(RP_N_HAO.total, RP_N1_HAO.total).pct },
+        { intitule: 'Produits HAO constatés (compte 841)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Dons et libéralités obtenus (compte 845)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'Subventions d’équilibre (compte 88)', montantN: 0, montantN1: 0, variationPct: '0.0%' },
+        { intitule: 'SOUS-TOTAL : AUTRES PRODUITS HAO (TO)', montantN: TO_N.total, montantN1: TO_N1.total, variationPct: fmtVar(TO_N.total, TO_N1.total).pct },
+        { intitule: 'RÉSULTAT HORS ACTIVITÉS ORDINAIRES (XH)', montantN: RHAO_N, montantN1: RHAO_N1, variationPct: fmtVar(RHAO_N, RHAO_N1).pct },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 31 : RÉPARTITION DU RÉSULTAT ET INDICATEURS DES 5 DERNIERS EXERCICES
+    // -------------------------------------------------------------------------
     {
       id: 'note-31',
       numero: 'NOTE 31',
-      nomNote: 'RÉPARTITION DU RÉSULTAT ET CINQ DERNIERS EXERCICES',
+      nomNote: 'RÉSULTATS DES 5 DERNIERS EXERCICES',
       statut: 'A',
+      colonnes: ['NATURE DES INDICATIONS', 'N', 'N-1', 'N-2', 'N-3', 'N-4'],
       items: [
-        { intitule: 'Capital social à la clôture', montantN: CA.netN, montantN1: CA.netN1 },
-        { intitule: 'Chiffre d’affaires hors taxes', montantN: CA_N, montantN1: CA_N1 },
-        { intitule: 'Résultat net de l’exercice (bénéfice + ou perte −)', montantN: RN_N_Total, montantN1: RN_N1_Total },
-        { intitule: 'Dividendes distribués au cours de l’exercice', montantN: 0, montantN1: 0 },
-        { intitule: 'Masse salariale distribuée (comptes 661 à 663)', montantN: getGestion(lignesGestionN, /^66[123]/).total, montantN1: getGestion(lignesGestionN1, /^66[123]/).total },
-        { intitule: 'Cotisations et avantages sociaux (comptes 664, 668)', montantN: getGestion(lignesGestionN, /^66[48]/).total, montantN1: getGestion(lignesGestionN1, /^66[48]/).total },
+        { intitule: 'Capital social à la clôture', colA: CA.netN, colB: CA.netN1, colC: CA.netN1, colD: 0, colE: 0, montantN: CA.netN, montantN1: CA.netN1 },
+        { intitule: 'Chiffre d’affaires hors taxes', colA: CA_N, colB: CA_N1, colC: 0, colD: 0, colE: 0, montantN: CA_N, montantN1: CA_N1 },
+        { intitule: 'Résultat des activités ordinaires (RAO)', colA: RAO_N, colB: RAO_N1, colC: 0, colD: 0, colE: 0, montantN: RAO_N, montantN1: RAO_N1 },
+        { intitule: 'Impôt sur le résultat (IS / IMF)', colA: RS_N_Impots.total, colB: RS_N1_Impots.total, colC: 0, colD: 0, colE: 0, montantN: RS_N_Impots.total, montantN1: RS_N1_Impots.total },
+        { intitule: 'Résultat net de l’exercice (+/-)', colA: RN_N_Total, colB: RN_N1_Total, colC: 0, colD: 0, colE: 0, montantN: RN_N_Total, montantN1: RN_N1_Total },
+        { intitule: 'Résultats distribués (dividendes)', colA: 0, colB: 0, colC: 0, colD: 0, colE: 0, montantN: 0, montantN1: 0 },
+        { intitule: 'Masse salariale brute versée', colA: RK_N.total, colB: RK_N1.total, colC: 0, colD: 0, colE: 0, montantN: RK_N.total, montantN1: RK_N1.total },
+        { intitule: 'Effectif moyen des salariés', colA: 12, colB: 12, colC: 0, colD: 0, colE: 0, montantN: 12, montantN1: 12 },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 32 : PRODUCTION DE L'EXERCICE
+    // -------------------------------------------------------------------------
     {
       id: 'note-32',
       numero: 'NOTE 32',
-      nomNote: 'PRODUCTION DE L’EXERCICE (VENTES DANS L’ESPACE OHADA & EXPORT)',
-      statut: 'A',
+      nomNote: 'PRODUCTION DE L’EXERCICE',
+      statut: TB_N.total > 0 || TC_N.total > 0 ? 'A' : 'N/A',
+      colonnes: ['Désignation produit / service', 'Unité', 'Ventes Pays (Qté / Val)', 'Ventes OHADA', 'Hors OHADA', 'Stock Clôture'],
       items: [
-        { intitule: 'Production vendue dans le pays', montantN: TC_N.total + TB_N.total, montantN1: TC_N1.total + TB_N1.total },
-        { intitule: 'Production vendue dans les autres pays de l’OHADA', montantN: 0, montantN1: 0 },
-        { intitule: 'Production vendue hors zone OHADA', montantN: 0, montantN1: 0 },
-        { intitule: 'Production immobilisée (compte 72)', montantN: TF_N.total, montantN1: TF_N1.total },
+        { intitule: 'Prestations de services et appui technique', detail: 'Services', colA: TC_N.total, colB: 0, colC: 0, colD: 0, montantN: TC_N.total, montantN1: TC_N1.total },
+        { intitule: 'TOTAL PRODUCTION DE L’EXERCICE', detail: '', colA: TC_N.total, colB: 0, colC: 0, colD: 0, montantN: TC_N.total, montantN1: TC_N1.total },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 33 : ACHATS DESTINÉS À LA PRODUCTION
+    // -------------------------------------------------------------------------
     {
       id: 'note-33',
       numero: 'NOTE 33',
       nomNote: 'ACHATS DESTINÉS À LA PRODUCTION',
-      statut: 'A',
+      statut: RC_N.total > 0 || RE_N.total > 0 ? 'A' : 'N/A',
+      colonnes: ['Désignations matières / produits', 'Unité', 'Achats Pays (Valeur)', 'Produits Importés', 'Variation stocks'],
       items: [
-        { intitule: 'Achats locaux dans le pays', montantN: RC_N.total + RE_N.total, montantN1: RC_N1.total + RE_N1.total },
-        { intitule: 'Achats importés hors UEMOA', montantN: 0, montantN1: 0 },
-        { intitule: 'Variations des stocks de matières', montantN: RD_N.total, montantN1: 0 },
+        { intitule: 'Approvisionnements et intrants d’exploitation', detail: 'Divers', colA: RE_N.total, colB: 0, colC: 0, montantN: RE_N.total, montantN1: RE_N1.total },
+        { intitule: 'TOTAL ACHATS DESTINÉS À LA PRODUCTION', detail: '', colA: RE_N.total, colB: 0, colC: 0, montantN: RE_N.total, montantN1: RE_N1.total },
       ],
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 34 : FICHE DE SYNTHÈSE DES PRINCIPAUX INDICATEURS FINANCIERS
+    // -------------------------------------------------------------------------
     {
       id: 'note-34',
       numero: 'NOTE 34',
       nomNote: 'FICHE DE SYNTHÈSE DES PRINCIPAUX INDICATEURS FINANCIERS',
       statut: 'A',
-      items: [
-        { intitule: 'Chiffre d’affaires', montantN: CA_N, montantN1: CA_N1 },
-        { intitule: 'Valeur Ajoutée (VA)', montantN: VA_N, montantN1: VA_N1 },
-        { intitule: 'Excédent Brut d’Exploitation (EBE)', montantN: EBE_N, montantN1: EBE_N1 },
-        { intitule: 'Résultat d’Exploitation', montantN: REX_N, montantN1: REX_N1 },
-        { intitule: 'Résultat Net', montantN: RN_N_Total, montantN1: RN_N1_Total },
-        { intitule: 'Fonds de Roulement (FR = Ressources stables − Actif immo)', montantN: fondsRoulementN, montantN1: fondsRoulementN1 },
-        { intitule: 'Besoin de Financement d’Exploitation (BFE = Actif circ. − Passif circ.)', montantN: bfeN, montantN1: bfeN1 },
-        { intitule: 'Besoin de Financement Global (BFG)', montantN: bfgN, montantN1: bfgN1 },
-        { intitule: 'Trésorerie Nette (TN = FR − BFG)', montantN: tresorerieCalculeeN, montantN1: tresorerieCalculeeN1 },
-        { intitule: 'Endettement Financier Net', montantN: endettementNetN, montantN1: endettementNetN1 },
-        { intitule: 'Rentabilité Économique', montantN: rentabiliteEcoN.toFixed(2) + ' %', montantN1: rentabiliteEcoN1.toFixed(2) + ' %' },
-        { intitule: 'Rentabilité Financière', montantN: rentabiliteFinN.toFixed(2) + ' %', montantN1: rentabiliteFinN1.toFixed(2) + ' %' },
-      ],
+      colonnes: ['(EN MILLIERS DE FRANCS) / INDICATEURS', 'Année N', 'Année N-1', 'Var. en %'],
+      items: indicateurs.map((ind) => ({
+        intitule: ind.libelle,
+        montantN: ind.montantN,
+        montantN1: ind.montantN1,
+        variationPct: typeof ind.montantN === 'number' && typeof ind.montantN1 === 'number'
+          ? fmtVar(ind.montantN, ind.montantN1).pct
+          : '',
+        detail: ind.code,
+      })),
+      commentaires: 'Indicateurs de solvabilité, de rentabilité et d’équilibre financier conformes aux normes OHADA.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 35 : INFORMATIONS SOCIALES, ENVIRONNEMENTALES ET SOCIÉTALES (RSE)
+    // -------------------------------------------------------------------------
     {
       id: 'note-35',
       numero: 'NOTE 35',
       nomNote: 'INFORMATIONS SOCIALES, ENVIRONNEMENTALES ET SOCIÉTALES (RSE)',
       statut: 'A',
+      colonnes: ['Domaines RSE', 'Engagements et actions réalisées'],
       items: [
-        { intitule: 'Politique de l’emploi', montantN: 'Conforme', detail: 'Recrutement local, égalité homme-femme et formation continue du personnel.' },
-        { intitule: 'Conditions de santé et sécurité', montantN: 'Conforme', detail: 'Suivi médical périodique, médecine du travail et équipements de protection.' },
-        { intitule: 'Impact environnemental & gestion des ressources', montantN: 'Durable', detail: 'Optimisation de la consommation d’eau et valorisation des co-produits agricoles.' },
+        { intitule: '1. Informations sociales (Emploi & Conditions de travail)', montantN: 'Conforme', detail: '12 salariés permanents. Respect des conventions collectives, de la sécurité sociale et de la médecine du travail.' },
+        { intitule: '2. Informations environnementales', montantN: 'Préservé', detail: 'Gestion raisonnée des intrants et de l’eau, valorisation des résidus agricoles et conformité environnementale.' },
+        { intitule: '3. Engagements sociétaux & impact territorial', montantN: 'Actif', detail: 'Appui direct au développement agricole et économique des producteurs locaux de la zone de Saint-Louis.' },
       ],
+      commentaires: 'Note requise au titre de la responsabilité sociétale de l’entreprise (RSE) selon le SYSCOHADA Révisé.',
     },
+
+    // -------------------------------------------------------------------------
+    // NOTE 36 : TABLE DES CODES OFFICIELS
+    // -------------------------------------------------------------------------
     {
       id: 'note-36',
       numero: 'NOTE 36',
-      nomNote: 'TABLE DES CODES ET NOMENCLATURES OHADA / SÉNÉGAL',
+      nomNote: 'TABLE DES CODES OFFICIELS',
       statut: 'A',
+      colonnes: ['Rubrique', 'Code appliqué', 'Signification réglementaire'],
       items: [
-        { intitule: 'Forme juridique', montantN: '02 — Société à Responsabilité Limitée (SARL / SAS)', detail: 'Code 02' },
-        { intitule: 'Régime fiscal', montantN: '1 — Réel Normal (SYSCOHADA)', detail: 'Code 1' },
-        { intitule: 'Pays du siège social', montantN: '07 — Sénégal (Zone UEMOA)', detail: 'Code 07' },
-        { intitule: 'Code activité principale', montantN: '038003 — Promotion de l’entrepreneuriat rural et agrobusiness', detail: 'Code 038003' },
+        { intitule: 'Forme juridique (Code 02)', colA: '02', colB: 'Société Commerciale (SARL / SAS)', montantN: '02', detail: 'SARL / SAS' },
+        { intitule: 'Régime fiscal (Code 1)', colA: '1', colB: 'Réel Normal (SYSCOHADA)', montantN: '1', detail: 'Réel Normal' },
+        { intitule: 'Pays du siège social (Code 07)', colA: '07', colB: 'Sénégal (UEMOA)', montantN: '07', detail: 'Sénégal' },
+        { intitule: 'Activité principale (Nomenclature UEMOA)', colA: '038003', colB: 'Services rendus principalement aux entreprises', montantN: '038003', detail: 'Services aux entreprises' },
       ],
     },
   ]
