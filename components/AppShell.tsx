@@ -53,6 +53,7 @@ import { signOut } from '@/app/auth/actions'
 import { useT } from '@/components/I18nProvider'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { OfflineSyncBar } from '@/components/offline/OfflineSyncBar'
+import { warmAppOfflineCache } from '@/lib/offline/warmer'
 import { estRtl } from '@/lib/i18n'
 import { MENUS } from '@/lib/menus'
 import { permissionMenu, type Matrice } from '@/lib/permissions'
@@ -150,13 +151,27 @@ export function AppShell({
     // S'assurer que le cookie hors-ligne est actif pour le Service Worker
     document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
 
-    // Si en ligne, rafraîchir en tâche de fond le shell applicatif
-    if (typeof navigator !== 'undefined' && navigator.onLine && 'caches' in window) {
-      caches.open('demba-offline-dagro-v3').then((cache) => {
-        fetch('/').then((res) => {
-          if (res && res.ok) cache.put('/', res)
-        }).catch(() => {})
-      }).catch(() => {})
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFLINE_SESSION', active: true })
+    }
+
+    // Réchauffer proactivement les routes clés de D-AGROBUSINESS
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      const routesToWarm = [
+        '/',
+        '/stocks',
+        '/achats',
+        '/depot-vente',
+        '/tresorerie',
+        '/comptabilite',
+        '/production',
+        '/usine',
+        '/tracabilite',
+        '/materiel',
+        '/financements',
+        '/subventions',
+      ]
+      warmAppOfflineCache(routesToWarm, 'demba-offline-dagro-v4')
     }
   }, [])
 

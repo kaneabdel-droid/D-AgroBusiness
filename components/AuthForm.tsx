@@ -76,10 +76,13 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
         const offRes = await verifyOfflineCredentials(cleanIdentifier, pwd)
         if (offRes.success && offRes.session) {
           document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
+          if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFLINE_SESSION', active: true })
+          }
           setSuccessNotice(t('Connexion locale validée ! Accès à votre espace D-AGROBUSINESS hors-ligne...'))
           setTimeout(() => {
             window.location.href = suite || '/'
-          }, 600)
+          }, 400)
         } else {
           setMessage({
             type: 'error',
@@ -110,10 +113,13 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
             const offRes = await verifyOfflineCredentials(cleanIdentifier, pwd)
             if (offRes.success) {
               document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
+              if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFLINE_SESSION', active: true })
+              }
               setSuccessNotice(t('Réseau instable : connexion locale hors-ligne activée !'))
               setTimeout(() => {
                 window.location.href = suite || '/'
-              }, 600)
+              }, 400)
               return
             }
           }
@@ -131,10 +137,13 @@ export function AuthForm({ mode, lang = 'fr', suite }: { mode: 'login' | 'signup
           }
 
           document.cookie = 'demba_offline_active=1; path=/; max-age=2592000; SameSite=Lax'
+          if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFLINE_SESSION', active: true })
+          }
 
           if ('caches' in window) {
             try {
-              const cache = await caches.open('demba-offline-dagro-v3')
+              const cache = await caches.open('demba-offline-dagro-v4')
               const appRes = await fetch('/')
               if (appRes && appRes.ok) {
                 await cache.put('/', appRes)
