@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { PageHeader, TableWrap, th, td } from '@/components/ui/card'
 import { ExportButtons } from '@/components/ExportButtons'
 import { ContrepassationButton } from '@/components/ContrepassationButton'
+import ImportJournauxModal from '@/components/ImportJournauxModal'
 
 type Ligne = { debit: number; credit: number; tiers_id: string | null }
 
@@ -54,11 +55,14 @@ export default async function EcrituresPage({
         description={t('Les écritures validées sont immuables : toute correction passe par une contre-passation.')}
       >
         {peutEcrire && (
-          <Button asChild>
-            <Link href="/comptabilite/ecritures/nouvelle">
-              <Plus className="h-4 w-4" aria-hidden /> {t('Nouvelle écriture')}
-            </Link>
-          </Button>
+          <>
+            <ImportJournauxModal />
+            <Button asChild>
+              <Link href="/comptabilite/ecritures/nouvelle">
+                <Plus className="h-4 w-4" aria-hidden /> {t('Nouvelle écriture')}
+              </Link>
+            </Button>
+          </>
         )}
         <ExportButtons
           titre={journalFiltre ? `${t('Journal')} ${journaux?.find((j) => j.id === journalFiltre)?.code ?? ''}` : t('Écritures comptables')}
