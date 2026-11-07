@@ -48,7 +48,31 @@ export default async function EtatsFinanciersSyscohadaPage({
     solde: Number(l.solde) || 0,
   }))
 
-  const etats = genererEtatsFinanciersSyscohada(toutesLignes, courant, exercices)
+  // Charger les informations officielles de l'organisation pour la liasse
+  const { data: orgFiche } = await supabase
+    .from('organisations')
+    .select('nom, adresse, telephone, nif, pays, devise')
+    .eq('id', ctx.organisationId)
+    .maybeSingle()
+
+  const nomOrg = orgFiche?.nom || ctx.organisationNom || 'ENTREPRISE AGROBUSINESS'
+  const sigleCalcule = nomOrg
+    .split(' ')
+    .filter(Boolean)
+    .map((w: string) => w[0])
+    .join('')
+    .slice(0, 8)
+    .toUpperCase()
+
+  const infosEntreprise = {
+    denomination: nomOrg,
+    sigle: sigleCalcule || 'AGRO',
+    adresse: orgFiche?.adresse || 'Dakar, Sénégal',
+    telephone: orgFiche?.telephone || '+221 33 800 00 00',
+    nineaNif: orgFiche?.nif || 'SN-00123456-2K',
+  }
+
+  const etats = genererEtatsFinanciersSyscohada(toutesLignes, courant, exercices, infosEntreprise)
 
   return (
     <>

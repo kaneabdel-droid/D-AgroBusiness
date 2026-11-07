@@ -122,12 +122,15 @@ export type NoteAnnexe = {
 
 export type FicheIdentification = {
   pays: string
+  paysCode?: string
   ministere: string
   direction: string
   centreDepot: string
   denomination: string
   sigle: string
   adresse: string
+  telephone?: string
+  email?: string
   nineaNif: string
   dateCloture: string
   dureeMois: number
@@ -1632,14 +1635,17 @@ export function genererEtatsFinanciersSyscohada(
         const bqN1 = Math.max(0, getSolde(balanceCumulN1, /^52/).total)
         const mob = Math.max(0, getSolde(balanceCumulN, /^551/).total)
         const mobN1 = Math.max(0, getSolde(balanceCumulN1, /^551/).total)
+        const chq = Math.max(0, getSolde(balanceCumulN, /^531/).total)
+        const chqN1 = Math.max(0, getSolde(balanceCumulN1, /^531/).total)
         const cs = Math.max(0, getSolde(balanceCumulN, /^571/).total)
         const csN1 = Math.max(0, getSolde(balanceCumulN1, /^571/).total)
-        const tot = bq + mob + cs
-        const totN1 = bqN1 + mobN1 + csN1
+        const tot = bq + mob + chq + cs
+        const totN1 = bqN1 + mobN1 + chqN1 + csN1
 
         return [
           { intitule: 'Banques locales (comptes de dépôt)', montantN: bq, montantN1: bqN1, variationPct: fmtVar(bq, bqN1).pct },
           { intitule: 'Monnaie électronique (Orange Money / Wave / Free Money)', montantN: mob, montantN1: mobN1, variationPct: fmtVar(mob, mobN1).pct },
+          { intitule: 'Chèques, bons et effets à encaisser', montantN: chq, montantN1: chqN1, variationPct: fmtVar(chq, chqN1).pct },
           { intitule: 'Caisse centrale (espèces)', montantN: cs, montantN1: csN1, variationPct: fmtVar(cs, csN1).pct },
           { intitule: 'Régies d’avances et accréditifs', montantN: 0, montantN1: 0, variationPct: '0.0%' },
           { intitule: 'TOTAL DISPONIBILITÉS', montantN: tot, montantN1: totN1, variationPct: fmtVar(tot, totN1).pct },
@@ -2328,12 +2334,15 @@ export function genererEtatsFinanciersSyscohada(
   // Fiche d'identification
   const fiche: FicheIdentification = {
     pays: infosEntreprise?.pays ?? 'RÉPUBLIQUE DU SÉNÉGAL',
+    paysCode: infosEntreprise?.paysCode,
     ministere: infosEntreprise?.ministere ?? 'MINISTÈRE DE L’ÉCONOMIE, DU PLAN ET DE LA COOPÉRATION',
     direction: infosEntreprise?.direction ?? 'DIRECTION GÉNÉRALE DES IMPÔTS ET DES DOMAINES (DGID)',
     centreDepot: infosEntreprise?.centreDepot ?? 'CENTRE DE DÉPÔT FISCAL DES ENTREPRISES',
     denomination: infosEntreprise?.denomination ?? 'ENTREPRISE AGROBUSINESS',
     sigle: infosEntreprise?.sigle ?? 'AGRO-SAS',
     adresse: infosEntreprise?.adresse ?? 'Dakar, Sénégal',
+    telephone: infosEntreprise?.telephone,
+    email: infosEntreprise?.email,
     nineaNif: infosEntreprise?.nineaNif ?? 'SN-00123456-2K',
     dateCloture: exerciceCourant.date_fin,
     dureeMois: 12,

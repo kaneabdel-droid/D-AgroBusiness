@@ -21,6 +21,7 @@ import {
   BookOpen,
   ShieldCheck,
   ListOrdered,
+  Globe,
 } from 'lucide-react'
 import LiasseImprimable from './LiasseImprimable'
 import { Card, TableWrap, th, td } from '@/components/ui/card'
@@ -33,6 +34,12 @@ import {
   type NoteAnnexe,
   exporterLiasseCompleteCSV,
 } from '@/lib/syscohada'
+import {
+  getReferentielPays,
+  detecterPaysParDevise,
+  type CodePays,
+  LISTE_REFERENTIELS_PAYS,
+} from '@/lib/comptabilite/referentielsPays'
 
 export default function EtatsFinanciersClient({
   etats,
@@ -51,6 +58,11 @@ export default function EtatsFinanciersClient({
   const [compteOuvert, setCompteOuvert] = useState<string | null>(null)
   const [noteSelectionnee, setNoteSelectionnee] = useState<string>('note-34')
   const [filtreNote, setFiltreNote] = useState<string>('')
+  const [paysSelectionne, setPaysSelectionne] = useState<CodePays>(() => {
+    return detecterPaysParDevise(devise)
+  })
+
+  const referentiel = getReferentielPays(paysSelectionne)
 
   const fm = (val: number | string | undefined | null) => {
     if (val === null || val === undefined || val === '') return '-'
@@ -222,8 +234,9 @@ export default function EtatsFinanciersClient({
         </Card>
       </div>
 
-      {/* Barre d'onglets de la Liasse Complète */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-surface-border">
+      {/* Barre d'onglets de la Liasse Complète & Sélecteur Multi-Pays */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border">
+        <div className="flex flex-wrap items-center gap-1">
         <button
           type="button"
           onClick={() => setActiveTab('page_garde')}
@@ -342,31 +355,59 @@ export default function EtatsFinanciersClient({
         </button>
       </div>
 
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-xl border border-surface-border shadow-xs my-1">
+        <Globe className="w-3.5 h-3.5 text-primary" />
+        <span className="text-xs font-semibold text-foreground-muted">Pays / Norme :</span>
+        <select
+          value={paysSelectionne}
+          onChange={(e) => setPaysSelectionne(e.target.value as CodePays)}
+          className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+        >
+          {LISTE_REFERENTIELS_PAYS.map((p) => (
+            <option key={p.code} value={p.code}>
+              {p.drapeau} {p.nom}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+
       {/* ==================================================================== */}
       {/* 1. ONGLET : PAGE DE GARDE & FICHE D'IDENTIFICATION */}
       {/* ==================================================================== */}
       {activeTab === 'page_garde' && (
         <div className="space-y-6 animate-in fade-in-50 duration-150">
-          <Card className="p-6">
-            <div className="border-b border-surface-border pb-6 text-center space-y-1">
-              <p className="text-sm font-bold text-foreground tracking-wider uppercase">
-                {etats.fiche.pays}
-              </p>
+          <Card className="p-8">
+            <div className="border-b border-surface-border pb-6 text-center space-y-1.5">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl">{referentiel.drapeau}</span>
+                <p className="text-sm font-bold text-foreground tracking-wider uppercase">
+                  {referentiel.paysOfficiel}
+                </p>
+              </div>
               <p className="text-xs text-foreground-muted uppercase">
-                {etats.fiche.ministere}
+                {referentiel.ministere}
               </p>
-              <p className="text-xs text-foreground-muted uppercase font-semibold">
-                {etats.fiche.direction}
+              <p className="text-xs text-foreground font-semibold">
+                {referentiel.directionFiscale}
               </p>
-              <p className="text-xs text-primary font-medium mt-2">
-                {etats.fiche.centreDepot}
+              <p className="text-xs text-primary font-medium">
+                {referentiel.centreDepot}
               </p>
-              <h2 className="text-xl font-bold font-heading text-foreground pt-4">
-                ÉTATS FINANCIERS NORMALISÉS DU SYSTÈME COMPTABLE OUEST AFRICAIN (SYSCOHADA)
-              </h2>
-              <p className="text-sm text-foreground font-semibold">
-                SYSTÈME NORMAL • EXERCICE CLOS AU {new Date(etats.fiche.dateCloture).toLocaleDateString('fr-FR')}
-              </p>
+              <div className="pt-3 space-y-1">
+                <span className="inline-block px-2.5 py-0.5 text-[10px] font-black uppercase rounded bg-primary/10 text-primary border border-primary/20 tracking-wider">
+                  {referentiel.systeme}
+                </span>
+                <h2 className="text-xl font-bold font-heading text-foreground">
+                  {referentiel.titres.liasse}
+                </h2>
+                <p className="text-xs text-foreground-muted">
+                  {referentiel.titres.sousTitreLiasse}
+                </p>
+                <p className="text-sm text-foreground font-semibold pt-1">
+                  EXERCICE CLOS LE {new Date(etats.fiche.dateCloture).toLocaleDateString('fr-FR')} ({etats.fiche.dureeMois} MOIS)
+                </p>
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 mt-6">
@@ -378,15 +419,15 @@ export default function EtatsFinanciersClient({
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-surface-border/50">
                     <span className="text-foreground-muted">Dénomination sociale :</span>
-                    <span className="font-semibold text-foreground">{etats.fiche.denomination}</span>
+                    <span className="font-bold text-foreground">{etats.fiche.denomination}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-surface-border/50">
                     <span className="text-foreground-muted">Sigle usuel :</span>
                     <span className="font-semibold text-foreground">{etats.fiche.sigle}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-surface-border/50">
-                    <span className="text-foreground-muted">N° d&apos;identification fiscale (NINEA/NIF) :</span>
-                    <span className="font-mono font-semibold text-primary">{etats.fiche.nineaNif}</span>
+                    <span className="text-foreground-muted">{referentiel.labelIdFiscal} :</span>
+                    <span className="font-mono font-bold text-primary">{etats.fiche.nineaNif || referentiel.placeholderIdFiscal}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-surface-border/50">
                     <span className="text-foreground-muted">Adresse géographique :</span>
@@ -1145,6 +1186,8 @@ export default function EtatsFinanciersClient({
           devise={devise}
           lang={lang}
           organisationNom={organisationNom}
+          paysCode={paysSelectionne}
+          onSelectPays={setPaysSelectionne}
         />
       )}
 
@@ -1232,6 +1275,8 @@ export default function EtatsFinanciersClient({
             devise={devise}
             lang={lang}
             organisationNom={organisationNom}
+            paysCode={paysSelectionne}
+            onSelectPays={setPaysSelectionne}
           />
         </div>
       )}
