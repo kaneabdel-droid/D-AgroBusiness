@@ -1,3 +1,4 @@
+import { ClientSecurityShield } from "@/components/ClientSecurityShield";
 import type { Metadata, Viewport } from 'next'
 import { Inter, Outfit, Cairo } from 'next/font/google'
 import './globals.css'
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${inter.variable} ${outfit.variable} ${cairo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ClientSecurityShield />
         <RegisterServiceWorker />
         {children}
       </body>

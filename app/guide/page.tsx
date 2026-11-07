@@ -1,3 +1,4 @@
+import { GuideAntiScreenshotShield } from "@/components/GuideAntiScreenshotShield";
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft, BookOpen, Boxes, Factory, LineChart, Users2, Landmark } from 'lucide-react'
@@ -59,6 +60,7 @@ export default async function GuidePage() {
 
   return (
     <PagePublique lang={lang}>
+      <GuideAntiScreenshotShield />
       <EnTete lang={lang} actif="guide" />
       <main>
         <section className="border-b border-surface-border bg-gradient-to-br from-eau-clair via-surface to-[#E6F4DC]">
